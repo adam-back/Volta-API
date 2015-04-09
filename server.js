@@ -1,7 +1,7 @@
 var express        = require( 'express' );
 var app            = express();
 var bodyParser     = require( 'body-parser' );
-var port           = process.env.PORT || 9000;
+var port           = process.env.PORT || 3000;
 
 app.use( passport.initialize() );
 
