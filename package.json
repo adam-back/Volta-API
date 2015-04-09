@@ -4,6 +4,8 @@
   "description": "Database dependencies for Volta.",
   "main": "server.js",
   "dependencies": {
+    "pg": "^4.3.0",
+    "pg-hstore": "^2.3.2",
     "sequelize": "^2.0.5"
   },
   "devDependencies": {},
