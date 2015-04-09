@@ -6,7 +6,7 @@ module.exports = exports = {
   logError: function ( err, req, res, next ) {
     if ( err ) {
       console.error( err );
-      return next e rr );
+      return next( err );
     }
     next();
   },

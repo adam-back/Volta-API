@@ -22,6 +22,8 @@ routers.EKMRouter = EKMRouter;
 
 require( './config.js' )( app, express, routers );
 
+require( './EKM/ekmRoutes.js' )( EKMRouter );
+
 app.listen(port);
 console.log( 'Volta server running on port:',  port );
 exports = module.exports = app;
