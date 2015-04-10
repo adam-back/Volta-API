@@ -23,8 +23,8 @@ Create a file called `private.js`. This should include:
 module.exports = {
   APIkey: // your key
 };
-```
+ ```
 
 ### Starting the server
 1. Start PostgreSQL.
-2. `npm start` will start the server with nodemon.
+2. `npm start` will start the server.
