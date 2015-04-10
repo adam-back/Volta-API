@@ -1,29 +1,55 @@
-var express        = require( 'express' );
-var app            = express();
-var bodyParser     = require( 'body-parser' );
-var port           = process.env.PORT || 3000;
+var child_process = require('child_process');
+var express = require('express');
+var path = require('path');
+var favicon = require('serve-favicon');
+var logger = require('morgan');
+var cookieParser = require('cookie-parser');
+var bodyParser = require('body-parser');
 
-var allowCrossDomain = function( req, res, next ) {
-    res.header( 'Access-Control-Allow-Origin', '*' );
-    res.header( 'Access-Control-Allow-Methods', 'GET,POST' );
-    res.header( 'Access-Control-Allow-Headers', 'Content-Type, Authorization, Content-Length, X-Requested-With' );
-    next();
+var ekmRoutes = require('./routes/ekmRoutes');
+
+var app = express();
+
+app.use(logger('dev'));
+app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({ extended: false }));
+app.use(cookieParser());
+
+app.use('/ekm', ekmRoutes);
+
+// catch 404 and forward to error handler
+app.use(function(req, res, next) {
+  var err = new Error('Not Found');
+  err.status = 404;
+  next(err);
+});
+
+// error handlers
+
+// development error handler
+// will print stacktrace
+if (app.get('env') === 'development') {
+  app.use(function(err, req, res, next) {
+    res.status(err.status || 500);
+    res.render('error', {
+      message: err.message,
+      error: err
+    });
+  });
 }
-;
-app.use( bodyParser.json() );
-app.use( allowCrossDomain );
-app.use( express.static( __dirname + '/public' ) );
 
-var EKMRouter = express.Router();
+// production error handler
+// no stacktraces leaked to user
+app.use(function(err, req, res, next) {
+  res.status(err.status || 500);
+  res.render('error', {
+    message: err.message,
+    error: {}
+  });
+});
 
-var routers = {};
 
-routers.EKMRouter = EKMRouter;
+module.exports = app;
 
-require( './config.js' )( app, express, routers );
-
-require( './EKM/ekmRoutes.js' )( EKMRouter );
-
-app.listen(port);
-console.log( 'Volta server running on port:',  port );
-exports = module.exports = app;
+child_process.exec('./bin/www');
+ 
