@@ -45,35 +45,42 @@ var normalizePort = function( val ) {
 
 // Event listener for HTTP server "error" event.
 var onError = function( error ) {
+  var bind; 
+  var errorMessages = {
+    'EACCES': ' requires elevated privileges.',
+    'EADDRINUSE': ' is already in use.'
+  };
+
   if ( error.syscall !== 'listen' ) {
     throw error;
   }
 
-  var bind = typeof port === 'string'
-    ? 'Pipe ' + port
-    : 'Port ' + port;
+  if( typeof port === 'string' ) {
+    bind = 'Pipe ' + port;
+  } else {
+    bind = 'Port ' + port;
+  }
 
   // handle specific listen errors with friendly messages
-  switch ( error.code ) {
-    case 'EACCES':
-      console.error(bind + ' requires elevated privileges');
-      process.exit(1);
-      break;
-    case 'EADDRINUSE':
-      console.error(bind + ' is already in use');
-      process.exit( 1 );
-      break;
-    default:
-      throw error;
+  if ( errorMessages[ error.code ] ) {
+    console.error( bind + errorMessages[ error.code ] );
+    process.exit(1);
+  } else {
+    throw error;
   }
+
 };
 
 // Event listener for HTTP server "listening" event.
 var onListening = function() {
-  var addr = server.address();
-  var bind = typeof addr === 'string'
-    ? 'pipe ' + addr
-    : 'port ' + addr.port;
+  var address = server.address();
+  var bind;
+
+  if ( typeof address === 'string' ) {
+    bind = 'pipe ' + address;
+  } else {
+    bind = 'port ' + address.port;
+  }
 
   console.log( 'Server listening on port', bind);
 }
