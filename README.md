@@ -1,6 +1,13 @@
 # Database
 Volta Database Schemas using Sequelize
 
+[Visit online](https://damp-temple-5600.herokuapp.com/).
+
+The current routes available are:
+
+- '/ekm': Serves a static string
+- '/ekm/<stationIdNumber>': Gives a single-day, JSON report of any station
+
 ### Stack
 
 - Express
