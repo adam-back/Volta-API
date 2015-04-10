@@ -1,6 +1,12 @@
 # Database
 Volta Database Schemas using Sequelize
 
+### Stack
+
+- Express
+- Sequelize
+- PostgreSQL
+
 ## Run Locally
 
 System Requirements
