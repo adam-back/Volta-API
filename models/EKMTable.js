@@ -1,5 +1,5 @@
 module.exports = function( sequelize, DataTypes ) {
-  var EKMmeter = sequelize.define('EKMmeter', {
+  var EKMreading = sequelize.define('EKMreading', {
     id: {
           type: DataTypes.INTEGER,
           autoIncrement: true,
@@ -313,6 +313,6 @@ module.exports = function( sequelize, DataTypes ) {
     "Power_Factor_Ln_3_RangeTo": DataTypes.STRING
   });
 
-  return EKMmeter;
+  return EKMreading;
 };
 

@@ -1,28 +1,15 @@
-var express = require('express');
+var express = require( 'express' );
 var router = express.Router();
-var request = require('request');
-var APIkey;
+var controller = require( '../controllers/ekm.controller.js' );
 
-if( process.env.APIkey ) {
-  APIkey = process.env.APIkey;
-} else {
-  APIkey = require( '../private.js' ).APIkey;
-}
-
-// for ekm/
+// for http://www.baseurl.com/ekm
 router.route( '/' )
   .get(function( req, res ) {
     res.send( 'You\'ve reached ' + req.url + '.' );
   });
 
 router.route( '/:id' )
-  .get(function( req, res ) {
-    // get data
-    request( 'http://summary.ekmpush.com/summary?meters=' + req.url.substring(1) + '&key=' + APIkey + '&report=dy&format=json&offset=0&limit=1', function( error, response, body ) {
-      // serve it
-      res.send( body );
-      // write it to database
-    });
+  .get( controller.writeEKMDataById );
 
     // TODO:
     // check the database for a matching entry
@@ -30,6 +17,5 @@ router.route( '/:id' )
         // serve it
       // if it isn't downloaded yet
         // put it in the queue to download
-  });
 
 module.exports = router;
