@@ -18,8 +18,11 @@ Volta Database Schemas using Sequelize
 ### Environmental Variables
 
 Create a file called `private.js`. This should include:
+
 ```javascript
-exports.APIkey = // Your EKM key ;
+module.exports = {
+  APIkey: // your key
+};
 ```
 
 ### Starting the server
