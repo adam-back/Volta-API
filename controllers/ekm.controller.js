@@ -16,14 +16,16 @@ module.exports = exports = {
       // serve it
       res.send(JSON.parse(body)[0]);
 
-      // save it
-      EKMreading.create(JSON.parse(body)[0])
-        .success(function( reading ) {
-          console.log( 'Saved EKM reading.' );
-        })
-        .error(function( error ) {
-          console.error( 'Error saving EKM reading:', error );
-        });
+      if ( !error ) {
+        // save it
+        EKMreading.create(JSON.parse(body)[0])
+          .then(function( reading ) {
+            console.log( 'Saved EKM reading.' );
+          })
+          .catch(function( error ) {
+            console.error( 'Error saving EKM reading:', error );
+          });
+      }
     });
   }
 };
