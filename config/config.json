@@ -1,6 +1,6 @@
 {
   "development": {
-    "username": "root",
+    "username": "adamback",
     "password": null,
     "database": "volta_development",
     "host": "127.0.0.1",
