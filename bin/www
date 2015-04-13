@@ -6,7 +6,7 @@ var models = require( '../models');
 var sequelize = require( 'sequelize' );
 
 
-var port = normalizePort( process.env.PORT || 3000 );
+var port = process.env.PORT || 3000;
 app.set( 'port', port );
 
 var server = http.createServer( app );
@@ -14,10 +14,11 @@ var server = http.createServer( app );
 // Create listeners
 server.on( 'error', function() {
   console.error( 'Server error.' );
-} );
+});
+
 server.on('listening', function() {
   console.log( 'Server listening on port:', port );
-};
+});
 
 // Syncronize the models
 models.sequelize.sync()
