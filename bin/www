@@ -79,7 +79,7 @@ models.sequelize.sync()
   // when sucessful
   .then(function() {
     // start to listen
-    server.listen( port );
   });
 
+server.listen( port );
 
