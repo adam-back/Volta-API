@@ -51,7 +51,7 @@ Create a local PostgreSQL database using with the name `volta_development`. Fill
 
 First, create a remote database. Currently, the database is a Amazon RDS PostgreSQL instance. <b>Make sure to change your security settings to allow incoming requests from any IP.</b>
 
-The server itself has been successfully deployed on [Heroku](https://damp-temple-5600.herokuapp.com/ekm) and [Azure](http://ekm.azurewebsites.net/ekm). It connects to the remote database with environmental variables: 
+The server itself has been successfully deployed on [AWS](http://ekm-api-2.elasticbeanstalk.com/ekm), [Heroku](https://damp-temple-5600.herokuapp.com/ekm), and [Azure](http://ekm.azurewebsites.net/ekm). It connects to the remote database with environmental variables: 
 
 - NODE_ENV = production
 - APIkey = EKM API key
