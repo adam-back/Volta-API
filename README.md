@@ -20,12 +20,11 @@ The current routes available are:
 
 - [Node.js](https://nodejs.org/download/)
 - [PostgreSQL 9.3](http://www.postgresql.org/docs/9.3/interactive/installation.html)
-- [Nodemon](http://nodemon.io/)
 
 ### Configure
 Run `npm install`.
 
-Create a file called `private.js`. This should include:
+Create a file in the root directory called `private.js`. This should include:
 ```javascript
 module.exports = {
   APIkey: // your key
@@ -48,3 +47,27 @@ Create a local PostgreSQL database using with the name `volta_development`. Fill
 1. Start PostgreSQL.
 1. Run `npm start` from the terminal.
 1. Open a browser to [http://localhost:3000/ekm](http://localhost:3000/ekm).
+
+## Deploy Online
+(Good luck)
+
+First, create a remote database. Currently, the database is a Amazon RDS PostgreSQL instance. <b>Make sure to change your security settings to allow incoming requests from any IP.</b>
+
+The server itself has been successfully deployed on [Heroku](https://damp-temple-5600.herokuapp.com/ekm) and [Azure](http://ekm.azurewebsites.net/ekm). It connects to the remote database with environmental variables: 
+
+- NODE_ENV = production
+- APIkey = EKM API key
+
+From RDS:
+- DB_USERNAME = Master username
+- DB_PASSWORD = Master username password
+- DB_NAME = Name of the database
+- DB_HOST = Connection endpoint, without the port on the end
+
+```javascript
+// good
+voltadb.cyq2lc28ysoe.us-west-2.rds.amazonaws.com
+
+// bad
+voltadb.cyq2lc28ysoe.us-west-2.rds.amazonaws.com:5432
+```
