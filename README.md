@@ -1,14 +1,11 @@
-# Database
-Volta Database Schemas using Sequelize
-
-[Visit online](https://damp-temple-5600.herokuapp.com/).
+# The Volta Database
 
 The current routes available are:
 
 - '/ekm': Serves a static string
 - '/ekm/<stationIdNumber>': Gives a single-day, JSON report of any station
 
-### Stack
+#### Stack
 
 - Express
 - Sequelize
@@ -69,5 +66,6 @@ From RDS:
 voltadb.cyq2lc28ysoe.us-west-2.rds.amazonaws.com
 
 // bad
+// the default port for PostgreSQl is always 5432
 voltadb.cyq2lc28ysoe.us-west-2.rds.amazonaws.com:5432
 ```
