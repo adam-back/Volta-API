@@ -1,6 +1,5 @@
 # The Volta Database
-
-![Database architecture](http://s15.postimg.org/9lr5n3wd7/IMG_1936.jpg)
+<img src="http://s15.postimg.org/9lr5n3wd7/IMG_1936.jpg" alt="Architecture Diagram" width="300" height="300"/>
 
 The current routes available are:
 
