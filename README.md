@@ -1,5 +1,7 @@
 # The Volta Database
 
+![Database architecture](http://s15.postimg.org/9lr5n3wd7/IMG_1936.jpg)
+
 The current routes available are:
 
 - '/ekm': Serves a static string
