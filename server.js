@@ -1,10 +1,10 @@
-var child_process = require('child_process');
-var express = require('express');
-var path = require('path');
-var favicon = require('serve-favicon');
-var logger = require('morgan');
-var cookieParser = require('cookie-parser');
-var bodyParser = require('body-parser');
+var child_process = require( 'child_process' );
+var express = require( 'express' );
+var path = require( 'path' );
+var favicon = require( 'serve-favicon' );
+var logger = require( 'morgan' );
+var cookieParser = require( 'cookie-parser' );
+var bodyParser = require( 'body-parser' );
 var http = require( 'http' );
 var sequelize = require( 'sequelize' );
 var models = require( './models');
@@ -12,18 +12,18 @@ var models = require( './models');
 var app = express();
 
 // Configuration
-app.use(logger('dev'));
-app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ extended: false }));
-app.use(cookieParser());
+app.use( logger( 'dev' ) );
+app.use( bodyParser.json() );
+app.use( bodyParser.urlencoded( { extended: false } ) );
+app.use( cookieParser() );
 
 // Route handling
-var ekmRoutes = require('./routes/ekmRoutes');
+var ekmRoutes = require( './routes/ekmRoutes' );
 
-app.use('/ekm', ekmRoutes);
+app.use( '/ekm', ekmRoutes );
 
-app.get('*', function(req, res){
-  res.send('I\'m afraid I can\'t do that, Hal', 404);
+app.get('*', function( req, res ){
+  res.send( 'I\'m afraid I can\'t do that, Hal', 404 );
 });
 
 ////////////////////////////
