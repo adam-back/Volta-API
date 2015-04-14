@@ -11,7 +11,7 @@ var sequelize = new Sequelize( config.database, config.username, config.password
 // describe relationships
 var createRelationshipsBetweenTables = function( m ) {
   m.EKMreading.belongsTo( m.Station );
-  m.Station.hasMany( m.EKMreading, { as: 'Readings'} );
+  m.Station.hasMany( m.EKMreading, { as: { singular: 'reading', plural: 'readings'} } );
 };
 
 fs.readdirSync( __dirname )
