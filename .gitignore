@@ -1,1 +1,10 @@
 node_modules/
+npm-debug.log
+.DS_Store
+private.js
+.elasticbeanstalk/
+
+# Elastic Beanstalk Files
+.elasticbeanstalk/*
+!.elasticbeanstalk/*.cfg.yml
+!.elasticbeanstalk/*.global.yml
