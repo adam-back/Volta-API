@@ -22,16 +22,29 @@ The current routes available are:
 - [PostgreSQL 9.3](http://www.postgresql.org/docs/9.3/interactive/installation.html)
 - [Nodemon](http://nodemon.io/)
 
-### Environmental Variables
+### Configure
+Run `npm install`.
 
 Create a file called `private.js`. This should include:
-
 ```javascript
 module.exports = {
   APIkey: // your key
 };
  ```
 
+Create a local PostgreSQL database using with the name `volta_development`. Fill the 'development' object in `config/config.js` with your own information:
+```javascript
+// change these
+'username': 'someRootUsername',
+'password': 'yourLocalDBPW',
+// these stay the same
+'database': 'volta_development',
+'host': '127.0.0.1',
+'dialect': 'postgres',
+'port': 5432
+```
+
 ### Starting the server
 1. Start PostgreSQL.
-2. `npm start` will start the server.
+1. Run `npm start` from the terminal.
+1. Open a browser to [http://localhost:3000/ekm](http://localhost:3000/ekm).
