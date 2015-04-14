@@ -4,9 +4,17 @@ var Sequelize = require( 'sequelize' );
 var basename  = path.basename( module.filename );
 var env       = process.env.NODE_ENV || 'development';
 var db        = {};
-var config    = require( '../config/config' )[ env ];
+var config    = require( '../config/config' )[ 'production' ];
 var sequelize = new Sequelize( config.database, config.username, config.password, config );
 
+sequelize.authenticate()
+  .complete(function( err ) {
+    if( err ) {
+      console.error( "Unable to connect to the database:", err );
+    } else {
+      console.log( 'Successfully connected to the database.' );
+    }
+  });
 
 fs.readdirSync( __dirname )
   .filter( function( file ) {

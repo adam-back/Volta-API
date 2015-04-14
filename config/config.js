@@ -1,3 +1,5 @@
+var RDS = require( '../private.js' ).RDS;
+
 var config = {
   "development": {
     "username": "adamback",
@@ -8,10 +10,10 @@ var config = {
     "port": 5432
   },
   "production": {
-    "username": process.env.DB_USERNAME,
-    "password": process.env.DB_PASSWORD,
-    "database": process.env.DB_NAME,
-    "host": process.env.DB_HOST,
+    "username": process.env.DB_USERNAME || RDS.USERNAME,
+    "password": process.env.DB_PASSWORD || RDS.PASSWORD,
+    "database": process.env.DB_NAME || RDS.NAME,
+    "host": process.env.DB_HOST || RDS.HOST,
     "dialect": "postgres",
     "port": 5432
   }
