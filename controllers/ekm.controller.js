@@ -1,5 +1,6 @@
 var request = require( 'request' );
 var EKMreading = require( '../models').EKMreading;
+var Station = require( '../models').Station;
 var express = require( 'express' );
 var APIkey;
 
@@ -21,6 +22,17 @@ module.exports = exports = {
         EKMreading.create(JSON.parse(body)[0])
           .then(function( reading ) {
             console.log( 'Saved EKM reading.' );
+
+            Station.find({where: {ekmOmnimeterSerial: reading.Meter}})
+              .then(function(station) {
+                console.log('Found station', station);
+                // reading.setKIN( station.kin );
+                station.addReading( reading )
+                  .then(function() {
+                    console.log('Made relationship.');
+                  })
+              })
+
           })
           .catch(function( error ) {
             console.error( 'Error saving EKM reading:', error );
