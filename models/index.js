@@ -10,7 +10,6 @@ var sequelize = new Sequelize( config.database, config.username, config.password
 
 // describe relationships
 var createRelationshipsBetweenTables = function( m ) {
-  m.EKMreading.belongsTo( m.Station );
   m.Station.hasMany( m.EKMreading, { as: { singular: 'reading', plural: 'readings'} } );
 };
 
@@ -23,13 +22,28 @@ fs.readdirSync( __dirname )
     db[ model.name ] = model;
   });
 
-createRelationshipsBetweenTables( modules.exports );
-
 Object.keys( db ).forEach( function( modelName ) {
   if ( "associate" in db[ modelName ] ) {
     db[ modelName ].associate( db );
   }
 });
+
+createRelationshipsBetweenTables( db );
+
+db.Station.findOrCreate({where: {'kin': '007-0020-001-04-K'}, defaults: {
+    'kin': '007-0020-001-04-K',
+    'siteNumber': 2,
+    'ekmPushMAC': '4016FA010191',
+    'ekmOmnimeterSerial': '15159',
+    'SIMCard': 9146,
+    'location': 'Scottsdale Quarter SW'
+  }})
+  .spread(function(station, created) {
+    console.log(station.get({
+      plain: true
+    }));
+    console.log("Created?", created);
+  });
 
 sequelize.sync();
 
