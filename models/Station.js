@@ -5,8 +5,13 @@ module.exports = function( sequelize, DataTypes ) {
           autoIncrement: true,
           primaryKey: true
       }, 
-    kin: DataTypes.STRING,
+    kin: {
+      type: DataTypes.STRING,
+      allowNull: false
+    },
     siteNumber: DataTypes.INTEGER,
+    installDate: DataTypes.STRING,
+    network: DataTypes.STRING
     ekmPushMAC: DataTypes.STRING,
     ekmOmnimeterSerial: DataTypes.STRING,
     SIMCard: DataTypes.INTEGER,
