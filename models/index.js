@@ -1,4 +1,4 @@
-var fs        = require( 'fs');
+ var fs        = require( 'fs');
 var path      = require( 'path' );
 var Sequelize = require( 'sequelize' );
 var basename  = path.basename( module.filename );
@@ -29,21 +29,6 @@ Object.keys( db ).forEach( function( modelName ) {
 });
 
 createRelationshipsBetweenTables( db );
-
-db.Station.findOrCreate({where: {'kin': '007-0020-001-04-K'}, defaults: {
-    'kin': '007-0020-001-04-K',
-    'siteNumber': 2,
-    'ekmPushMAC': '4016FA010191',
-    'ekmOmnimeterSerial': '15159',
-    'SIMCard': 9146,
-    'location': 'Scottsdale Quarter SW'
-  }})
-  .spread(function(station, created) {
-    console.log(station.get({
-      plain: true
-    }));
-    console.log("Created?", created);
-  });
 
 sequelize.sync();
 

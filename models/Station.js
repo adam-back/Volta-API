@@ -11,7 +11,7 @@ module.exports = function( sequelize, DataTypes ) {
     },
     siteNumber: DataTypes.INTEGER,
     installDate: DataTypes.STRING,
-    network: DataTypes.STRING
+    network: DataTypes.STRING,
     ekmPushMAC: DataTypes.STRING,
     ekmOmnimeterSerial: DataTypes.STRING,
     SIMCard: DataTypes.INTEGER,
