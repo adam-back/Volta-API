@@ -1,16 +1,24 @@
 # The Volta Database
 <img src="http://s15.postimg.org/9lr5n3wd7/IMG_1936.jpg" alt="Architecture Diagram" width="300" height="300"/>
 
-The current routes available are:
+## API Endpoints
 
-### EKM
-'/ekm' | Serves a static string
-'/ekm/:omnimeterSerialNumber' | Gives a single-day, JSON report of any station
+### EKM Data
+**/ekm**
+Serves a static string
+
+**/ekm/:omnimeterSerialNumber**
+Gives a single-day, JSON report of any station
 
 ### Stations
-'/stations' | Serves all the stations currently in the database
-'/stations/:kin' | Serves one station
-'/stations/network/:network' | Serves stations based on network
+**/stations** 
+Serves all the stations currently in the database
+
+**/stations/:kin**
+Serves one station
+
+**/stations/network/:network**
+Serves stations based on network
   - Options include:
     - NoCal : Northern California
     - LA : Los Angeles Area
@@ -20,7 +28,7 @@ The current routes available are:
     - Hawaii
     - Chicago
 
-#### Stack
+## Stack
 
 - Express
 - Sequelize
