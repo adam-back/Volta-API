@@ -19,8 +19,10 @@ app.use( cookieParser() );
 
 // Route handling
 var ekmRoutes = require( './routes/ekmRoutes' );
+var stationRoutes = require( './routes/stationRoutes' );
 
 app.use( '/ekm', ekmRoutes );
+app.use( '/stations', stationRoutes)
 
 app.get('*', function( req, res ){
   res.send( 'I\'m afraid I can\'t do that, Hal', 404 );
@@ -43,13 +45,6 @@ server.on( 'error', function() {
 server.on('listening', function() {
   console.log( 'Server listening on port:', port );
 });
-
-// Syncronize the models
-models.sequelize.sync()
-  // when sucessful
-  .then(function() {
-    // start to listen
-  });
 
 server.listen( port );
  
