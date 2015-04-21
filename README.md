@@ -4,10 +4,10 @@
 The current routes available are:
 
 - '/ekm': Serves a static string
-- '/ekm/<Station Omnimeter S/N>': Gives a single-day, JSON report of any station
+- '/ekm/station omnimeter S/N': Gives a single-day, JSON report of any station
 
 - '/stations': Serves all the stations currently in the database
-- '/stations/<Station Kin>': Serves one station
+- '/stations/station kin': Serves one station
 
 #### Stack
 
