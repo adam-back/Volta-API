@@ -7,7 +7,7 @@ router.route( '/' )
   .get( controller.getAllStations );
 
 // for http://www.baseurl.com/stations/KIN
-// router.route( '/:kin' )
-  // .get( controller.getOneStation );
+router.route( '/:kin' )
+  .get( controller.getOneStation );
 
 module.exports = router;

@@ -4,7 +4,10 @@
 The current routes available are:
 
 - '/ekm': Serves a static string
-- '/ekm/<stationIdNumber>': Gives a single-day, JSON report of any station
+- '/ekm/<Station Omnimeter S/N>': Gives a single-day, JSON report of any station
+
+- '/stations': Serves all the stations currently in the database
+- '/stations/<Station Kin>': Serves one station
 
 #### Stack
 
@@ -51,7 +54,7 @@ Create a local PostgreSQL database using with the name `volta_development`. Fill
 
 First, create a remote database. Currently, the database is a Amazon RDS PostgreSQL instance. <b>Make sure to change your security settings to allow incoming requests from any IP.</b>
 
-The server itself has been successfully deployed on [AWS](http://ekm-api-2.elasticbeanstalk.com/ekm), [Heroku](https://damp-temple-5600.herokuapp.com/ekm), and [Azure](http://ekm.azurewebsites.net/ekm). It connects to the remote database with environmental variables: 
+The server itself has been successfully deployed on AWS, Heroku, and Azure. It connects to the remote database with environmental variables: 
 
 - NODE_ENV = production
 - APIkey = EKM API key
