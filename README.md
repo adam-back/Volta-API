@@ -3,11 +3,22 @@
 
 The current routes available are:
 
-- '/ekm': Serves a static string
-- '/ekm/station omnimeter S/N': Gives a single-day, JSON report of any station
+### EKM
+'/ekm' | Serves a static string
+'/ekm/:omnimeterSerialNumber' | Gives a single-day, JSON report of any station
 
-- '/stations': Serves all the stations currently in the database
-- '/stations/station kin': Serves one station
+### Stations
+'/stations' | Serves all the stations currently in the database
+'/stations/:kin' | Serves one station
+'/stations/network/:network' | Serves stations based on network
+  - Options include:
+    - NoCal : Northern California
+    - LA : Los Angeles Area
+    - SD : San Diego
+    - SB : Santa Barbara Area
+    - Arizona
+    - Hawaii
+    - Chicago
 
 #### Stack
 
