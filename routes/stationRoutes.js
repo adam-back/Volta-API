@@ -10,4 +10,7 @@ router.route( '/' )
 router.route( '/:kin' )
   .get( controller.getOneStation );
 
+router.route( '/network/:network' )
+  .get( controller.getStationsByNetwork );
+  
 module.exports = router;
