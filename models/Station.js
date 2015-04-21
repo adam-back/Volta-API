@@ -7,7 +7,8 @@ module.exports = function( sequelize, DataTypes ) {
       }, 
     kin: {
       type: DataTypes.STRING,
-      allowNull: false
+      allowNull: false,
+      unique: true
     },
     siteNumber: DataTypes.INTEGER,
     installDate: DataTypes.STRING,
