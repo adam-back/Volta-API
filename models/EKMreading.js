@@ -314,4 +314,6 @@ module.exports = function( sequelize, DataTypes ) {
   });
 
   return EKMreading;
+
+  // stationId added as foreign key
 };
