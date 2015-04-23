@@ -20,8 +20,6 @@ module.exports = function( sequelize, DataTypes ) {
     locationAddress: DataTypes.STRING,
     locationGPS: DataTypes.ARRAY(DataTypes.DECIMAL),
     chargeType: DataTypes.INTEGER,
-    maxVolts: DataTypes.INTEGER,
-    maxAmps: DataTypes.INTEGER,
     cumulativeKW: DataTypes.DECIMAL,
     status: DataTypes.STRING,
     inUse: DataTypes.BOOLEAN
