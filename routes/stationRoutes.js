@@ -10,6 +10,9 @@ router.route( '/' )
 router.route( '/:kin' )
   .get( controller.getOneStation );
 
+router.route( '/:kin' )
+  .put( controller.setOneStation );
+
 router.route( '/network/:network' )
   .get( controller.getStationsByNetwork );
   

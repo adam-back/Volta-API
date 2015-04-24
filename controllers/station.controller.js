@@ -55,5 +55,9 @@ module.exports = exports = {
       .catch(function( error ) {
         res.status( 500 ).send( error );
       });
+  },
+  setOneStation: function (req, res) {
+    Station.update(req.body, { where: { kin: req.params.kin } });
+    res.json('Update Complete');
   }
 };
