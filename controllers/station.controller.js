@@ -1,6 +1,7 @@
 var request = require( 'request' );
 var Station = require( '../models').Station;
 var express = require( 'express' );
+var io = require('../server').io;
 
 module.exports = exports = {
   getAllStations: function (req, res) {
@@ -58,6 +59,12 @@ module.exports = exports = {
   },
   setOneStation: function (req, res) {
     Station.update(req.body, { where: { kin: req.params.kin } });
+
+    if(!io){
+      var io = require('../server').io;
+    }
+    
+    io.sockets.emit(req.params.kin, { status: req.body });
     res.json('Update Complete');
   }
 };
