@@ -21,7 +21,8 @@ module.exports = function( sequelize, DataTypes ) {
     locationGPS: DataTypes.ARRAY(DataTypes.DECIMAL),
     chargeType: DataTypes.INTEGER,
     cumulativeKW: DataTypes.DECIMAL,
-    status: DataTypes.STRING,
+    stationStatus: DataTypes.STRING,
+    meterStatus: DataTypes.STRING,
     inUse: DataTypes.BOOLEAN
   });
 
