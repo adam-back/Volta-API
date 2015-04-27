@@ -44,6 +44,9 @@ var port = process.env.PORT || 3000;
 app.set( 'port', port );
 
 var server = http.createServer( app );
+var io = require('socket.io')(server);
+console.log('server io: ', io);
+module.exports = {io: io};
 
 // Create listeners
 server.on( 'error', function() {
