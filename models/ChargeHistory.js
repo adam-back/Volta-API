@@ -1,14 +1,14 @@
-module.exports = function( sequelize, DataType ) {
+module.exports = function( sequelize, DataTypes ) {
 	var ChargeHistory = sequelize.define('ChargeHistory', {
 		id: { 
-			type: DataType.INTEGER,
+			type: DataTypes.INTEGER,
 			autoIncrement: true,
 			primaryKey: true
 		},
-		timeStart: DataType.DATE,
-		timeStop: DataType.DATE,
-		timeUnplugged: DataType.DATE,
-		kWh: DataType.DECIMAL
+		timeStart: DataTypes.DATE,
+		timeStop: DataTypes.DATE,
+		timeUnplugged: DataTypes.DATE,
+		kWh: DataTypes.DECIMAL
 	});
 
 	return ChargeHistory;

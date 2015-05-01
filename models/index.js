@@ -1,4 +1,4 @@
- var fs        = require( 'fs');
+var fs        = require( 'fs');
 var path      = require( 'path' );
 var Sequelize = require( 'sequelize' );
 var basename  = path.basename( module.filename );
@@ -40,6 +40,7 @@ db.Station.hasMany( db.ChargeHistory, { as: { singular: 'chargeHistory', plural:
 db.User.hasMany( db.StationRating, { as: { singular: 'stationRating', plural: 'stationRatings' } } );
 db.User.hasMany( db.StationReport, { as: { singular: 'stationReport', plural: 'stationReports' } } );
 db.User.hasMany( db.ChargeHistory, { as: { singular: 'chargeHistory', plural: 'chargeHistories' } } );
+db.ChargeHistory.hasMany( db.EKMreading, { as: { singular: 'EKMReading', plural: 'EKMReadings' } } );
 
 // Many-to-many
 db.Car.belongsToMany( db.User, { through: 'UserCar' } );
