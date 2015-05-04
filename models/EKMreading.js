@@ -10,8 +10,8 @@ module.exports = function( sequelize, DataTypes ) {
     Interval: DataTypes.INTEGER,
     Protocol: DataTypes.STRING,
     MAC_Addr: DataTypes.STRING,
-    Date: DataTypes.DATE,
-    Time: DataTypes.DATE,
+    Date: DataTypes.STRING,
+    Time: DataTypes.STRING,
     Time_Stamp_UTC_ms: DataTypes.DATE,
     Firmware: DataTypes.STRING,
     // had to rename Model to meterModel
