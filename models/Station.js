@@ -13,9 +13,18 @@ module.exports = function( sequelize, DataTypes ) {
     siteNumber: DataTypes.INTEGER,
     installDate: DataTypes.STRING,
     network: DataTypes.STRING,
-    ekmPushMAC: DataTypes.STRING,
-    ekmOmnimeterSerial: DataTypes.STRING,
-    SIMCard: DataTypes.INTEGER,
+    ekmPushMAC: {
+      type: DataTypes.STRING,
+      unique: true
+    },
+    ekmOmnimeterSerial: {
+      type: DataTypes.STRING,
+      unique: true
+    },
+    SIMCard: {
+      type: DataTypes.STRING,
+      unique: true
+    },
     location: DataTypes.STRING,
     locationAddress: DataTypes.STRING,
     locationGPS: DataTypes.ARRAY(DataTypes.DECIMAL),
