@@ -1,5 +1,5 @@
 module.exports = function( sequelize, DataTypes ) {
-	var ChargeHistory = sequelize.define('ChargeHistory', {
+	var ChargeEvent = sequelize.define('ChargeEvent', {
 		id: { 
 			type: DataTypes.INTEGER,
 			autoIncrement: true,
@@ -11,7 +11,7 @@ module.exports = function( sequelize, DataTypes ) {
 		kWh: DataTypes.DECIMAL
 	});
 
-	return ChargeHistory;
+	return ChargeEvent;
 
 	// stationId and userId added as foreign keys
 };
