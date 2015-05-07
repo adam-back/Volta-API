@@ -18,10 +18,6 @@ module.exports = function( sequelize, DataTypes ) {
       type: DataTypes.STRING,
       unique: true
     },
-    ekmOmnimeterSerial: {
-      type: DataTypes.STRING,
-      unique: true
-    },
     SIMCard: {
       type: DataTypes.STRING,
       unique: true
@@ -30,11 +26,8 @@ module.exports = function( sequelize, DataTypes ) {
     locationAddress: DataTypes.STRING,
     locationGPS: DataTypes.ARRAY(DataTypes.DECIMAL),
     costToAccess: DataTypes.BOOLEAN,
-    chargeType: DataTypes.INTEGER,
     cumulativeKW: DataTypes.DECIMAL,
-    stationStatus: DataTypes.STRING,
-    meterStatus: DataTypes.STRING,
-    inUse: DataTypes.BOOLEAN
+    stationStatus: DataTypes.STRING
   });
 
   return Station;
