@@ -8,9 +8,9 @@ module.exports = function( sequelize, DataTypes ) {
 		rating: DataTypes.DECIMAL,
 		message: DataTypes.TEXT,
 		date: DataTypes.DATE
-	});
+	}, { 'underscored': true } );
 
 	return station_rating;
 
-	// stationId and userId added as foreign keys
+	// station_id and user_id added as foreign keys
 };

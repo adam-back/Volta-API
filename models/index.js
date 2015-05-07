@@ -32,25 +32,25 @@ Object.keys( db ).forEach( function( modelName ) {
 //////////////////
 
 // One-to-many
-db.Station.hasMany( db.ChargeEvent );
-db.Station.hasMany( db.Plug );
-db.Station.hasMany( db.WeatherReading );
-db.Station.hasMany( db.StationRating );
-db.Station.hasMany( db.StationReport );
-db.Station.hasMany( db.EKMreading );
+db.station.hasMany( db.charge_event );
+db.station.hasMany( db.plug );
+db.station.hasMany( db.weather_reading );
+db.station.hasMany( db.station_rating );
+db.station.hasMany( db.station_report );
+db.station.hasMany( db.ekm_reading );
 
-db.Plug.hasMany( db.ChargeEvent );
-db.Plug.hasMany( db.EKMreading );
+db.plug.hasMany( db.charge_event );
+db.plug.hasMany( db.ekm_reading );
 
-db.User.hasMany( db.StationRating );
-db.User.hasMany( db.StationReport );
-db.User.hasMany( db.ChargeEvent );
+db.user.hasMany( db.station_rating );
+db.user.hasMany( db.station_report );
+db.user.hasMany( db.charge_event );
 
-db.ChargeEvent.hasMany( db.EKMreading );
+db.charge_event.hasMany( db.ekm_reading );
 
 // Many-to-many
-db.Car.belongsToMany( db.User, { through: 'UserCar' } );
-db.User.belongsToMany( db.Car, { through: 'UserCar' } );
+db.car.belongsToMany( db.user, { through: 'user_car' } );
+db.user.belongsToMany( db.car, { through: 'user_car' } );
 
 //////////////////
 // Sync

@@ -12,7 +12,9 @@ module.exports = function( sequelize, DataTypes ) {
 		// in kWh
 		battery_size: DataTypes.INTEGER,
 		charge_current: DataTypes.DECIMAL
-	});
+	}, { underscored: true } );
 
 	return car;
+
+	// foreign key to join table with user
 };

@@ -69,8 +69,9 @@ module.exports = function( sequelize, DataTypes ) {
     rev_kwh_ln_2: DataTypes.STRING,
     rev_kwh_ln_3: DataTypes.STRING,
     cf_ratio: DataTypes.STRING
-  });
+  }, { underscored: true } );
     
     return ekm_reading;
-    // stationId added as foreign key
+
+    // plug_id, station_id, charge_event_id added as foreign keys
 };

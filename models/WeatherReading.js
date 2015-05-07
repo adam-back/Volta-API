@@ -9,9 +9,9 @@ module.exports = function( sequelize, DataTypes ) {
     internal_temperature: DataTypes.DECIMAL,
     relative_humidity: DataTypes.DECIMAL,
     barometric_pressure: DataTypes.DECIMAL
-  });
+  }, { 'underscored': true } );
 
   return weather_reading;
 
-  // stationId added as foreign key
+  // station_id added as foreign key
 };

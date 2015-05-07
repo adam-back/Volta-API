@@ -30,7 +30,8 @@ module.exports = function( sequelize, DataTypes ) {
     station_status: DataTypes.STRING,
     // [ 'true', 'false', 'error' ], 1/3 stations in use, 1 plug broken
     in_use: DataTypes.ARRAY( DataTypes.STRING )
-  }, { paranoid: true });
+  }, { paranoid: true, underscored: true } );
 
   return station;
+
 };

@@ -20,7 +20,9 @@ module.exports = function( sequelize, DataTypes ) {
     meter_status: DataTypes.STRING,
     in_use: DataTypes.BOOLEAN,
     cumulative_kwh: DataTypes.DECIMAL
-  }, { paranoid: true });
+  }, { paranoid: true, underscored: true } );
 
   return plug;
+
+  // station_id added as foreign key
 };

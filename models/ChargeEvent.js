@@ -9,9 +9,9 @@ module.exports = function( sequelize, DataTypes ) {
 		time_stop: DataTypes.DATE,
 		time_unplugged: DataTypes.DATE,
 		kwh: DataTypes.DECIMAL
-	}, { paranoid: true, underscored: true });
+	}, { paranoid: true, underscored: true } );
 
 	return charge_event;
 
-	// stationId and userId added as foreign keys
+	// user_id, station_id, plug_id added as foreign keys
 };

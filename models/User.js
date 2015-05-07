@@ -34,7 +34,9 @@ module.exports = function( sequelize, DataTypes ) {
     number_of_checkins: DataTypes.INTEGER,
     kwh_used: DataTypes.DECIMAL,
     freemium_level: DataTypes.INTEGER
-  }, { paranoid: true });
+  }, { paranoid: true, underscored: true } );
 
   return user;
+
+  // foreign key to join table with user
 };

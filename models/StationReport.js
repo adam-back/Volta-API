@@ -13,9 +13,9 @@ module.exports = function( sequelize, DataTypes ) {
     location_stamp: DataTypes.ARRAY(DataTypes.DECIMAL),
     message: DataTypes.TEXT,
     picture_path: DataTypes.STRING 
-  });
+  }, { 'underscored': true } );
 
   return station_report;
 
-  // stationId and userId added as foreign keys
+  // station_id and user_id added as foreign keys
 };
