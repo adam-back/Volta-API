@@ -1,26 +1,26 @@
 module.exports = function( sequelize, DataTypes ) {
-  var Plug = sequelize.define('Plug', {
+  var plug = sequelize.define('plug', {
     id: {
           type: DataTypes.INTEGER,
           autoIncrement: true,
           primaryKey: true
     },
-    numberOnStation: DataTypes.INTEGER,
+    number_on_station: DataTypes.INTEGER,
     // could be same as station install date,
     // but doesn't have to be if it was added later
-    installDate: DataTypes.STRING,
+    install_date: DataTypes.STRING,
     // RS1772 
-    connectorType: DataTypes.STRING,
+    connector_type: DataTypes.STRING,
     // 1, Level 1
-    chargerType: DataTypes.INTEGER,
-    ekmOmnimeterSerial: {
+    charger_type: DataTypes.INTEGER,
+    ekm_omnimeter_serial: {
       type: DataTypes.STRING,
       unique: true
     },
-    meterStatus: DataTypes.STRING,
-    inUse: DataTypes.BOOLEAN,
-    cumulativeKW: DataTypes.DECIMAL
-  });
+    meter_status: DataTypes.STRING,
+    in_use: DataTypes.BOOLEAN,
+    cumulative_kwh: DataTypes.DECIMAL
+  }, { paranoid: true });
 
-  return Plug;
+  return plug;
 };

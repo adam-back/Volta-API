@@ -1,17 +1,17 @@
 module.exports = function( sequelize, DataTypes ) {
-	var ChargeEvent = sequelize.define('ChargeEvent', {
+	var charge_event = sequelize.define('charge_event', {
 		id: { 
 			type: DataTypes.INTEGER,
 			autoIncrement: true,
 			primaryKey: true
 		},
-		timeStart: DataTypes.DATE,
-		timeStop: DataTypes.DATE,
-		timeUnplugged: DataTypes.DATE,
-		kWh: DataTypes.DECIMAL
-	});
+		time_start: DataTypes.DATE,
+		time_stop: DataTypes.DATE,
+		time_unplugged: DataTypes.DATE,
+		kwh: DataTypes.DECIMAL
+	}, { paranoid: true, underscored: true });
 
-	return ChargeEvent;
+	return charge_event;
 
 	// stationId and userId added as foreign keys
 };

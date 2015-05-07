@@ -1,5 +1,5 @@
 module.exports = function( sequelize, DataTypes ) {
-	var Car = sequelize.define('Car', {
+	var car = sequelize.define('car', {
 		id: { 
 			type: DataTypes.INTEGER,
 			autoIncrement: true,
@@ -9,9 +9,10 @@ module.exports = function( sequelize, DataTypes ) {
 		model: DataTypes.STRING,
 		year: DataTypes.INTEGER,
 		trim: DataTypes.STRING,
-		batterySizeInkW: DataTypes.INTEGER,
-		chargeCurrent: DataTypes.DECIMAL
+		// in kWh
+		battery_size: DataTypes.INTEGER,
+		charge_current: DataTypes.DECIMAL
 	});
 
-	return Car;
+	return car;
 };
