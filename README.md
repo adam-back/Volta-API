@@ -1,4 +1,4 @@
-# The Volta Database
+# [The Volta Database](http://volta-api.elasticbeanstalk.com)
 <img src="http://s15.postimg.org/9lr5n3wd7/IMG_1936.jpg" alt="Architecture Diagram" width="300" height="300"/>
 
 ## API Endpoints
