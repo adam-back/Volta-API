@@ -1,6 +1,20 @@
 # [The Volta Database](http://volta-api.elasticbeanstalk.com)
 <img src="http://s15.postimg.org/9lr5n3wd7/IMG_1936.jpg" alt="Architecture Diagram" width="300" height="300"/>
 
+## Table Schemas
+Car
+User
+Charge Event
+EKMreading
+Station
+Plug
+Rating
+Report
+Weather Report
+
+
+TODO: Add explanations, relationships, and relationship drawing.
+
 ## API Endpoints
 
 ### EKM Data
