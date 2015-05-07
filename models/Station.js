@@ -10,6 +10,7 @@ module.exports = function( sequelize, DataTypes ) {
       allowNull: false,
       unique: true
     },
+    version: DataTypes.STRING,
     siteNumber: DataTypes.INTEGER,
     installDate: DataTypes.STRING,
     network: DataTypes.STRING,
@@ -28,6 +29,7 @@ module.exports = function( sequelize, DataTypes ) {
     location: DataTypes.STRING,
     locationAddress: DataTypes.STRING,
     locationGPS: DataTypes.ARRAY(DataTypes.DECIMAL),
+    costToAccess: DataTypes.BOOLEAN,
     chargeType: DataTypes.INTEGER,
     cumulativeKW: DataTypes.DECIMAL,
     stationStatus: DataTypes.STRING,
