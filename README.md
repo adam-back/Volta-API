@@ -65,13 +65,13 @@ module.exports = {
 };
  ```
 
-Create a local PostgreSQL database using with the name `volta_development`. Fill the 'development' object in `config/config.js` with your own information:
+Create a local PostgreSQL database using with the name `volta`. Fill the 'development' object in `config/config.js` with your own information:
 ```javascript
 // change these
 'username': 'someRootUsername',
 'password': 'yourLocalDBPW',
 // these stay the same
-'database': 'volta_development',
+'database': 'volta',
 'host': '127.0.0.1',
 'dialect': 'postgres',
 'port': 5432
