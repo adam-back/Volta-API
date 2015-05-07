@@ -5,6 +5,7 @@ module.exports = function( sequelize, DataTypes ) {
           autoIncrement: true,
           primaryKey: true
     },
+    numberOnStation: DataTypes.INTEGER,
     // could be same as station install date,
     // but doesn't have to be if it was added later
     installDate: DataTypes.STRING,

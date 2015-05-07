@@ -24,10 +24,12 @@ module.exports = function( sequelize, DataTypes ) {
     },
     location: DataTypes.STRING,
     locationAddress: DataTypes.STRING,
-    locationGPS: DataTypes.ARRAY(DataTypes.DECIMAL),
+    locationGPS: DataTypes.ARRAY( DataTypes.DECIMAL ),
     costToAccess: DataTypes.BOOLEAN,
     cumulativeKW: DataTypes.DECIMAL,
     stationStatus: DataTypes.STRING
+    // [ 'true', 'false', 'error' ], 1/3 stations in use, 1 plug broken
+    inUse: DataTypes.ARRAY( DataTypes.STRING );
   });
 
   return Station;
