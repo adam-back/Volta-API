@@ -22,6 +22,7 @@ TODO: Add explanations, relationships, and relationship drawing.
 Serves a static string
 
 **/ekm/:omnimeterSerialNumber**
+Not currently implemented
 Gives a single-day, JSON report of any station
 
 ### Stations
