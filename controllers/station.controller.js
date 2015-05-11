@@ -1,5 +1,5 @@
 var request = require( 'request' );
-var Station = require( '../models').Station;
+var station = require( '../models').station;
 var express = require( 'express' );
 var io = require('../server').io;
 
@@ -7,7 +7,7 @@ module.exports = exports = {
   getAllStations: function (req, res) {
      
     // query database for all rows of stations
-    Station.findAll()
+    station.findAll()
       .then(function( stations ) {
         // respond json with all data
         res.json( stations );
@@ -19,7 +19,7 @@ module.exports = exports = {
   getOneStation: function (req, res) {
      
     // query database for all rows of stations
-    Station.findOne( { where: { kin: req.params.kin } } )
+    station.findOne( { where: { kin: req.params.kin } } )
       .then(function( oneStation ) {
         // if found
         if( oneStation.length === 0 ) {
@@ -33,9 +33,9 @@ module.exports = exports = {
       });
   },
   getStationsByNetwork: function (req, res) {
-     
+    console.log('here')
     // query database for all rows of stations
-    Station.findAll( { where: { network: req.params.network } } )
+    station.findAll( { where: { network: req.params.network } } )
       .then(function( stations ) {
         // if found
         if( stations.length === 0 ) {
@@ -58,7 +58,7 @@ module.exports = exports = {
       });
   },
   setOneStation: function (req, res) {
-    Station.update(req.body, { where: { kin: req.params.kin } });
+    station.update(req.body, { where: { kin: req.params.kin } });
 
     if(!io){
       var io = require('../server').io;
