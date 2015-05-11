@@ -32,19 +32,25 @@ Object.keys( db ).forEach( function( modelName ) {
 //////////////////
 
 // One-to-many
-db.Station.hasMany( db.EKMreading, { as: { singular: 'EKMReading', plural: 'EKMReadings' } } );
-db.Station.hasMany( db.WeatherReading, { as: { singular: 'weatherReading', plural: 'weatherReadings' } } );
-db.Station.hasMany( db.StationRating, { as: { singular: 'stationRating', plural: 'stationRatings' } } );
-db.Station.hasMany( db.StationReport, { as: { singular: 'stationReport', plural: 'stationReports' } } );
-db.Station.hasMany( db.ChargeHistory, { as: { singular: 'chargeHistory', plural: 'chargeHistories' } } );
-db.User.hasMany( db.StationRating, { as: { singular: 'stationRating', plural: 'stationRatings' } } );
-db.User.hasMany( db.StationReport, { as: { singular: 'stationReport', plural: 'stationReports' } } );
-db.User.hasMany( db.ChargeHistory, { as: { singular: 'chargeHistory', plural: 'chargeHistories' } } );
-db.ChargeHistory.hasMany( db.EKMreading, { as: { singular: 'EKMReading', plural: 'EKMReadings' } } );
+db.station.hasMany( db.charge_event );
+db.station.hasMany( db.plug );
+db.station.hasMany( db.weather_reading );
+db.station.hasMany( db.station_rating );
+db.station.hasMany( db.station_report );
+db.station.hasMany( db.ekm_reading );
+
+db.plug.hasMany( db.charge_event );
+db.plug.hasMany( db.ekm_reading );
+
+db.user.hasMany( db.station_rating );
+db.user.hasMany( db.station_report );
+db.user.hasMany( db.charge_event );
+
+db.charge_event.hasMany( db.ekm_reading );
 
 // Many-to-many
-db.Car.belongsToMany( db.User, { through: 'UserCar' } );
-db.User.belongsToMany( db.Car, { through: 'UserCar' } );
+db.car.belongsToMany( db.user, { through: 'user_car' } );
+db.user.belongsToMany( db.car, { through: 'user_car' } );
 
 //////////////////
 // Sync

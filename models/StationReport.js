@@ -1,21 +1,21 @@
 module.exports = function( sequelize, DataTypes ) {
-  var StationReport = sequelize.define('StationReport', {
+  var station_report = sequelize.define('station_report', {
     id: {
           type: DataTypes.INTEGER,
           autoIncrement: true,
           primaryKey: true
       }, 
-    typeOfReport: DataTypes.STRING,
+    type_of_report: DataTypes.STRING,
     timestamp: {
       type: DataTypes.DATE,
       defaultValue: DataTypes.NOW
     },
-    locationStamp: DataTypes.ARRAY(DataTypes.DECIMAL),
+    location_stamp: DataTypes.ARRAY(DataTypes.DECIMAL),
     message: DataTypes.TEXT,
-    picturePath: DataTypes.STRING 
-  });
+    picture_path: DataTypes.STRING 
+  }, { 'underscored': true } );
 
-  return StationReport;
+  return station_report;
 
-  // stationId and userId added as foreign keys
+  // station_id and user_id added as foreign keys
 };

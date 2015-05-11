@@ -1,17 +1,17 @@
 module.exports = function( sequelize, DataTypes ) {
-  var WeatherReading = sequelize.define('WeatherReading', {
+  var weather_reading = sequelize.define('weather_reading', {
     id: {
           type: DataTypes.INTEGER,
           autoIncrement: true,
           primaryKey: true
       }, 
-    outsideTemperature: DataTypes.DECIMAL,
-    internalTemperature: DataTypes.DECIMAL,
-    relativeHumidity: DataTypes.DECIMAL,
-    barometricPressure: DataTypes.DECIMAL
-  });
+    outside_temperature: DataTypes.DECIMAL,
+    internal_temperature: DataTypes.DECIMAL,
+    relative_humidity: DataTypes.DECIMAL,
+    barometric_pressure: DataTypes.DECIMAL
+  }, { 'underscored': true } );
 
-  return WeatherReading;
+  return weather_reading;
 
-  // stationId added as foreign key
+  // station_id added as foreign key
 };

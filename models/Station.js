@@ -1,5 +1,5 @@
 module.exports = function( sequelize, DataTypes ) {
-  var Station = sequelize.define('Station', {
+  var station = sequelize.define('station', {
     id: {
           type: DataTypes.INTEGER,
           autoIncrement: true,
@@ -10,30 +10,28 @@ module.exports = function( sequelize, DataTypes ) {
       allowNull: false,
       unique: true
     },
-    siteNumber: DataTypes.INTEGER,
-    installDate: DataTypes.STRING,
+    version: DataTypes.STRING,
+    site_number: DataTypes.INTEGER,
+    install_date: DataTypes.STRING,
     network: DataTypes.STRING,
-    ekmPushMAC: {
+    ekm_push_mac: {
       type: DataTypes.STRING,
       unique: true
     },
-    ekmOmnimeterSerial: {
-      type: DataTypes.STRING,
-      unique: true
-    },
-    SIMCard: {
+    sim_card: {
       type: DataTypes.STRING,
       unique: true
     },
     location: DataTypes.STRING,
-    locationAddress: DataTypes.STRING,
-    locationGPS: DataTypes.ARRAY(DataTypes.DECIMAL),
-    chargeType: DataTypes.INTEGER,
-    cumulativeKW: DataTypes.DECIMAL,
-    stationStatus: DataTypes.STRING,
-    meterStatus: DataTypes.STRING,
-    inUse: DataTypes.BOOLEAN
-  });
+    location_address: DataTypes.STRING,
+    location_gps: DataTypes.ARRAY( DataTypes.DECIMAL ),
+    cost_to_access: DataTypes.BOOLEAN,
+    cumulative_kwh: DataTypes.DECIMAL,
+    station_status: DataTypes.STRING,
+    // [ 'true', 'false', 'error' ], 1/3 stations in use, 1 plug broken
+    in_use: DataTypes.ARRAY( DataTypes.STRING )
+  }, { paranoid: true, underscored: true } );
 
-  return Station;
+  return station;
+
 };

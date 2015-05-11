@@ -22,30 +22,6 @@ module.exports = exports = {
       if ( !error && body[0] !== 'E' ) {
         // serve JSON data to client
         res.send(JSON.parse(body)[0]);
-        // save it in the database
-        EKMreading.create( JSON.parse( body )[ 0 ] )
-          .then(function( reading ) {
-            console.log( 'Saved EKM reading.' );
-
-            Station.find( { where: { ekmOmnimeterSerial: reading.Meter } } )
-              .then(function( station ) {
-                // Connect with foreign key
-                station.addReading( reading )
-                  .then(function() {
-                    console.log( 'Connected reading to station.' );
-                  })
-                  .catch(function( err ) {
-                    console.error( 'Error setting reading to station:', err );
-                  });
-              })
-              .catch(function( err) {
-                console.error( 'Error finding station:', err );
-              });
-
-          })
-          .catch(function( error ) {
-            console.error( 'Error saving EKM reading:', error );
-          });
       } else {
         // Wrong Omnimeter S/N Number
         res.send( 'I\'m sorry, but data for the station with Omnimeter S\\N ' + req.url.substring( 1 ) + ', could not be found.' );

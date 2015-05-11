@@ -1,5 +1,5 @@
 module.exports = function( sequelize, DataTypes ) {
-	var StationRating = sequelize.define('StationRating', {
+	var station_rating = sequelize.define('station_rating', {
 		id: { 
 			type:DataTypes.INTEGER,
 			autoIncrement: true,
@@ -8,9 +8,9 @@ module.exports = function( sequelize, DataTypes ) {
 		rating: DataTypes.DECIMAL,
 		message: DataTypes.TEXT,
 		date: DataTypes.DATE
-	});
+	}, { 'underscored': true } );
 
-	return StationRating;
+	return station_rating;
 
-	// stationId and userId added as foreign keys
+	// station_id and user_id added as foreign keys
 };
