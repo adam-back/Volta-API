@@ -13,7 +13,7 @@ module.exports = function( sequelize, DataTypes ) {
     date: DataTypes.STRING,
     time: DataTypes.STRING,
     time_stamp_utc_ms: DataTypes.DATE,
-    Firmware: DataTypes.STRING,
+    firmware: DataTypes.STRING,
     // had to rename Model to meterModel
     // because it didn't like Model for import
     // even as a string
