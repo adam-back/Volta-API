@@ -4,6 +4,7 @@ var favicon = require( 'serve-favicon' );
 var logger = require( 'morgan' );
 var cookieParser = require( 'cookie-parser' );
 var bodyParser = require( 'body-parser' );
+var expressSanitizer = require( 'express-sanitizer' );
 var http = require( 'http' );
 
 var app = express();
@@ -12,6 +13,7 @@ var app = express();
 app.use( logger( 'dev' ) );
 app.use( bodyParser.json() );
 app.use( bodyParser.urlencoded( { extended: false } ) );
+app.use( expressSanitizer() );
 app.use( cookieParser() );
 
 // Allow CORS
@@ -26,10 +28,12 @@ app.use(function(req, res, next) {
 var ekmRoutes = require( './routes/ekmRoutes' );
 var stationRoutes = require( './routes/stationRoutes' );
 var plugRoutes = require( './routes/plugRoutes' );
+var reportRoutes = require( './routes/stationReportRoutes' );
 
 app.use( '/ekm', ekmRoutes );
 app.use( '/stations', stationRoutes );
 app.use( '/plugs', plugRoutes );
+app.use( '/stationReport', reportRoutes );
 
 app.get('*', function( req, res ){
   res.send( 'I\'m afraid I can\'t do that, Hal.', 404 );

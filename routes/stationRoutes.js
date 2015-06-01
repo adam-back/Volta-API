@@ -15,5 +15,5 @@ router.route( '/:kin' )
 
 router.route( '/network/:network' )
   .get( controller.getStationsByNetwork );
-  
+
 module.exports = router;

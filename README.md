@@ -55,7 +55,7 @@ Serves all the plugs currently in the database by station id.
 Serves the plugs associated with the station id.
 
 ### Station Reports
-**POST /report**
+**POST /stationReport**
 Receives and saves a station_report. Responds with 204 No Content.
 
 ### Adam Likes Tea
