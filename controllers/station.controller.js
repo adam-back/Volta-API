@@ -4,8 +4,7 @@ var express = require( 'express' );
 var io = require('../server').io;
 
 module.exports = exports = {
-  getAllStations: function (req, res) {
-     
+  getAllStations: function ( req, res ) {
     // query database for all rows of stations
     station.findAll()
       .then(function( stations ) {
@@ -16,7 +15,7 @@ module.exports = exports = {
         res.status( 500 ).send( error );
       });
   },
-  getOneStation: function (req, res) {
+  getOneStation: function ( req, res ) {
      
     // query database for all rows of stations
     station.findOne( { where: { kin: req.params.kin } } )
@@ -32,7 +31,7 @@ module.exports = exports = {
         res.status( 500 ).send( error );
       });
   },
-  getStationsByNetwork: function (req, res) {
+  getStationsByNetwork: function ( req, res ) {
     console.log('here')
     // query database for all rows of stations
     station.findAll( { where: { network: req.params.network } } )
@@ -57,13 +56,13 @@ module.exports = exports = {
         res.status( 500 ).send( error );
       });
   },
-  setOneStation: function (req, res) {
+  setOneStation: function ( req, res ) {
     station.update(req.body, { where: { kin: req.params.kin } });
 
     if(!io){
       var io = require('../server').io;
     }
-    
+
     io.sockets.emit(req.params.kin, { status: req.body });
     res.json('Update Complete');
   }

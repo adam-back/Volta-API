@@ -1,6 +1,6 @@
 var config = {
   'development': {
-    'username': 'dev',
+    'username': 'adamback',
     'password': null,
     'database': 'volta',
     'host': '127.0.0.1',

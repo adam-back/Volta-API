@@ -11,7 +11,7 @@ if( process.env.APIkey ) {
 }
 
 module.exports = exports = {
-  writeEKMDataById: function (req, res) {
+  writeEKMDataById: function ( req, res ) {
      // get data from API
     request( 'http://summary.ekmpush.com/summary?meters=' + req.url.substring( 1 ) + '&key=' + APIkey + '&report=dy&format=json&offset=0&limit=1', function( error, response, body ) {
 
