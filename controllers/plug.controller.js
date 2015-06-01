@@ -4,10 +4,9 @@ var express = require( 'express' );
 
 module.exports = exports = {
   getAllPlugs: function ( req, res ) {
-    // query database for all rows of stations
+    // query database for all rows of plugs
     plug.findAll()
     .then(function( plugs ) {
-      // respond json with all data
       var orderedByStation = {};
       for ( var i = 0; i < plugs.length; i++ ) {
         var stationId = plugs[ i ].station_id;
@@ -23,6 +22,21 @@ module.exports = exports = {
         }
       }
       res.json( orderedByStation );
+    })
+    .catch(function( error ) {
+      res.status( 500 ).send( error );
+    });
+  },
+  getOnePlug: function ( req, res ) {
+    // query database for a plug with a certain station_id
+    plug.findOne( { where: { station_id: req.params.id } } )
+    .then(function( plugs ) {
+      // if found
+      if( !plugs ) {
+        res.status( 404 ).send( '<p><strong>404</strong></p><p>A plug associated with that station id was not found.</p>' );
+      } else {
+        res.json( plugs );
+      }
     })
     .catch(function( error ) {
       res.status( 500 ).send( error );

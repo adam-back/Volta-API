@@ -6,4 +6,7 @@ var controller = require( '../controllers/plug.controller.js' );
 router.route( '/' )
   .get( controller.getAllPlugs );
 
+router.route( '/:id' )
+  .get( controller.getOnePlug );
+
 module.exports = router;
