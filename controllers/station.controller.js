@@ -16,13 +16,12 @@ module.exports = exports = {
       });
   },
   getOneStation: function ( req, res ) {
-     
     // query database for all rows of stations
     station.findOne( { where: { kin: req.params.kin } } )
       .then(function( oneStation ) {
         // if found
         if( oneStation.length === 0 ) {
-          res.status( 404 ).send('<p>A station with that KIN was not found.</p>')
+          res.status( 404 ).send( '<p>A station with that KIN was not found.</p>' );
         } else {
           res.json( oneStation );
         }
@@ -32,7 +31,6 @@ module.exports = exports = {
       });
   },
   getStationsByNetwork: function ( req, res ) {
-    console.log('here')
     // query database for all rows of stations
     station.findAll( { where: { network: req.params.network } } )
       .then(function( stations ) {
@@ -57,13 +55,13 @@ module.exports = exports = {
       });
   },
   setOneStation: function ( req, res ) {
-    station.update(req.body, { where: { kin: req.params.kin } });
+    station.update( req.body, { where: { kin: req.params.kin } } );
 
-    if(!io){
-      var io = require('../server').io;
+    if ( !io ) {
+      var io = require( '../server' ).io;
     }
 
-    io.sockets.emit(req.params.kin, { status: req.body });
-    res.json('Update Complete');
+    io.sockets.emit( req.params.kin, { status: req.body } );
+    res.json( 'Update Complete' );
   }
 };
