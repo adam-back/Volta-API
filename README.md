@@ -1,38 +1,42 @@
 # [The Volta Database](http://volta-api.elasticbeanstalk.com)
-<img src="http://s15.postimg.org/9lr5n3wd7/IMG_1936.jpg" alt="Architecture Diagram" width="300" height="300"/>
+<img src="https://s3-us-west-2.amazonaws.com/repo-assets/Database+Arch.png" alt="Architecture Diagram" width="400" height="300"/>
 
 ## Table Schemas
-Car
-User
-Charge Event
-EKMreading
-Station
-Plug
-Rating
-Report
-Weather Report
+- Car
+- User
+- Charge Event
+- EKMreading
+- Station
+- Plug
+- Rating
+- Report
+- Weather Report
 
+## Relationships
+<img src="https://s3-us-west-2.amazonaws.com/repo-assets/relations.png" alt="Relationships" width="500" height="400">
 
-TODO: Add explanations, relationships, and relationship drawing.
+Stars are 'many', 1 is 'one'.
+
+For example, one charge event has many EKM readings.
 
 ## API Endpoints
 
 ### EKM Data
-**/ekm**
+**GET /ekm**
 Serves a static string
 
-**/ekm/:omnimeterSerialNumber**
+**GET /ekm/:omnimeterSerialNumber**
 Not currently implemented
 Gives a single-day, JSON report of any station
 
 ### Stations
-**/stations** 
+**GET /stations**
 Serves all the stations currently in the database
 
-**/stations/:kin**
+**GET /stations/:kin**
 Serves one station
 
-**/stations/network/:network**
+**GET /stations/network/:network**
 Serves stations based on network
   - Options include:
     - NoCal : Northern California
@@ -42,6 +46,21 @@ Serves stations based on network
     - Arizona
     - Hawaii
     - Chicago
+
+### Plugs
+**GET /plugs**
+Serves all the plugs currently in the database by station id.
+
+**GET /plugs/:stationId**
+Serves the plugs associated with the station id.
+
+### Station Reports
+**POST /report**
+Receives and saves a station_report. Responds with 204 No Content.
+
+### Adam Likes Tea
+**GET /imalittleteapot**
+Returns a cuppa' tea.
 
 ## Stack
 

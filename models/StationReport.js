@@ -4,7 +4,7 @@ module.exports = function( sequelize, DataTypes ) {
           type: DataTypes.INTEGER,
           autoIncrement: true,
           primaryKey: true
-      }, 
+    },
     type_of_report: DataTypes.STRING,
     timestamp: {
       type: DataTypes.DATE,
@@ -12,7 +12,7 @@ module.exports = function( sequelize, DataTypes ) {
     },
     location_stamp: DataTypes.ARRAY(DataTypes.DECIMAL),
     message: DataTypes.TEXT,
-    picture_path: DataTypes.STRING 
+    picture_path: DataTypes.STRING
   }, { 'underscored': true } );
 
   return station_report;
