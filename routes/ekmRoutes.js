@@ -11,11 +11,4 @@ router.route( '/' )
 router.route( '/:id' )
   .get( controller.writeEKMDataById );
 
-    // TODO:
-    // check the database for a matching entry
-      // if it returns
-        // serve it
-      // if it isn't downloaded yet
-        // put it in the queue to download
-
 module.exports = router;
