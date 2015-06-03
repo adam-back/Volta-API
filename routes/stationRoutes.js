@@ -6,6 +6,9 @@ var controller = require( '../controllers/station.controller.js' );
 router.route( '/' )
   .get( controller.getAllStations );
 
+router.route( '/top10' )
+  .get( controller.getTopTenStations );
+
 // for http://www.baseurl.com/stations/KIN
 router.route( '/:kin' )
   .get( controller.getOneStation );
