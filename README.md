@@ -33,6 +33,23 @@ Gives a single-day, JSON report of any station
 **GET /stations**
 Serves all the stations currently in the database
 
+**GET /stations/top10**
+Serves top ten stations (and their plugs) ordered by kWh.
+
+Sample, partial response:
+```javascript
+{
+  "stations": {
+    "0": // most used station,
+    "1": // second most used station, ...
+  },
+  "plugs": {
+    "0": // plug for most used station,
+    "1": // plug for second most used station...
+  }
+}
+```
+
 **GET /stations/:kin**
 Serves one station
 
