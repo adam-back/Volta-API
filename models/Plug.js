@@ -9,10 +9,11 @@ module.exports = function( sequelize, DataTypes ) {
     // could be same as station install date,
     // but doesn't have to be if it was added later
     install_date: DataTypes.STRING,
-    // RS1772 
+    // RS1772
     connector_type: DataTypes.STRING,
     // 1, Level 1
     charger_type: DataTypes.INTEGER,
+    max_amps: DataTypes.INTEGER,
     ekm_omnimeter_serial: {
       type: DataTypes.STRING,
       unique: true

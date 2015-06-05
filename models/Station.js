@@ -4,7 +4,7 @@ module.exports = function( sequelize, DataTypes ) {
           type: DataTypes.INTEGER,
           autoIncrement: true,
           primaryKey: true
-      }, 
+      },
     kin: {
       type: DataTypes.STRING,
       allowNull: false,
@@ -22,8 +22,10 @@ module.exports = function( sequelize, DataTypes ) {
       type: DataTypes.STRING,
       unique: true
     },
+    has_kill_switch: DataTypes.BOOLEAN,
     location: DataTypes.STRING,
     location_address: DataTypes.STRING,
+    location_description: DataTypes.STRING,
     location_gps: DataTypes.ARRAY( DataTypes.DECIMAL ),
     cost_to_access: DataTypes.BOOLEAN,
     cumulative_kwh: DataTypes.DECIMAL,
