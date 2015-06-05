@@ -25,7 +25,7 @@ module.exports = function( sequelize, DataTypes ) {
     has_kill_switch: DataTypes.BOOLEAN,
     location: DataTypes.STRING,
     location_address: DataTypes.STRING,
-    location_description: DataTypes.STRING,
+    location_description: DataTypes.TEXT,
     location_gps: DataTypes.ARRAY( DataTypes.DECIMAL ),
     cost_to_access: DataTypes.BOOLEAN,
     cumulative_kwh: DataTypes.DECIMAL,
