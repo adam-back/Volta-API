@@ -9,6 +9,9 @@ router.route( '/' )
 router.route( '/top10' )
   .get( controller.getTopTenStations );
 
+router.route( '/cumulative' )
+  .get( controller.getCumulativeData );
+
 // for http://www.baseurl.com/stations/KIN
 router.route( '/:kin' )
   .get( controller.getOneStation );
