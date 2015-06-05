@@ -34,7 +34,7 @@ Gives a single-day, JSON report of any station
 Serves all the stations currently in the database
 
 **GET /stations/top10**
-Serves top ten stations (and their plugs) ordered by kWh.
+Serves top ten stations (and their plugs) ordered by kWh with data to graph.
 
 Sample, partial response:
 ```javascript
@@ -46,6 +46,30 @@ Sample, partial response:
   "plugs": {
     "0": // plug for most used station,
     "1": // plug for second most used station...
+  },
+  "events": {
+    "0": {
+      "count": // number of charges in last seven days for that station,
+      "cumulative_kwh": // summative kwh in last seven days for that station,
+      "plugIns": [ [ timestamp, count ], [], ... ],
+      "kwhGiven": [ [ timestamp, cumulative ], [], ... ]
+    }
+  }
+}
+```
+
+**GET /stations/cumulative**
+Serves cumulative data for the entire network since May 16, 2015 with data to graph.
+
+Sample, partial response:
+```javascript
+{
+  "plugIns": // total # of charge events,
+  "kwhGiven": // # of kwh given away, to nearest 10ths,
+  "graphs": {
+    // last seven days
+    "plugIns": [ [ timestamp, count ], [], ... ],
+    "kwhGiven": [ [ timestamp, cumulative ], [], ... ]
   }
 }
 ```
