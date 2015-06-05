@@ -1,6 +1,7 @@
 var request = require( 'request' );
 var station = require( '../models').station;
 var plug = require( '../models').plug;
+var charge_event = require( '../models').charge_event;
 var express = require( 'express' );
 var io = require('../server').io;
 var async = require( 'async' );
@@ -71,15 +72,34 @@ module.exports = exports = {
     .then(function( stationsInOrder ) {
       var stationsAndPlugs  = {
         stations: {},
-        plugs: {}
+        plugs: {},
+        events: {}
       };
 
       async.each(stationsInOrder, function( station, cb ) {
+        var order = stationsInOrder.indexOf( station );
         station.getPlugs()
         .then(function( plugs ) {
-          var order = stationsInOrder.indexOf( station );
           stationsAndPlugs.stations[ order ] = station;
           stationsAndPlugs.plugs[ order ] = plugs;
+          stationsAndPlugs.events[ order ] = {};
+          // count the number of total charge events
+          return charge_event.count( { where: { station_id: station.id } } );
+        })
+        .then(function( countOfEvents ) {
+          stationsAndPlugs.events[ order ].count = countOfEvents;
+          // add total kWh
+          return charge_event.sum('kwh', { where: { station_id: station.id, time_stop: { $ne: null } } } );
+        })
+        .then(function( totalKWH ) {
+          stationsAndPlugs.events[ order ].cumulative_kwh = totalKWH;
+          var sevenDaysAgo = new Date();
+          sevenDaysAgo.setDate( sevenDaysAgo.getDate() - 7 );
+          // get the charge events for the last sevent days
+          return charge_event.findAll( { where: { station_id: station.id, time_stop: { $ne: null }, time_start: { $gt: sevenDaysAgo } } } );
+        })
+        .then(function( weekReport ) {
+          stationsAndPlugs.events[ order ].graph = weekReport;
           cb( null );
         })
         .catch(function( error ) {
