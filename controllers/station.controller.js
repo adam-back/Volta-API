@@ -95,12 +95,25 @@ module.exports = exports = {
           stationsAndPlugs.events[ order ].cumulative_kwh = totalKWH;
           var sevenDaysAgo = new Date();
           sevenDaysAgo.setDate( sevenDaysAgo.getDate() - 7 );
-          // get the charge events for the last sevent days
-          return charge_event.findAll( { where: { station_id: station.id, time_stop: { $ne: null }, time_start: { $gt: sevenDaysAgo } } } );
+          // get the charge events for the last sevent days, ordered from oldest to newest
+          return charge_event.findAll( { where: { station_id: station.id, time_stop: { $ne: null }, time_start: { $gt: sevenDaysAgo } }, order: 'time_start' } );
         })
         .then(function( weekReport ) {
-          stationsAndPlugs.events[ order ].graph = weekReport;
-          cb( null );
+          var days = {};
+          // sort the report into days
+
+          // finish work here
+          async.each(weekReport, function( singleChargeEvent, cb ) {
+
+          }, function( error ) {
+            if ( error ) {
+              throw error;
+            } else {
+              stationsAndPlugs.events[ order ].graph = weekReport;
+              cb( null );
+            }
+          })
+
         })
         .catch(function( error ) {
           cb( error );
