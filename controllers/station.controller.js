@@ -94,26 +94,32 @@ module.exports = exports = {
         .then(function( totalKWH ) {
           stationsAndPlugs.events[ order ].cumulative_kwh = totalKWH;
           var sevenDaysAgo = new Date();
-          sevenDaysAgo.setDate( sevenDaysAgo.getDate() - 7 );
+          sevenDaysAgo.setDate( sevenDaysAgo.getDate() - 6 );
           // get the charge events for the last sevent days, ordered from oldest to newest
           return charge_event.findAll( { where: { station_id: station.id, time_stop: { $ne: null }, time_start: { $gt: sevenDaysAgo } }, order: 'time_start' } );
         })
         .then(function( weekReport ) {
-          var days = {};
+          var days = [];
+          var dayIndex = -1;
+          var currentDay;
+
           // sort the report into days
-
-          // finish work here
-          async.each(weekReport, function( singleChargeEvent, cb ) {
-
-          }, function( error ) {
-            if ( error ) {
-              throw error;
+          for ( var i = 0; i < weekReport.length; i++ ) {
+            // if we're still on the same day
+            if ( currentDay === weekReport[ i ].time_start.getDate() ) {
+              // this is a charge event to count, increase it
+              days[ dayIndex ][ 1 ]++;
+            // new day
             } else {
-              stationsAndPlugs.events[ order ].graph = weekReport;
-              cb( null );
+              currentDay = weekReport[ i ].time_start.getDate();
+              dayIndex++;
+              // note that the time is a timestamp
+              days.push( [ weekReport[ i ].time_start.getTime(), 1 ] );
             }
-          })
+          }
 
+          stationsAndPlugs.events[ order ].data = days;
+          cb( null );
         })
         .catch(function( error ) {
           cb( error );
