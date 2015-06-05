@@ -126,10 +126,8 @@ module.exports = exports = {
             kwhGiven[ i ][ 1 ] = Math.round( 10 * kwhGiven[ i ][ 1 ] ) / 10;
           }
 
-          stationsAndPlugs.events[ order ].data = {
-            plugIns: plugIns,
-            kwhGiven: kwhGiven
-          };
+          stationsAndPlugs.events[ order ].plugIns = plugIns;
+          stationsAndPlugs.events[ order ].kwhGiven = kwhGiven;
 
           cb( null );
         })
