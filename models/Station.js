@@ -10,7 +10,7 @@ module.exports = function( sequelize, DataTypes ) {
       allowNull: false,
       unique: true
     },
-    vers ion: DataTypes.STRING,
+    version: DataTypes.STRING,
     site_number: DataTypes.INTEGER,
     install_date: DataTypes.STRING,
     network: DataTypes.STRING,
