@@ -110,19 +110,27 @@ module.exports = exports = {
             if ( currentDay === weekReport[ i ].time_start.getDate() ) {
               // this is a charge event to count, increase it
               plugIns[ dayIndex ][ 1 ]++;
-              kwhGiven[ dayIndex ][ 1 ] += weekReport[ i ].kwh;
+              kwhGiven[ dayIndex ][ 1 ] += +weekReport[ i ].kwh;
             // new day
             } else {
               currentDay = weekReport[ i ].time_start.getDate();
               dayIndex++;
               // note that the time is a timestamp
               plugIns.push( [ weekReport[ i ].time_start.getTime(), 1 ] );
-              kwhGiven.push( [ weekReport[ i ].time_start.getTime(), weekReport[ i ].kwh ] );
+              kwhGiven.push( [ weekReport[ i ].time_start.getTime(), +weekReport[ i ].kwh ] );
             }
           }
 
-          stationsAndPlugs.events[ order ].data.plugIns = plugIns;
-          stationsAndPlugs.events[ order ].data.kwhGiven = kwhGiven;
+          // round to nearest tenths
+          for ( var i = 0; i < kwhGiven.length; i++ ) {
+            kwhGiven[ i ][ 1 ] = Math.round( 10 * kwhGiven[ i ][ 1 ] ) / 10;
+          }
+
+          stationsAndPlugs.events[ order ].data = {
+            plugIns: plugIns,
+            kwhGiven: kwhGiven
+          };
+
           cb( null );
         })
         .catch(function( error ) {
@@ -141,9 +149,62 @@ module.exports = exports = {
     });
   },
   getCumulativeData: function( req, res ) {
+    var data = {
+      plugIns: 0,
+      kwhGiven: 0,
+      graphs: {}
+    };
+
     // count the number of total charge events
-    // add the kwh of those charge events
-    // get the charge events from the last seven days
-    // create a data set for the graph
+    charge_event.count()
+    .then(function( number ) {
+      data.plugIns = number;
+      // add the kwh of those charge events
+      return charge_event.sum('kwh', { where: { time_stop: { $ne: null } } } );
+    })
+    .then(function( totalKWH ) {
+      var sevenDaysAgo = new Date();
+      sevenDaysAgo.setDate( sevenDaysAgo.getDate() - 6 );
+      data.kwhGiven = totalKWH;
+      // get the charge events from the last seven days
+      return charge_event.findAll( { where: { time_stop: { $ne: null }, time_start: { $gt: sevenDaysAgo } }, order: 'time_start' } );
+    })
+    .then(function( charges ) {
+      // create a data set for the graph
+      var plugIns = [];
+      var kwhGiven = [];
+      var dayIndex = -1;
+      var currentDay;
+
+      // sort the report into days
+      for ( var i = 0; i < charges.length; i++ ) {
+        // if we're still on the same day
+        if ( currentDay === charges[ i ].time_start.getDate() ) {
+          // this is a charge event to count, increase it
+          plugIns[ dayIndex ][ 1 ]++;
+          kwhGiven[ dayIndex ][ 1 ] += +charges[ i ].kwh;
+        // new day
+        } else {
+          currentDay = charges[ i ].time_start.getDate();
+          dayIndex++;
+          // note that the time is a timestamp
+          plugIns.push( [ charges[ i ].time_start.getTime(), 1 ] );
+          kwhGiven.push( [ charges[ i ].time_start.getTime(), +charges[ i ].kwh ] );
+        }
+      }
+
+      // round to nearest tenths
+      for ( var i = 0; i < kwhGiven.length; i++ ) {
+        kwhGiven[ i ][ 1 ] = Math.round( 10 * kwhGiven[ i ][ 1 ] ) / 10;
+      }
+
+      data.graphs.plugIns = plugIns;
+      data.graphs.kwhGiven = kwhGiven;
+      res.json( data );
+    })
+    .catch(function( error ) {
+      console.log( error );
+      res.status( 500 ).send( error );
+    })
   }
 };
