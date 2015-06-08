@@ -49,6 +49,24 @@ app.set( 'port', port );
 var server = http.createServer( app );
 var io = require( 'socket.io' )( server );
 console.log( 'server io: ', io );
+
+//Socket.io Settings
+var heartbeatInterval = 86400000; // 1 Day in milliseconds
+io.set('close timeout', 0);
+io.set('heartbeat timeout', heartbeatInterval*2);
+io.set('heartbeat interval', heartbeatInterval);
+
+
+// console.log('eio: ', io.eio);
+// io.eio.pingInterval = heartbeatInterval;
+// io.eio.pingTimeout = heartbeatInterval*2;
+// io.eio.transports = ['websocket'];
+
+
+// io.engine.pingInterval = heartbeatInterval;
+// io.engine.pingTimeout = heartbeatInterval*2;
+// io.engine.transports = ['websocket'];
+
 module.exports = { io: io };
 
 // Create listeners

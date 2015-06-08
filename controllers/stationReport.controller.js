@@ -6,7 +6,8 @@ module.exports = exports = {
   saveReport: function ( req, res ) {
     station_report.create( req.body )
     .then(function( success ) {
-      res.status( 204 ).send();
+      // res.status( 204 ).send();
+      res.json( {success:true} );
     })
     .catch(function( error ) {
       res.status( 500 ).send( error );
