@@ -51,11 +51,15 @@ var io = require( 'socket.io' )( server );
 console.log( 'server io: ', io );
 
 //Socket.io Settings
-var heartbeatInterval = 86400000; // 1 Day in milliseconds
+var heartbeatInterval = 3600*1000; // 1 Hour in milliseconds
 io.set('close timeout', 0);
-io.set('heartbeat timeout', heartbeatInterval*2);
-io.set('heartbeat interval', heartbeatInterval);
+io.set('heartbeat timeout', heartbeatInterval);
+io.set('heartbeat interval', heartbeatInterval-60*1000); // 59 Minutes in milliseconds
 
+// io.set('heartbeat timeout', 10000);
+// io.set('heartbeat interval', 10000);
+
+// console.log('timeout: ', io.engine.pingTimeout, ' interval: ', io.engine.pingInterval);
 
 // console.log('eio: ', io.eio);
 // io.eio.pingInterval = heartbeatInterval;
