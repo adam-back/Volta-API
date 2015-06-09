@@ -51,8 +51,9 @@ Sample, partial response:
     "0": {
       "count": // number of charges in last seven days for that station,
       "cumulative_kwh": // summative kwh in last seven days for that station,
-      "plugIns": [ [ timestamp, count ], [], ... ],
-      "kwhGiven": [ [ timestamp, cumulative ], [], ... ]
+      "days": [ '6/3', '6/4', '6/5' ] // last seven days MO/DAY
+      "plugIns": [ count_for_6/3, count_for_6/4, count_for_6/5 ],
+      "kwhGiven": [ cumulative_for_6/3, cumulative_for_6/4, cumulative_for_6/5 ]
     }
   }
 }
