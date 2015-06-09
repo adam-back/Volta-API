@@ -161,14 +161,22 @@ module.exports = exports = {
       return charge_event.sum('kwh', { where: { time_stop: { $ne: null } } } );
     })
     .then(function( totalKWH ) {
+      // right now
       var sevenDaysAgo = new Date();
+      // roll back the day 6 times, which is inclusive of today
       sevenDaysAgo.setDate( sevenDaysAgo.getDate() - 6 );
+      // make it the start of the day, UTC +7, ignorin DST
+      sevenDaysAgo.setHours( 7 );
+      sevenDaysAgo.setMinutes( 0 );
+      sevenDaysAgo.setSeconds( 0 );
+      sevenDaysAgo.setMilliseconds( 0 );
       data.kwhGiven = totalKWH;
       // get the charge events from the last seven days
       return charge_event.findAll( { where: { time_stop: { $ne: null }, time_start: { $gt: sevenDaysAgo } }, order: 'time_start' } );
     })
     .then(function( charges ) {
       // create a data set for the graph
+      var days = [];
       var plugIns = [];
       var kwhGiven = [];
       var dayIndex = -1;
@@ -179,23 +187,24 @@ module.exports = exports = {
         // if we're still on the same day
         if ( currentDay === charges[ i ].time_start.getDate() ) {
           // this is a charge event to count, increase it
-          plugIns[ dayIndex ][ 1 ]++;
-          kwhGiven[ dayIndex ][ 1 ] += +charges[ i ].kwh;
+          plugIns[ dayIndex ]++;
+          kwhGiven[ dayIndex ] += +charges[ i ].kwh;
         // new day
         } else {
           currentDay = charges[ i ].time_start.getDate();
+          days.push( ( charges[ i ].time_start.getMonth() + 1 ) + '/' + currentDay );
           dayIndex++;
-          // note that the time is a timestamp
-          plugIns.push( [ charges[ i ].time_start.getTime(), 1 ] );
-          kwhGiven.push( [ charges[ i ].time_start.getTime(), +charges[ i ].kwh ] );
+          plugIns.push( 1 );
+          kwhGiven.push( +charges[ i ].kwh );
         }
       }
 
       // round to nearest tenths
       for ( var i = 0; i < kwhGiven.length; i++ ) {
-        kwhGiven[ i ][ 1 ] = Math.round( 10 * kwhGiven[ i ][ 1 ] ) / 10;
+        kwhGiven[ i ] = Math.round( 10 * kwhGiven[ i ] ) / 10;
       }
 
+      data.graphs.days = days;
       data.graphs.plugIns = plugIns;
       data.graphs.kwhGiven = kwhGiven;
       res.json( data );
