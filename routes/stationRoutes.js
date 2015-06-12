@@ -17,9 +17,19 @@ router.route( '/:kin' )
   .get( controller.getOneStation );
 
 router.route( '/:kin' )
-  .put( controller.setOneStation );
+  .patch( controller.updateStation );
+
+//Kill switch - DO NOT CHANGE!
+router.route( '/:kin' )
+	.put( controller.setStationStatus );
 
 router.route( '/network/:network' )
   .get( controller.getStationsByNetwork );
+
+router.route( '/:kin' )
+	.post( controller.addStation );
+
+router.route( '/:kin' )
+	.delete( controller.deleteStation );
 
 module.exports = router;

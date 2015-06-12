@@ -6,7 +6,16 @@ var controller = require( '../controllers/plug.controller.js' );
 router.route( '/' )
   .get( controller.getAllPlugs );
 
-router.route( '/:id' )
+router.route( '/:kin' )
   .get( controller.getOnePlug );
+
+router.route( '/' )
+	.post( controller.addPlug );
+
+router.route( '/:id' )
+	.delete( controller.deletePlug );
+
+router.route( '/:id' )
+  .patch( controller.updatePlug );
 
 module.exports = router;
