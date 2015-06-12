@@ -8,6 +8,7 @@ var async = require( 'async' );
 var querystring = require('querystring');
 
 module.exports = exports = {
+  
   getAllStations: function ( req, res ) {
     // query database for all rows of stations
     station.findAll()
