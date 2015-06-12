@@ -58,7 +58,7 @@ var protectedStationRoutes = require( './routes/protected/protectedStationRoutes
 app.use( '/protected/station', protectedStationRoutes );
 
 app.get('*', function( req, res ){
-  res.status( 401 ).send( 'I\'m afraid I can\'t do that, Hal.' );
+  res.status( 404 ).send( 'I\'m afraid I can\'t do that, Hal.' );
 });
 
 ////////////////////////////
