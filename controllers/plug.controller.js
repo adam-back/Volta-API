@@ -28,23 +28,8 @@ module.exports = exports = {
       res.status( 500 ).send( error );
     });
   },
-  getOnePlugFromStation: function ( req, res ) {
-    // query database for a plug with a certain station_id
-    plug.findOne( { where: { station_id: req.params.id } } )
-    .then(function( plugs ) {
-      // if found
-      if( !plugs ) {
-        res.status( 404 ).send( '<p><strong>404</strong></p><p>A plug associated with that station id was not found.</p>' );
-      } else {
-        res.json( plugs );
-      }
-    })
-    .catch(function( error ) {
-      res.status( 500 ).send( error );
-    });
-  },
   getOnePlug: function ( req, res ) {
-    // query database for a plug with a certain station_id
+    // query database for a plug by its id
     plug.find( { where: { id: req.url.substring( 1 ) } } )
     .then(function( plug ) {
       if( plug ) {
@@ -59,20 +44,16 @@ module.exports = exports = {
   },
   addPlug: function( req, res ) {
     // Get the station so you can associate it
-    console.log('req body: ', req.body);
     station.find( { where: { kin: req.body.kin } } )
     .then(function( station ) {
-      console.log('found station');
       // kin is not part of plug schema
       delete req.body.kin;
       // Validate that a plug with same omnimeter doesn't exist, create it
       plug.findOrCreate( { where: { ekm_omnimeter_serial: req.body.ekm_omnimeter_serial }, defaults: req.body } )
         .spread(function( plug, created ) {
-          console.log('create plug: ', plug, ' created: ', created);
           if( created ) {
-            console.log('created plug successfully');
             // associate
-            station.addPlug( plug )
+            station.addPlug( plug );
             // send boolean
             res.json( { successfullyAddedPlug: created } );
           } else {
@@ -83,10 +64,9 @@ module.exports = exports = {
     })
     .catch(function( error ) {
       res.status( 500 ).send( error );
-    })
+    });
   },
   updatePlug: function(req, res) {
-    console.log(req.body);
     // object looks like:
     // { kin: #, changes: [ [ field, old, new ], [ field, old, new ] ] }
     plug.find( { where: { ekm_omnimeter_serial: req.body.serialNumber, id: { $ne: req.body.id } } } )
@@ -126,7 +106,17 @@ module.exports = exports = {
       // if the plug exists
       if( plug ) {
         // delete it
-        return plug.destroy()
+        return station.find( { where: { id: plug.station_id } } )
+        .then(function( station ) {
+          if( station ) {
+            return station.removePlug( plug );
+          } else {
+            throw 'There is no station association for plug';
+          }
+        })
+        .then(function() {
+          return plug.destroy();
+        });
       } else {
       // else it doesn't exist
         return 404;

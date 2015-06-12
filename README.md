@@ -22,6 +22,7 @@ For example, one charge event has many EKM readings.
 ## API Endpoints
 
 ### EKM Data
+
 **GET /ekm**
 Serves a static string
 
@@ -30,10 +31,14 @@ Not currently implemented
 Gives a single-day, JSON report of any station
 
 ### Stations
-**GET /stations**
-Serves all the stations currently in the database
+**/stations**
 
-**GET /stations/top10**
+*GET*
+Serves all the stations currently in the database.
+
+**/stations/top10**
+
+*GET*
 Serves top ten stations (and their plugs) ordered by kWh with data to graph.
 
 Sample, partial response:
@@ -59,7 +64,9 @@ Sample, partial response:
 }
 ```
 
-**GET /stations/cumulative**
+**/stations/cumulative**
+
+*GET*
 Serves cumulative data for the entire network since May 16, 2015 with data to graph.
 
 Sample, partial response:
@@ -75,10 +82,26 @@ Sample, partial response:
 }
 ```
 
-**GET /stations/:kin**
+**/stations/:kin**
+
+*GET*
 Serves one station
 
-**GET /stations/network/:network**
+*POST*
+Add station to the database with a given kin.
+
+*PATCH*
+Update a station with the given kin.
+
+*PUT*
+Kill switch - DO NOT CHANGE!
+Update the kill switch status based on kin.
+
+*DELETE*
+Delete station to the database with a given kin. Also deletes associated plugs.
+
+**/stations/network/:network**
+*GET*
 Serves stations based on network
   - Options include:
     - NoCal : Northern California
@@ -90,19 +113,27 @@ Serves stations based on network
     - Chicago
 
 ### Plugs
-**GET /plugs**
+**/plugs**
+*GET*
 Serves all the plugs currently in the database by station id.
 
-**GET /plugs/:stationId**
-Serves the plugs associated with the station id.
+*POST*
+Adds a plug to the database, associating it with a station.
+
+**/plugs:id**
+*GET*
+Get one plug based on plug id.
+
+*PATCH*
+Get one plug based on plug id.
+
+*DELETE*
+Delete one plug based on plug id.
 
 ### Station Reports
-**POST /stationReport**
+**/stationReport**
+*POST*
 Receives and saves a station_report. Responds with 204 No Content.
-
-### Adam Likes Tea
-**GET /imalittleteapot**
-Returns a cuppa' tea.
 
 ## Stack
 

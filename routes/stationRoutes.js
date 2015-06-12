@@ -14,22 +14,14 @@ router.route( '/cumulative' )
 
 // for http://www.baseurl.com/stations/KIN
 router.route( '/:kin' )
-  .get( controller.getOneStation );
-
-router.route( '/:kin' )
-  .patch( controller.updateStation );
-
+  .get( controller.getOneStation )
+  .patch( controller.updateStation )
 //Kill switch - DO NOT CHANGE!
-router.route( '/:kin' )
-	.put( controller.setStationStatus );
+	.put( controller.setStationStatus )
+	.post( controller.addStation )
+	.delete( controller.deleteStation );
 
 router.route( '/network/:network' )
   .get( controller.getStationsByNetwork );
-
-router.route( '/:kin' )
-	.post( controller.addStation );
-
-router.route( '/:kin' )
-	.delete( controller.deleteStation );
 
 module.exports = router;
