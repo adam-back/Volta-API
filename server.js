@@ -36,7 +36,7 @@ app.use( '/plugs', plugRoutes );
 app.use( '/stationReport', reportRoutes );
 
 app.get('*', function( req, res ){
-  res.send( 'I\'m afraid I can\'t do that, Hal.', 404 );
+  res.status( 401 ).send( 'I\'m afraid I can\'t do that, Hal.' );
 });
 
 ////////////////////////////

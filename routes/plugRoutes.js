@@ -4,18 +4,12 @@ var controller = require( '../controllers/plug.controller.js' );
 
 // for http://www.baseurl.com/plugs/
 router.route( '/' )
-  .get( controller.getAllPlugs );
-
-router.route( '/:kin' )
-  .get( controller.getOnePlug );
-
-router.route( '/' )
+  .get( controller.getAllPlugs )
 	.post( controller.addPlug );
 
 router.route( '/:id' )
-	.delete( controller.deletePlug );
-
-router.route( '/:id' )
-  .patch( controller.updatePlug );
+  .get( controller.getOnePlug )
+  .patch( controller.updatePlug )
+  .delete( controller.deletePlug );
 
 module.exports = router;
