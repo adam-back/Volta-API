@@ -16,7 +16,7 @@ router.route( '/cumulative' )
 router.route( '/:kin' )
   .get( controller.getOneStation )
   .patch( controller.updateStation )
-//Kill switch - DO NOT CHANGE!
+  //Kill switch - DO NOT CHANGE!
 	.put( controller.setStationStatus )
 	.post( controller.addStation )
 	.delete( controller.deleteStation );
