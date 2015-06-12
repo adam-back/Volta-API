@@ -24,10 +24,10 @@ module.exports = exports = {
     station.findOne( { where: { kin: req.params.kin } } )
       .then(function( oneStation ) {
         // if found
-        if( oneStation.length === 0 ) {
-          res.status( 404 ).send( '<p>A station with that KIN was not found.</p>' );
-        } else {
+        if( oneStation ) {
           res.json( oneStation );
+        } else {
+          res.status( 404 ).send( '<p>A station with that KIN was not found.</p>' );
         }
       })
       .catch(function( error ) {
