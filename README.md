@@ -1,6 +1,17 @@
 # [The Volta Database](http://volta-api.elasticbeanstalk.com)
 <img src="https://s3-us-west-2.amazonaws.com/repo-assets/Database+Arch.png" alt="Architecture Diagram" width="400" height="300"/>
 
+There are currently three deployments:
+1. [Production](http://volta-api.elasticbeanstalk.com)
+  - Master branch
+  - `eb deploy volta-api`
+2. [Development](http://volta-api-dev.elasticbeanstalk.com)
+  - Dev branch
+  - `eb deploy API-dev`
+3. Kill Switch
+  - `eb deploy kill-switch-api`
+  - This is a single instance, rather than load-balanced.
+
 ## Table Schemas
 - Car
 - User
@@ -20,9 +31,10 @@ Stars are 'many', 1 is 'one'.
 For example, one charge event has many EKM readings.
 
 ## API Endpoints
+There are public and private endpoints. Private endpoints may only be accessed with an appropriate JWT.
 
-### EKM Data
-
+### Public
+#### EKM Data
 **GET /ekm**
 Serves a static string
 
@@ -30,15 +42,15 @@ Serves a static string
 Not currently implemented
 Gives a single-day, JSON report of any station
 
-### Stations
-**/stations**
-
-*GET*
+#### Stations
+**GET /stations**
 Serves all the stations currently in the database.
 
-**/stations/top10**
+**PUT /stations/:kin**
+Kill switch - DO NOT CHANGE!
+Update the kill switch status based on kin.
 
-*GET*
+**GET /stations/top10**
 Serves top ten stations (and their plugs) ordered by kWh with data to graph.
 
 Sample, partial response:
@@ -64,9 +76,7 @@ Sample, partial response:
 }
 ```
 
-**/stations/cumulative**
-
-*GET*
+**GET /stations/cumulative**
 Serves cumulative data for the entire network since May 16, 2015 with data to graph.
 
 Sample, partial response:
@@ -82,26 +92,37 @@ Sample, partial response:
 }
 ```
 
-**/stations/:kin**
+#### Plugs
+**GET /plugs**
+Serves all the plugs currently in the database, collected into a JSON object by station id.
 
+#### Station Reports
+**POST /stationReport**
+Receives and saves a station_report. Responds with 204 No Content.
+
+### Private
+All private endpoints are prepended with `/protected/`.
+
+#### Stations
+**/protected/station**
 *GET*
-Serves one station
+Serves all stations. Note, this is a duplicate of the same public route. The public route is for legacy purposes.
 
 *POST*
-Add station to the database with a given kin.
+Add station to the database.
 
 *PATCH*
-Update a station with the given kin.
+Update a station.
 
-*PUT*
-Kill switch - DO NOT CHANGE!
-Update the kill switch status based on kin.
+**/protected/station/:kin**
+*GET*
+Serves one station based on the kin.
 
 *DELETE*
 Delete station to the database with a given kin. Also deletes associated plugs.
 
-**/stations/network/:network**
-*GET*
+#### Network
+**GET protected/station/network/:network**
 Serves stations based on network
   - Options include:
     - NoCal : Northern California
@@ -112,28 +133,23 @@ Serves stations based on network
     - Hawaii
     - Chicago
 
-### Plugs
-**/plugs**
+#### Plugs
+**/protected/plug**
 *GET*
-Serves all the plugs currently in the database by station id.
+Serves all the plugs currently in the database by station id. Note, this is a duplicate of the same public route. The public route is for legacy purposes.
 
 *POST*
 Adds a plug to the database, associating it with a station.
 
-**/plugs:id**
-*GET*
-Get one plug based on plug id.
-
 *PATCH*
+Update a plug.
+
+**protected/plug/:id**
+*GET*
 Get one plug based on plug id.
 
 *DELETE*
 Delete one plug based on plug id.
-
-### Station Reports
-**/stationReport**
-*POST*
-Receives and saves a station_report. Responds with 204 No Content.
 
 ## Stack
 
@@ -167,13 +183,25 @@ Create a local PostgreSQL database using with the name `volta`. Fill the 'develo
 'database': 'volta',
 'host': '127.0.0.1',
 'dialect': 'postgres',
-'port': 5432
+'port': 5432,
+'secret': 'iamallama',
+'issuer': 'seniorllama'
 ```
 
 ### Starting the server
 1. Start PostgreSQL.
 1. Run `npm start` from the terminal.
-1. Open a browser to [http://localhost:3000/ekm](http://localhost:3000/ekm).
+1. Open a browser to [http://localhost:3000/stations](http://localhost:3000/stations).
+
+#### Workflow
+See the [contribution guide](https://github.com/Volta-Charging/Project-Management/blob/master/contributing.md). Note: there is a dev and a master branch on this project, each with their own deployments.
+
+#### Deploying Changes
+This repo has a development and master branch corresponding to two different deployments.
+1. Merge PR on GitHub. Checkout dev or master branch in terminal, depending on where the PR was merged. Rebase to upstream.
+2. `eb init`. Select 3, Oregon. Select EKM-API.
+3. `eb deploy ` + environment name. If dev, `eb deploy API-dev`. For master, `eb deploy volta-api`. For the single instance, `kill-switch-api`.
+4. Wait a while (>5 minutes). Fingers crossed, `eb open`.
 
 ## Deploy Online
 (Good luck)
@@ -199,3 +227,9 @@ voltadb.cyq2lc28ysoe.us-west-2.rds.amazonaws.com
 // the default port for PostgreSQl is always 5432
 voltadb.cyq2lc28ysoe.us-west-2.rds.amazonaws.com:5432
 ```
+
+Your own, matching Auth-API:
+These should match the authentication API's values.
+- JWT_SECRET = JSON web token secret string
+- JWT_ISSUER = JWT `iss` field to match
+
