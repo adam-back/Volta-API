@@ -9,10 +9,11 @@ var http             = require( 'http' );
 var env              = process.env.NODE_ENV || 'development';
 var jwt              = require( 'express-jwt' );
 var jwtSecret        = require( './config/config' )[ env ].secret;
+var issuer           = require( './config/config' )[ env ].issuer;
 
 var app = express();
 
-var jwtCheck = jwt( { secret: jwtSecret } );
+var jwtCheck = jwt( { secret: jwtSecret, issuer: issuer } );
 
 // Configuration
 app.use( '/protected', jwtCheck );

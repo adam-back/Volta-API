@@ -4,6 +4,17 @@ var express = require( 'express' );
 var async     = require( 'async' );
 
 module.exports = exports = {
+  getAllStations: function ( req, res ) {
+    // query database for all rows of stations
+    station.findAll()
+      .then(function( stations ) {
+        // respond json with all data
+        res.json( stations );
+      })
+      .catch(function( error ) {
+        res.status( 500 ).send( error );
+      });
+  },
   getOneStation: function( req, res ) {
     // query database for all rows of stations
     station.findOne( { where: { kin: '001-0001-001-01-K' } } )

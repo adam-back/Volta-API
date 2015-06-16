@@ -6,7 +6,8 @@ var config = {
     'host': '127.0.0.1',
     'dialect': 'postgres',
     'port': 5432,
-    'secret': 'iamallama'
+    'secret': 'iamallama',
+    'issuer': 'seniorllama'
   },
   'production': {
     'username': process.env.DB_USERNAME,
@@ -15,7 +16,8 @@ var config = {
     'host': process.env.DB_HOST,
     'dialect': 'postgres',
     'port': 5432,
-    'secret': process.env.JWT_SECRET
+    'secret': process.env.JWT_SECRET,
+    'issuer': process.env.JWT_ISSUER,
   }
 };
 
