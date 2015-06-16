@@ -5,13 +5,15 @@ var controller = require( '../../controllers/protected/station.protectedControll
 // for http://www.baseurl.com/protected/station
 router.route( '/' )
   .get( controller.getAllStations )
-  .post( controller.addStation );
+  .post( controller.addStation )
+  .patch( controller.editStation );
+
+router.route( '/:kin' )
+  .delete( controller.deleteStation );
 
 // for http://www.baseurl.com/protected/station/edit
 router.route( '/edit' )
-  .get( controller.getOneStation )
+  .get( controller.getOneStation );
   // ^ only for testing purposes
-  .put( controller.editStation )
-  .delete( controller.deleteStation );
 
 module.exports = router;

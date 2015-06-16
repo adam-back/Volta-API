@@ -51,28 +51,28 @@ module.exports = exports = {
         }
 
         stationToUpdate.save()
-          .then(function( successStation ) {
-            res.json( successStation );
+        .then(function( successStation ) {
+          res.json( successStation );
+        })
+        .catch(function( error ) {
+          var query = {};
+          // get the title that of the colum that errored
+          var errorColumn = Object.keys( error.fields );
+          // get the value that errored
+          var duplicateValue = error.fields[ errorColumn ];
+          query[ errorColumn ] = duplicateValue;
+
+          // where conflicting key, value
+          station.find( { where: query } )
+          .then(function( duplicateStation ) {
+            error.duplicateStation = duplicateStation;
+            // 409 = conflict
+            res.status( 409 ).send( error );
           })
           .catch(function( error ) {
-            var query = {};
-            // get the title that of the colum that errored
-            var errorColumn = Object.keys( error.fields );
-            // get the value that errored
-            var duplicateValue = error.fields[ errorColumn ];
-            query[ errorColumn ] = duplicateValue;
-
-            // where conflicting key, value
-            station.find( { where: query } )
-              .then(function( duplicateStation ) {
-                error.duplicateStation = duplicateStation;
-                // 409 = conflict
-                res.status( 409 ).send( error );
-              })
-              .catch(function( error ) {
-                res.status( 500 ).send( error );
-              });
+            res.status( 500 ).send( error );
           });
+        });
       })
       .catch(function( error ) {
         res.status( 404 ).send( error );
