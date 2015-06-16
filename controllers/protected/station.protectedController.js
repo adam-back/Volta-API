@@ -17,7 +17,7 @@ module.exports = exports = {
   },
   getOneStation: function( req, res ) {
     // query database for all rows of stations
-    station.findOne( { where: { kin: req.body.kin } } )
+    station.findOne( { where: { kin: req.url.substring(1) } } )
     .then(function( oneStation ) {
       // if found
       if( oneStation.length === 0 ) {
