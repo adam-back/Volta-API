@@ -4,13 +4,13 @@ var controller = require( '../../controllers/protected/station.protectedControll
 
 // for http://www.baseurl.com/protected/station
 router.route( '/' )
-  .get( controller.getAllStations );
+  .get( controller.getAllStations )
+  .post( controller.addStation );
 
 // for http://www.baseurl.com/protected/station/edit
 router.route( '/edit' )
   .get( controller.getOneStation )
   // ^ only for testing purposes
-  .post( controller.addStation )
   .put( controller.editStation )
   .delete( controller.deleteStation );
 

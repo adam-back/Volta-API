@@ -33,7 +33,7 @@ module.exports = exports = {
   },
   addStation: function( req, res ) {
     // Validate that a station with same KIN doesn't exist, create it
-    Station.findOrCreate( { where: { kin: req.body.kin }, defaults: req.body } )
+    station.findOrCreate( { where: { kin: req.body.kin }, defaults: req.body } )
       .spread(function( station, created ) {
         // send boolean
         res.json( { successfullyAddedStation: created } );
@@ -42,7 +42,7 @@ module.exports = exports = {
   editStation: function( req, res ) {
     // object looks like:
     // { kin: #, changes: [ [ field, old, new ], [ field, old, new ] ] }
-    Station.find( { where: { kin: req.body.kin } } )
+    station.find( { where: { kin: req.body.kin } } )
       .then(function( stationToUpdate ) {
         for ( var i = 0; i < req.body.changes.length; i++ ) {
           var field = req.body.changes[ i ][ 0 ];
@@ -63,7 +63,7 @@ module.exports = exports = {
             query[ errorColumn ] = duplicateValue;
 
             // where conflicting key, value
-            Station.find( { where: query } )
+            station.find( { where: query } )
               .then(function( duplicateStation ) {
                 error.duplicateStation = duplicateStation;
                 // 409 = conflict
@@ -80,7 +80,7 @@ module.exports = exports = {
   },
   deleteStation: function( req, res ) {
     // also deletes associated plugs
-    Station.find( { where: { kin: req.url.substring(1) } } )
+    station.find( { where: { kin: req.url.substring(1) } } )
     .then(function( station ) {
       // if there is a station with that kin
       if ( station ) {
