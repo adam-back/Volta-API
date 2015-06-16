@@ -54,9 +54,11 @@ app.use( '/stationReport', reportRoutes );
 // Route handling
 //
 var protectedStationRoutes = require( './routes/protected/protectedStationRoutes' );
+var protectedPlugRoutes = require( './routes/protected/protectedPlugRoutes' );
 
 // Routes
 app.use( '/protected/station', protectedStationRoutes );
+app.use( '/protected/plug', protectedPlugRoutes );
 
 app.get('*', function( req, res ){
   res.status( 404 ).send( 'I\'m afraid I can\'t do that, Hal.' );
