@@ -2,6 +2,7 @@
 <img src="https://s3-us-west-2.amazonaws.com/repo-assets/Database+Arch.png" alt="Architecture Diagram" width="400" height="300"/>
 
 There are currently three deployments:
+
 1. [Production](http://volta-api.elasticbeanstalk.com)
   - Master branch
   - `eb deploy volta-api`
@@ -34,14 +35,6 @@ For example, one charge event has many EKM readings.
 There are public and private endpoints. Private endpoints may only be accessed with an appropriate JWT.
 
 ### Public
-#### EKM Data
-**GET /ekm**
-Serves a static string
-
-**GET /ekm/:omnimeterSerialNumber**
-Not currently implemented
-Gives a single-day, JSON report of any station
-
 #### Stations
 **GET /stations**
 Serves all the stations currently in the database.

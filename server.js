@@ -36,13 +36,11 @@ app.use(function(req, res, next) {
 ////
 
 // Route handling
-var ekmRoutes = require( './routes/ekmRoutes' );
-var stationRoutes = require( './routes/stationRoutes' );
-var plugRoutes = require( './routes/plugRoutes' );
-var reportRoutes = require( './routes/stationReportRoutes' );
+var stationRoutes = require( './routes/public/stationRoutes' );
+var plugRoutes = require( './routes/public/plugRoutes' );
+var reportRoutes = require( './routes/public/stationReportRoutes' );
 
 // Routes
-app.use( '/ekm', ekmRoutes );
 app.use( '/stations', stationRoutes );
 app.use( '/plugs', plugRoutes );
 app.use( '/stationReport', reportRoutes );
@@ -52,12 +50,13 @@ app.use( '/stationReport', reportRoutes );
 ////
 
 // Route handling
-//
 var protectedStationRoutes = require( './routes/protected/protectedStationRoutes' );
 var protectedPlugRoutes = require( './routes/protected/protectedPlugRoutes' );
+var protectedNetworkRoutes = require( './routes/protected/protectedNetworkRoutes' );
 
 // Routes
 app.use( '/protected/station', protectedStationRoutes );
+app.use( '/protected/station/network', protectedNetworkRoutes );
 app.use( '/protected/plug', protectedPlugRoutes );
 
 app.get('*', function( req, res ){
