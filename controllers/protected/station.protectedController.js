@@ -16,7 +16,6 @@ module.exports = exports = {
       });
   },
   getOneStation: function( req, res ) {
-    console.log( 'here'  );
     // query database for all rows of stations
     station.findOne( { where: { kin: req.body.kin } } )
       .then(function( oneStation ) {

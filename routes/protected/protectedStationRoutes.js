@@ -8,12 +8,9 @@ router.route( '/' )
   .post( controller.addStation )
   .patch( controller.editStation );
 
+// for http://www.baseurl.com/protected/station/001-0001-001-01-K
 router.route( '/:kin' )
+  .get( controller.getOneStation )
   .delete( controller.deleteStation );
-
-// for http://www.baseurl.com/protected/station/edit
-router.route( '/edit' )
-  .get( controller.getOneStation );
-  // ^ only for testing purposes
 
 module.exports = router;
