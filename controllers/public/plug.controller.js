@@ -1,6 +1,6 @@
 var request = require( 'request' );
-var plug = require( '../models').plug;
-var station = require( '../models').station;
+var plug = require( '../../models').plug;
+var station = require( '../../models').station;
 var express = require( 'express' );
 
 module.exports = exports = {

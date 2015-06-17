@@ -1,15 +1,22 @@
-var express = require( 'express' );
-var path = require( 'path' );
-var favicon = require( 'serve-favicon' );
-var logger = require( 'morgan' );
+var express      = require( 'express' );
+var path         = require( 'path' );
+var favicon      = require( 'serve-favicon' );
+var logger       = require( 'morgan' );
 var cookieParser = require( 'cookie-parser' );
-var bodyParser = require( 'body-parser' );
+var bodyParser   = require( 'body-parser' );
 var expressSanitizer = require( 'express-sanitizer' );
-var http = require( 'http' );
+var http             = require( 'http' );
+var env              = process.env.NODE_ENV || 'development';
+var jwt              = require( 'express-jwt' );
+var jwtSecret        = require( './config/config' )[ env ].secret;
+var issuer           = require( './config/config' )[ env ].issuer;
 
 var app = express();
 
+var jwtCheck = jwt( { secret: jwtSecret, issuer: issuer } );
+
 // Configuration
+app.use( '/protected', jwtCheck );
 app.use( logger( 'dev' ) );
 app.use( bodyParser.json() );
 app.use( bodyParser.urlencoded( { extended: false } ) );
@@ -24,19 +31,36 @@ app.use(function(req, res, next) {
   next();
 });
 
-// Route handling
-var ekmRoutes = require( './routes/ekmRoutes' );
-var stationRoutes = require( './routes/stationRoutes' );
-var plugRoutes = require( './routes/plugRoutes' );
-var reportRoutes = require( './routes/stationReportRoutes' );
+////
+// Public
+////
 
-app.use( '/ekm', ekmRoutes );
+// Route handling
+var stationRoutes = require( './routes/public/stationRoutes' );
+var plugRoutes = require( './routes/public/plugRoutes' );
+var reportRoutes = require( './routes/public/stationReportRoutes' );
+
+// Routes
 app.use( '/stations', stationRoutes );
 app.use( '/plugs', plugRoutes );
 app.use( '/stationReport', reportRoutes );
 
+////
+// Authentication Required
+////
+
+// Route handling
+var protectedStationRoutes = require( './routes/protected/protectedStationRoutes' );
+var protectedPlugRoutes = require( './routes/protected/protectedPlugRoutes' );
+var protectedNetworkRoutes = require( './routes/protected/protectedNetworkRoutes' );
+
+// Routes
+app.use( '/protected/station', protectedStationRoutes );
+app.use( '/protected/station/network', protectedNetworkRoutes );
+app.use( '/protected/plug', protectedPlugRoutes );
+
 app.get('*', function( req, res ){
-  res.status( 401 ).send( 'I\'m afraid I can\'t do that, Hal.' );
+  res.status( 404 ).send( 'I\'m afraid I can\'t do that, Hal.' );
 });
 
 ////////////////////////////
