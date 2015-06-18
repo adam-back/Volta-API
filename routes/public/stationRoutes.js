@@ -9,7 +9,8 @@ router.route( '/' )
 // for http://www.baseurl.com/stations/001-0001-001-01-K
 // For Kill Switch, DO NOT TOUCH
 router.route( '/:kin' )
-  .put( controller.setStationStatus );
+  .put( controller.setStationStatus )
+  .get( controller.getOneStation );
 
 // for http://www.baseurl.com/stations/top10
 router.route( '/top10' )
