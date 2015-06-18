@@ -20,6 +20,21 @@ module.exports = exports = {
         res.status( 500 ).send( error );
       });
   },
+  getOneStation: function( req, res ) {
+    // query database for all rows of stations
+    station.findOne( { where: { kin: req.url.substring(1) } } )
+    .then(function( oneStation ) {
+      // if found
+      if( oneStation.length === 0 ) {
+        res.status( 404 ).send( '<p>A station with that KIN was not found.</p>' );
+      } else {
+        res.json( oneStation );
+      }
+    })
+    .catch(function( error ) {
+      res.status( 500 ).send( error );
+    });
+  },
   //Kill switch - DO NOT CHANGE!
   setStationStatus: function (req, res) {
     if ( !io ) {
