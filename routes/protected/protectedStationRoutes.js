@@ -12,5 +12,6 @@ router.route( '/' )
 router.route( '/:kin' )
   .get( controller.getOneStation )
   .delete( controller.deleteStation );
+  .put( controller.setStationStatus ); //KILLSWITCH
 
 module.exports = router;
