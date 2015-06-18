@@ -11,7 +11,7 @@ router.route( '/' )
 // for http://www.baseurl.com/protected/station/001-0001-001-01-K
 router.route( '/:kin' )
   .get( controller.getOneStation )
-  .delete( controller.deleteStation );
+  .delete( controller.deleteStation )
   .put( controller.setStationStatus ); //KILLSWITCH
 
 module.exports = router;
