@@ -27,7 +27,7 @@ module.exports = exports = {
     }
 
     io.sockets.emit( req.params.kin, { status: req.body } );
-    setOneStation(req, res);
+    station.update( req.body, { where: { kin: req.params.kin } } );
   },
   getTopTenStations: function( req, res ) {
     station.findAll( { limit: 10, order: 'cumulative_kwh DESC'} )

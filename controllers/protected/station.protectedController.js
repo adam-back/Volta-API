@@ -30,6 +30,15 @@ module.exports = exports = {
       res.status( 500 ).send( error );
     });
   },
+  //Kill switch - DO NOT CHANGE!
+  setStationStatus: function (req, res) {
+    if ( !io ) {
+      var io = require( '../server' ).io;
+    }
+
+    io.sockets.emit( req.params.kin, { status: req.body } );
+    station.update( req.body, { where: { kin: req.params.kin } } );
+  },
   addStation: function( req, res ) {
     // Validate that a station with same KIN doesn't exist, create it
     station.findOrCreate( { where: { kin: req.body.kin }, defaults: req.body } )
