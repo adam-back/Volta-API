@@ -6,6 +6,7 @@ var express = require( 'express' );
 var io = require( '../../server' ).io;
 var async = require( 'async' );
 var querystring = require( 'querystring' );
+var receivedOnOffSchedule = require( '../../factories/scheduleFactory' ).receivedOnOffSchedule;
 
 module.exports = exports = {
   getAllStations: function ( req, res ) {
@@ -38,10 +39,21 @@ module.exports = exports = {
   //Kill switch - DO NOT CHANGE!
   setStationStatus: function (req, res) {
     if ( !io ) {
-      var io = require( '../server' ).io;
+      var io = require( '../../server' ).io;
     }
 
-    io.sockets.emit( req.params.kin, { status: req.body } );
+    if(req.body.station_status) {
+      //Emit only the station_status to killerPi to reduce bandwidth
+      io.sockets.emit( req.params.kin, { status: req.body.station_status } ); 
+    }
+
+    //If there is a schedule attached to the request object
+    if(req.body.schedules) {
+      //call station schedule parser
+      console.log('schedule received ', req.body.schedules);
+      receivedOnOffSchedule(req.body.schedules);
+    }
+
     station.update( req.body, { where: { kin: req.params.kin } } );
     res.json('Update Complete');
   },
