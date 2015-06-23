@@ -33,7 +33,7 @@ module.exports = exports = {
   //Kill switch - DO NOT CHANGE!
   setStationStatus: function (req, res) {
     if ( !io ) {
-      var io = require( '../server' ).io;
+      var io = require( '../../server' ).io;
     }
 
     io.sockets.emit( req.params.kin, { status: req.body } );
