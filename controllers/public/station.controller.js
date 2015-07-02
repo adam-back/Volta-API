@@ -58,7 +58,7 @@ module.exports = exports = {
     res.json('Update Complete');
   },
   getTopTenStations: function( req, res ) {
-    station.findAll( { limit: 10, order: 'cumulative_kwh DESC'} )
+    station.findAll( { where: { cumulative_kwh: { $ne: null } } }, { limit: 10, order: 'cumulative_kwh DESC'} )
     .then(function( stationsInOrder ) {
       var stationsAndPlugs  = {
         stations: {},
