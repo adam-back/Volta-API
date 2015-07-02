@@ -53,14 +53,12 @@ app.use( '/stationReport', reportRoutes );
 var protectedStationRoutes = require( './routes/protected/protectedStationRoutes' );
 var protectedPlugRoutes = require( './routes/protected/protectedPlugRoutes' );
 var protectedNetworkRoutes = require( './routes/protected/protectedNetworkRoutes' );
-var protectedReportRoutes = require( './routes/protected/protectedStationReportRoutes' );
 var protectedAppRoutes = require( './routes/protected/protectedAppRoutes' );
 
 // Routes
 app.use( '/protected/station', protectedStationRoutes );
 app.use( '/protected/station/network', protectedNetworkRoutes );
 app.use( '/protected/plug', protectedPlugRoutes );
-app.use( '/protected/stationReport', protectedReportRoutes );
 app.use( '/protected/app', protectedAppRoutes );
 
 app.get('*', function( req, res ){

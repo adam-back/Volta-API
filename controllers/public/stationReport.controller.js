@@ -1,4 +1,3 @@
-var request = require( 'request' );
 var station_report = require( '../../models' ).station_report;
 var express = require( 'express' );
 

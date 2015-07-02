@@ -1,5 +1,5 @@
-var request = require( 'request' );
 var station = require( '../../models').station;
+var station_report = require( '../../models' ).station_report;
 var express = require( 'express' );
 var async     = require( 'async' );
 
@@ -44,6 +44,15 @@ module.exports = exports = {
           res.json( stationsAndPlugs );
         }
       });
+    })
+    .catch(function( error ) {
+      res.status( 500 ).send( error );
+    });
+  },
+  saveReport: function ( req, res ) {
+    station_report.create( req.body )
+    .then(function( success ) {
+      res.status( 204 ).send(); // needs to be this for iOS app
     })
     .catch(function( error ) {
       res.status( 500 ).send( error );
