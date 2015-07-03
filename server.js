@@ -80,7 +80,7 @@ console.log( 'server io: ', io );
 var heartbeatInterval = 3600*1000; // 1 Hour in milliseconds
 io.set('close timeout', 0);
 io.set('heartbeat timeout', heartbeatInterval);
-io.set('heartbeat interval', heartbeatInterval-60*1000); // 59 Minutes in milliseconds
+io.set('heartbeat interval', heartbeatInterval/2); // 30 Minutes in milliseconds
 
 // io.set('heartbeat timeout', 10000);
 // io.set('heartbeat interval', 10000);
