@@ -47,15 +47,12 @@ var connectStationsWithPlugs = function( stations ) {
 };
 
 var groupByKin = function( stationsWithPlugs ) {
-}
-
-module.exports = exports = {
-  getStationsAndPlugs: function ( req, res ) {
-    var stationsAndPlugs = [];
-    var groupedByKin = {
+  var deferred = Q.defer();
+  var groupedByKin = {
       // kin: common kin,
       // location: coloquial location, eg. Serra Shopping Center,
-      // address: common location_address
+      // address: common location_address,
+      // gps: [ lat, long ],
       // stations: array of stations
         // [{
             // id:
@@ -70,13 +67,60 @@ module.exports = exports = {
         // }]
     };
 
+  async.each( stationsWithPlugs, function( station, cb ) {
+    // cut off the station number and K/W
+    // 001-0001-001-01-K becomes 001-0001-001
+    var cutKin = station.kin.substring( 0, 12 );
+    // if there is no grouping
+    if ( !groupedByKin[ cutKin ] ) {
+      // create it
+      groupedByKin[ cutKin ] = {};
+      groupedByKin[ cutKin ].kin = cutKin;
+      groupedByKin[ cutKin ].location = station.location;
+      groupedByKin[ cutKin ].address = station.location_address;
+      groupedByKin[ cutKin ].gps = null;
+      groupedByKin[ cutKin ].stations = [];
+    }
+
+    // add to the grouping by site number
+    groupedByKin[ cutKin ].stations[ station.site_number - 1 ] = station;
+
+    // if the grouping doesn't have GPS yet and the station can provide it
+    if ( !Array.isArray( groupedByKin[ cutKin ].gps ) && Array.isArray( station.location_gps ) ) {
+      // add GPS
+      groupedByKin[ cutKin ].gps = station.location_gps;
+    }
+    cb( null );
+  }, function( error ) {
+    var groupedInArray = [];
+
+    if ( error ) {
+      deferred.reject( error );
+    } else {
+      for ( var kin in groupedByKin ) {
+        groupedInArray.push( groupedByKin[ kin ] );
+      }
+      deferred.resolve( groupedInArray );
+    }
+  });
+
+  return deferred.promise;
+};
+
+module.exports = exports = {
+  getStationsAndPlugs: function ( req, res ) {
+    var stationsAndPlugs = [];
+
     // get all stations
     station.findAll()
     .then(function( stations ) {
       return connectStationsWithPlugs( stations );
     })
     .then(function( stationsAndPlugs ) {
-
+      return groupByKin( stationsAndPlugs );
+    })
+    .then(function( groupedKin ) {
+      res.json( groupedKin );
     })
     .catch(function( error ) {
       res.status( 500 ).send( error );
