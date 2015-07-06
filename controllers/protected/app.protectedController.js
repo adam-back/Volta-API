@@ -48,6 +48,7 @@ var connectStationsWithPlugs = function( stations ) {
 
 var groupByKin = function( stationsWithPlugs ) {
   var deferred = Q.defer();
+  var numberOfGroups = 0;
   var groupedByKin = {
       // kin: common kin,
       // location: coloquial location, eg. Serra Shopping Center,
@@ -79,6 +80,8 @@ var groupByKin = function( stationsWithPlugs ) {
     if ( !groupedByKin[ cutKin ] ) {
       // create it
       groupedByKin[ cutKin ] = {};
+      groupedByKin[ cutKin ].id = numberOfGroups;
+      numberOfGroups++;
       groupedByKin[ cutKin ].kin = cutKin;
       groupedByKin[ cutKin ].location = station.location;
       groupedByKin[ cutKin ].address = station.location_address;
@@ -95,8 +98,8 @@ var groupByKin = function( stationsWithPlugs ) {
       // add GPS
       groupedByKin[ cutKin ].gps = station.location_gps;
       groupedByKin[ cutKin ].androidGPS = {
-        longitude: station.location_gps[ 0 ],
-        latitude: station.location_gps[ 1 ]
+        latitude: station.location_gps[ 0 ],
+        longitude: station.location_gps[ 1 ]
       };
     }
     cb( null );
