@@ -53,6 +53,10 @@ var groupByKin = function( stationsWithPlugs ) {
       // location: coloquial location, eg. Serra Shopping Center,
       // address: common location_address,
       // gps: [ lat, long ],
+      // androidGPS: {
+          // latitude:,
+          // longitude:
+      // },
       // stations: array of stations
         // [{
             // id:
@@ -79,6 +83,7 @@ var groupByKin = function( stationsWithPlugs ) {
       groupedByKin[ cutKin ].location = station.location;
       groupedByKin[ cutKin ].address = station.location_address;
       groupedByKin[ cutKin ].gps = null;
+      groupedByKin[ cutKin ].androidGPS = null;
       groupedByKin[ cutKin ].stations = [];
     }
 
@@ -89,6 +94,10 @@ var groupByKin = function( stationsWithPlugs ) {
     if ( !Array.isArray( groupedByKin[ cutKin ].gps ) && Array.isArray( station.location_gps ) ) {
       // add GPS
       groupedByKin[ cutKin ].gps = station.location_gps;
+      groupedByKin[ cutKin ].androidGPS = {
+        longitude: station.location_gps[ 0 ],
+        latitude: station.location_gps[ 1 ]
+      };
     }
     cb( null );
   }, function( error ) {
