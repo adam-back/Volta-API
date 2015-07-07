@@ -3,6 +3,12 @@ var station_report = require( '../../models' ).station_report;
 var express = require( 'express' );
 var async     = require( 'async' );
 var Q = require( 'q' );
+var env = process.env.NODE_ENV || 'development';
+var config    = require( '../../config/config' )[ env ];
+var geocoder = require( 'node-geocoder' )( 'google', 'https', { apiKey: config.googleApiKey, formatter: null } );
+
+// ordered by kin
+var stationsWithoutGPSCache = {};
 
 var connectStationsWithPlugs = function( stations ) {
   var deferred = Q.defer();
@@ -101,15 +107,61 @@ var groupByKin = function( stationsWithPlugs ) {
     }
     cb( null );
   }, function( error ) {
-    var groupedInArray = [];
-
     if ( error ) {
       deferred.reject( error );
     } else {
-      for ( var kin in groupedByKin ) {
-        groupedInArray.push( groupedByKin[ kin ] );
-      }
-      deferred.resolve( groupedInArray );
+      deferred.resolve( groupedByKin );
+    }
+  });
+
+  return deferred.promise;
+};
+
+var geocodeGroupsWithoutGPS = function( groupsOfStations ) {
+  var deferred = Q.defer();
+  var geocodedGroups = [];
+
+  async.forEachOf( groupsOfStations, function(group, kin, cb ) {
+    // if we already have it cached
+    if ( stationsWithoutGPSCache[ kin ] ) {
+      // add the location
+      group.gps = [ stationsWithoutGPSCache[ kin ][ 0 ].latitude, stationsWithoutGPSCache[ kin ][ 0 ].longitude ];
+      group.androidGPS = {
+        latitude: group.gps[ 0 ],
+        longitude: group.gps[ 1 ]
+      };
+      geocodedGroups.push( group );
+      cb( null );
+
+    // not cached yet
+    } else {
+      // use geocoder service
+      geocoder.geocode( group.address )
+      .then(function( gpx ) {
+        console.log( '\n\nmessage', gpx );
+        // add to cache
+        stationsWithoutGPSCache[ kin ] = gpx;
+        // add the location
+        group.gps = [ gpx[ 0 ].latitude, gpx[ 0 ].longitude ];
+        group.androidGPS = {
+          latitude: group.gps[ 0 ],
+          longitude: group.gps[ 1 ]
+        };
+        geocodedGroups.push( group );
+        cb( null );
+      })
+      .catch(function( error ) {
+        console.log( '\n\nerror in geocoder', error );
+        cb( error );
+      });
+    }
+  }, function( error ) {
+    if ( error ) {
+      console.log( 'error', error );
+      deferred.reject( error );
+    } else {
+      console.log( 'geocodedGroups', geocodedGroups );
+      deferred.resolve( geocodedGroups );
     }
   });
 
@@ -118,18 +170,34 @@ var groupByKin = function( stationsWithPlugs ) {
 
 module.exports = exports = {
   getStationsAndPlugs: function ( req, res ) {
-    var stationsAndPlugs = [];
+    var readyForReturn = [];
 
     // get all stations
     station.findAll()
     .then(function( stations ) {
+      // connect all those stations with their respective plugs
       return connectStationsWithPlugs( stations );
     })
     .then(function( stationsAndPlugs ) {
+      // group similar stations by kin
       return groupByKin( stationsAndPlugs );
     })
     .then(function( groupedKin ) {
-      res.json( groupedKin );
+      // add stations with GPS to ready
+      for ( var kin in groupedKin ) {
+        if ( Array.isArray( groupedKin[ kin ].gps ) ) {
+          readyForReturn.push( groupedKin[ kin ] );
+          // delete it so it won't get geocoded
+          delete groupedKin[ kin ];
+        }
+      }
+      // send the rest to be geocoded
+      return geocodeGroupsWithoutGPS( groupedKin );
+    })
+    .then(function( geocoded ) {
+      // add the geocoded kins and return
+      console.log( 'geocoded', geocoded );
+      res.json( readyForReturn.concat( geocoded ) );
     })
     .catch(function( error ) {
       res.status( 500 ).send( error );
