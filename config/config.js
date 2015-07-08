@@ -7,7 +7,8 @@ var config = {
     'dialect': 'postgres',
     'port': 5432,
     'secret': 'iamallama',
-    'issuer': 'seniorllama'
+    'issuer': 'seniorllama',
+    'googleApiKey': null
   },
   'production': {
     'username': process.env.DB_USERNAME,
@@ -18,6 +19,7 @@ var config = {
     'port': 5432,
     'secret': process.env.JWT_SECRET,
     'issuer': process.env.JWT_ISSUER,
+    'googleApiKey': process.env.GOOGLE_API_KEY
   }
 };
 
