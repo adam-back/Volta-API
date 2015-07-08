@@ -43,48 +43,6 @@ Serves all the stations currently in the database.
 Kill switch - DO NOT CHANGE!
 Update the kill switch status based on kin.
 
-**GET /stations/top10**
-Serves top ten stations (and their plugs) ordered by kWh with data to graph.
-
-Sample, partial response:
-```javascript
-{
-  "stations": {
-    "0": // most used station,
-    "1": // second most used station, ...
-  },
-  "plugs": {
-    "0": // plug for most used station,
-    "1": // plug for second most used station...
-  },
-  "events": {
-    "0": {
-      "count": // number of charges in last seven days for that station,
-      "cumulative_kwh": // summative kwh in last seven days for that station,
-      "days": [ '6/3', '6/4', '6/5' ] // last seven days MO/DAY
-      "plugIns": [ count_for_6/3, count_for_6/4, count_for_6/5 ],
-      "kwhGiven": [ cumulative_for_6/3, cumulative_for_6/4, cumulative_for_6/5 ]
-    }
-  }
-}
-```
-
-**GET /stations/cumulative**
-Serves cumulative data for the entire network since May 16, 2015 with data to graph.
-
-Sample, partial response:
-```javascript
-{
-  "plugIns": // total # of charge events,
-  "kwhGiven": // # of kwh given away, to nearest 10ths,
-  "graphs": {
-    // last seven days
-    "plugIns": [ [ timestamp, count ], [], ... ],
-    "kwhGiven": [ [ timestamp, cumulative ], [], ... ]
-  }
-}
-```
-
 #### Plugs
 **GET /plugs**
 Serves all the plugs currently in the database, collected into a JSON object by station id.
@@ -115,6 +73,48 @@ Serves one station based on the kin.
 Delete station to the database with a given kin. Also deletes associated plugs.
 
 #### Network
+**GET protected/station/network/top10**
+Serves top ten stations (and their plugs) ordered by kWh with data to graph.
+
+Sample, partial response:
+```javascript
+{
+  "stations": {
+    "0": // most used station,
+    "1": // second most used station, ...
+  },
+  "plugs": {
+    "0": // plug for most used station,
+    "1": // plug for second most used station...
+  },
+  "events": {
+    "0": {
+      "count": // number of charges in last seven days for that station,
+      "cumulative_kwh": // summative kwh in last seven days for that station,
+      "days": [ '6/3', '6/4', '6/5' ] // last seven days MO/DAY
+      "plugIns": [ count_for_6/3, count_for_6/4, count_for_6/5 ],
+      "kwhGiven": [ cumulative_for_6/3, cumulative_for_6/4, cumulative_for_6/5 ]
+    }
+  }
+}
+```
+
+**GET protected/station/network/cumulative**
+Serves cumulative data for the entire network since May 16, 2015 with data to graph.
+
+Sample, partial response:
+```javascript
+{
+  "plugIns": // total # of charge events,
+  "kwhGiven": // # of kwh given away, to nearest 10ths,
+  "graphs": {
+    // last seven days
+    "plugIns": [ [ timestamp, count ], [], ... ],
+    "kwhGiven": [ [ timestamp, cumulative ], [], ... ]
+  }
+}
+```
+
 **GET protected/station/network/:network**
 Serves stations based on network
   - Options include:
