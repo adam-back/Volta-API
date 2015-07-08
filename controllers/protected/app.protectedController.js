@@ -138,7 +138,6 @@ var geocodeGroupsWithoutGPS = function( groupsOfStations ) {
       // use geocoder service
       geocoder.geocode( group.address )
       .then(function( gpx ) {
-        console.log( '\n\nmessage', gpx );
         // add to cache
         stationsWithoutGPSCache[ kin ] = gpx;
         // add the location
@@ -151,16 +150,13 @@ var geocodeGroupsWithoutGPS = function( groupsOfStations ) {
         cb( null );
       })
       .catch(function( error ) {
-        console.log( '\n\nerror in geocoder', error );
         cb( error );
       });
     }
   }, function( error ) {
     if ( error ) {
-      console.log( 'error', error );
       deferred.reject( error );
     } else {
-      console.log( 'geocodedGroups', geocodedGroups );
       deferred.resolve( geocodedGroups );
     }
   });
