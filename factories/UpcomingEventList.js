@@ -40,7 +40,9 @@ var UpcomingEventsList = function(scheduledEventArray){
     if(!nodesByKin[scheduledEvent.kin]) {
       nodesByKin[scheduledEvent.kin] = {};
     }
-    nodesByKin[scheduledEvent.kin][scheduledEvent.turnOn ? 'turnOn' : 'turnOff'] = node;
+    console.log('turnOn or Off: ', scheduledEvent.turnOn);
+    var turnOnOff = scheduledEvent.turnOn ? 'turnOn' : 'turnOff';
+    nodesByKin[scheduledEvent.kin][turnOnOff] = node;
 
     nodesByPosition[list.length] = node;
     positionByNode[node] = list.length;
@@ -65,7 +67,8 @@ var UpcomingEventsList = function(scheduledEventArray){
     if(!nodesByKin[scheduledEvent.kin]) {
       nodesByKin[scheduledEvent.kin] = {};
     }
-    nodesByKin[scheduledEvent.kin][scheduledEvent.turnOn ? 'turnOn' : 'turnOff'] = node;
+    var turnOnOff = scheduledEvent.turnOn ? 'turnOn' : 'turnOff';
+    nodesByKin[scheduledEvent.kin][turnOnOff] = node;
 
     positionByNode[node] = 0;
     nodesByPosition[0] = node;
@@ -97,7 +100,11 @@ var UpcomingEventsList = function(scheduledEventArray){
     list.length--;
 
     var scheduledEvent = temp.scheduledEvent;
-    delete nodesByKin[scheduledEvent.kin][scheduledEvent.turnOn ? 'turnOn' : 'turnOff'];
+    console.log('ahhh! ', scheduledEvent, ' type: ', typeof scheduledEvent.turnOn);
+    var turnOnOff = scheduledEvent.turnOn ? 'turnOn' : 'turnOff';
+    delete nodesByKin[scheduledEvent.kin][turnOnOff];
+
+
     console.log('Head - Object? ', nodesByKin[scheduledEvent.kin]);
     if(nodesByKin[scheduledEvent.kin] && Object.keys(nodesByKin[scheduledEvent.kin]).length === 0) {
       delete nodesByKin[scheduledEvent.kin];
@@ -116,7 +123,8 @@ var UpcomingEventsList = function(scheduledEventArray){
     list.length--;
 
     var scheduledEvent = tail.scheduledEvent;
-    delete nodesByKin[scheduledEvent.kin][scheduledEvent.turnOn ? 'turnOn' : 'turnOff'];
+    var turnOnOff = scheduledEvent.turnOn ? 'turnOn' : 'turnOff';
+    delete nodesByKin[scheduledEvent.kin][turnOnOff];
     console.log('Tail - Object? ', nodesByKin[scheduledEvent]);
     if(nodesByKin[scheduledEvent.kin] && Object.keys(nodesByKin[scheduledEvent.kin]).length === 0) {
       delete nodesByKin[scheduledEvent.kin];
@@ -161,10 +169,14 @@ var UpcomingEventsList = function(scheduledEventArray){
     while(currentNode) {
       console.log('insert while loop');
 
-      if(!nodesByKin[scheduledEvent]) {
-        nodesByKin[scheduledEvent] = [];
+      if(!nodesByKin[scheduledEvent.kin]) {
+        nodesByKin[scheduledEvent.kin] = {};
       }
-      nodesByKin[scheduledEvent].push(newNode);
+
+      //WTF was I thinking?
+      // nodesByKin[scheduledEvent].push(newNode);
+      var turnOnOff = scheduledEvent.turnOn ? 'turnOn' : 'turnOff';
+      nodesByKin[scheduledEvent.kin][turnOnOff] = newNode;
 
       //if the event to be inserted occurs before this event
       //insert the new event before the current event
