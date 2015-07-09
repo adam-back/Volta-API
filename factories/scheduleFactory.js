@@ -93,6 +93,10 @@ var receivedOnOffSchedule = function(schedule) {
 
 					upcomingIntervalsList.insert(scheduledEvent);
 					
+					// if scheduledEvent is the next event to occur
+					// reset nextEventTimeout
+					var timeToEvent = getTimeToEvent(upcomingIntervalsList.head.scheduledEvent);
+					nextEventTimeout = setTimeout(triggerSwitches, timeToEvent);
 			}
 		}
 	}
@@ -167,13 +171,13 @@ var triggerSwitches = function() {
 
 	console.log( 'trigger switches for currentEvent: ', currentEvent );
 
-	while(currentEvent.hour === timeToTriggerAt.hour && currentEvent.minutes === timeToTriggerAt.minutes) {
+	while(currentEvent && currentEvent.hour === timeToTriggerAt.hour && currentEvent.minutes === timeToTriggerAt.minutes) {
 		//emit the switch command by kin
 		// currentEvent.turnOn;
 		// currentEvent.kin;
 
 		if ( !io ) {
-      var io = require( '../../server' ).io;
+      var io = require( '../server' ).io;
     }
 
     //Emit only the station_status to killerPi to reduce bandwidth
