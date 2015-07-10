@@ -65,17 +65,14 @@ var receivedOnOffSchedule = function(schedule) {
 		newSchedule[day].push(daySchedule);
 
 		//is the schedule for today?
-		//does this kin have events scheduled for this interval?
-		//if yes to both, delete the scheduled events for this kin today
-		if((dayIsDayOfWeek(onDate, day) || dayIsDayOfWeek(offDate, day)) 
-			&& upcomingIntervalsList.containsEventOfKin(daySchedule.kin)) {
-			console.log('remove all of kin ', daySchedule.kin);
-			upcomingIntervalsList.removeAllOfKin(daySchedule.kin);
+		if(dayIsDayOfWeek(onDate, today) || dayIsDayOfWeek(offDate, today)) {
+			//does this kin have events scheduled for this interval?
+			if(upcomingIntervalsList.containsEventOfKin(daySchedule.kin)) {
+				console.log('remove all of kin ', daySchedule.kin);
+				upcomingIntervalsList.removeAllOfKin(daySchedule.kin);	
+			}
+			addEventsWithinTheHour(daySchedule);	
 		}
-		console.log('should complete removing stuff before hitting here');
-
-		addEventsWithinTheHour(daySchedule);
-		
 	}
 
 	allSchedules[schedule.kin] = newSchedule;
@@ -84,8 +81,9 @@ var receivedOnOffSchedule = function(schedule) {
 	//Emit changes to sockets (KillSwitch GUIs should be updated immediately)
 };
 
-var dayIsDayOfWeek = function(date, dayOfWeek) {
-  return date.getDay() === dayToNumber[dayOfWeek]+1;
+//This is wrong some of the time, as it does not account for timezones
+var dayIsDayOfWeek = function(date, today) {
+  return date.getDay() === today.getDay();
 };
 
 var addEventsWithinTheHour = function(daySchedule) {
