@@ -100,7 +100,7 @@ var UpcomingEventsList = function(scheduledEventArray){
     list.length--;
 
     var scheduledEvent = temp.scheduledEvent;
-    console.log('ahhh! ', scheduledEvent, ' type: ', typeof scheduledEvent.turnOn);
+    console.log('remove head! ', scheduledEvent, ' type: ', typeof scheduledEvent.turnOn);
     var turnOnOff = scheduledEvent.turnOn ? 'turnOn' : 'turnOff';
     delete nodesByKin[scheduledEvent.kin][turnOnOff];
 
