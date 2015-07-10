@@ -1,20 +1,19 @@
 var station = require( '../../models' ).station;
 var express = require( 'express' );
 var io = require( '../../server' ).io;
-var receivedOnOffSchedule = require( '../../factories/scheduleFactory' ).receivedOnOffSchedule;
 
 module.exports = exports = {
   getAllStations: function ( req, res ) {
 
     // query database for all rows of stations
     station.findAll()
-      .then(function( stations ) {
-        // respond json with all data
-        res.json( stations );
-      })
-      .catch(function( error ) {
-        res.status( 500 ).send( error );
-      });
+    .then(function( stations ) {
+      // respond json with all data
+      res.json( stations );
+    })
+    .catch(function( error ) {
+      res.status( 500 ).send( error );
+    });
   },
   getOneStation: function( req, res ) {
     // query database for all rows of stations
@@ -36,18 +35,9 @@ module.exports = exports = {
     if ( !io ) {
       var io = require( '../../server' ).io;
     }
-
-    if(req.body.station_status) {
-      //Emit only the station_status to killerPi to reduce bandwidth
-      io.sockets.emit( req.params.kin, { status: req.body.station_status } ); 
-    }
-
-    //If there is a schedule attached to the request object
-    if(req.body.schedules) {
-      //call station schedule parser
-      console.log('schedule received ', req.body.schedules);
-      receivedOnOffSchedule(req.body.schedules);
-    }
+    
+    //Emit only the station_status to killerPi to reduce bandwidth
+    io.sockets.emit( req.params.kin, { status: req.body.station_status } ); 
 
     station.update( req.body, { where: { kin: req.params.kin } } );
     res.json('Update Complete');
