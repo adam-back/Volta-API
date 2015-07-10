@@ -93,6 +93,9 @@ var addEventsWithinTheHour = function(daySchedule) {
 	for(var i=0; i<daySchedule.times.length; i++) {
 		var time = daySchedule.times[i];
 
+		console.log('scheduled time: ', time);
+		console.log('server time: ', now);
+
 		if((time.hour > now.getHours() || time.hour == now.getHours() && time.minutes >= now.getMinutes())
 		 && (time.hour < nextIntervalBeginsAt.hour || 
 		 time.hour === nextIntervalBeginsAt.hour && time.minutes < nextIntervalBeginsAt.minutes)) {
