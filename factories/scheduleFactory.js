@@ -1,7 +1,9 @@
 //NEED TO BE SENT AN ENTIRE SCHEDULE NOT JUST DELTAS!
+var station_schedule = require( '../models' ).station_schedule;
 var UpcomingEventsListExports = require( './UpcomingEventList' );
 var UpcomingEventsList = UpcomingEventsListExports.UpcomingEventsList;
 var ScheduledEvent = UpcomingEventsListExports.ScheduledEvent;
+var timezones = require( './timezones' );
 
 var eventsWithinTheHour = [];
 var upcomingIntervalsList = new UpcomingEventsList();
@@ -29,13 +31,21 @@ var receivedOnOffSchedule = function(schedule) {
 	//PERFORM TWO CHECKS
 	//WILL EITHER OF THE NEW EVENTS (ON/OFF) OCCUR BEFORE THE NEXT INTERVAL?
 	//DOES THIS KIN ALREADY HAVE AN EVENT SCHEDULED BEFORE THE NEXT INTERVAL?
+	var kin;
+	var timezone;
 
 	var today = new Date();
 	var newSchedule = {};
-	for(var day in schedule) {
-		if(day === 'kin') {
+	for( var day in schedule ) {
+		
+		if( day === 'kin' ) {
+			kin = schedule[day];
+			continue;
+		} else if( day === 'timezone' ) {
+			timezone = schedule[day];
 			continue;
 		}
+
 		var daySchedule = {};
 
 		var onUTC = schedule[day].on_time_utc;
@@ -44,19 +54,27 @@ var receivedOnOffSchedule = function(schedule) {
 		var onDate = new Date(onUTC);
 		var offDate = new Date(offUTC);
 
+		//if it is Daylight time, add an hour
+		if( timezones[ timezone ] ) {
+			onDate.setHours(onDate.getHours()-1);
+			offDate.setHours(offDate.getHours()-1);
+		}
+
 		daySchedule.kin = schedule.kin;
 		daySchedule.times = [];
 		
 		daySchedule.times.push({
 			hour: onDate.getHours(),
 			minutes: onDate.getMinutes(),
-			turnOn: true
+			turnOn: true,
+			on_time_utc: onUTC
 		});
 
 		daySchedule.times.push({
 			hour: offDate.getHours(),
 			minutes: offDate.getMinutes(),
-			turnOn: false
+			turnOn: false,
+			off_time_utc: offUTC
 		});
 
 		if(!newSchedule[day]) {
@@ -76,9 +94,40 @@ var receivedOnOffSchedule = function(schedule) {
 	}
 
 	allSchedules[schedule.kin] = newSchedule;
-
-	//Add to DB?
+	updateScheduleInDatabase(newSchedule, kin, timezone);
 	//Emit changes to sockets (KillSwitch GUIs should be updated immediately)
+};
+
+var updateScheduleInDatabase = function(newSchedule, kin, timezone) {
+	//format for database
+	var update = {};
+	update.kin = kin;
+	update.timezone = timezone;
+
+  //monday_on_time: DataTypes.STRING,
+  //monday_off_time: DataTypes.STRING,
+	for( day in newSchedule ) {
+		var daySchedule = newSchedule[day][0];
+		console.log('newSchedule[day]: ', newSchedule[day]);
+		console.log('update in DB: ', daySchedule);
+		for( var i=0; i<daySchedule.times.length; i++ ) {
+			if( daySchedule.times[i].on_time_utc ) {
+				var key = day.toLowerCase() + '_on_time';
+				update[key] = daySchedule.times[i].on_time_utc;
+			} else {
+				var key = day.toLowerCase() + '_off_time';
+				update[key] = daySchedule.times[i].off_time_utc;
+			}
+		}
+	}
+
+  station_schedule.findOrCreate( { where: { kin: kin }, defaults: update } )
+  .spread( function(station_schedule, created ) {
+  	// if there is already a station_schedule for this kin, update it
+  	if( !created ) {
+  		station_schedule.update( update, { where: { kin: kin } } );
+  	}
+  });
 };
 
 //This is wrong some of the time, as it does not account for timezones
@@ -92,6 +141,9 @@ var addEventsWithinTheHour = function(daySchedule) {
 	var now = new Date();
 	for(var i=0; i<daySchedule.times.length; i++) {
 		var time = daySchedule.times[i];
+
+		console.log('scheduled time: ', time);
+		console.log('server time: ', now);
 
 		if((time.hour > now.getHours() || time.hour == now.getHours() && time.minutes >= now.getMinutes())
 		 && (time.hour < nextIntervalBeginsAt.hour || 
@@ -222,4 +274,6 @@ setInterval(gatherEventsWithinTheHour, oneHourInMilliseconds);
 module.exports = exports = {
 	receivedOnOffSchedule: receivedOnOffSchedule
 };
+
+
 
