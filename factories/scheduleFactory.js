@@ -216,7 +216,7 @@ var gatherEventsWithinTheHour = function() {
 			if((time.hour == thisHour && time.minutes >= thisMinute)
 				|| (time.hour == thisHour+1 && time.minutes <= thisMinute)) {
 
-				var scheduledEvent = new ScheduledEvent(time.hour, time.minutes, time.turnOn, schedule.kin);
+				var scheduledEvent = new ScheduledEvent(time.hour, time.minutes, time.turnOn, schedule[weekDay][0].kin);
 				console.log('Push scheduledEvent: ', scheduledEvent);
 				eventsWithinTheHour.push(scheduledEvent);
 			}
