@@ -269,8 +269,8 @@ var UpcomingEventsList = function(scheduledEventArray){
 
       console.log('sorted bulk: ', scheduledEventArray);
       for(var i=0; i<scheduledEventArray.length; i++) {
-        var node = new makeNode(scheduledEventArray[i]);
-        list.addToTail(node);
+        // var node = new makeNode(scheduledEventArray[i]);
+        list.addToTail(scheduledEventArray[i]);
       }
 
     } else {
