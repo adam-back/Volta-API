@@ -10,14 +10,24 @@ var upcomingIntervalsList = new UpcomingEventsList();
 var nextEventTimeout;
 
 var dayToNumber = {
-      Monday: 0,
-      Tuesday: 1,
-      Wednesday: 2,
-      Thursday: 3,
-      Friday: 4,
-      Saturday: 5,
-      Sunday: 6
-    };
+  Monday: 0,
+  Tuesday: 1,
+  Wednesday: 2,
+  Thursday: 3,
+  Friday: 4,
+  Saturday: 5,
+  Sunday: 6
+};
+
+var datObjectNumberToDay = {
+	0: 'Sunday',
+	1: 'Monday',
+	2: 'Tuesday',
+	3: 'Wednesday',
+	4: 'Thursday',
+	5: 'Friday',
+	6: 'Saturday'
+};
 
 var allSchedules = {};
 var nextIntervalBeginsAt;
@@ -94,6 +104,10 @@ var receivedOnOffSchedule = function(schedule) {
 	}
 
 	allSchedules[schedule.kin] = newSchedule;
+
+	console.log('schedule kin: ', schedule.kin)
+	console.log('all schedules: ', allSchedules);
+
 	updateScheduleInDatabase(newSchedule, kin, timezone);
 	//Emit changes to sockets (KillSwitch GUIs should be updated immediately)
 };
@@ -183,18 +197,29 @@ var gatherEventsWithinTheHour = function() {
 
 	nextIntervalBeginsAt = {hour: thisHour+1, minutes: thisMinute};
 
-	for(var schedule in allSchedules) {
-		for(var time in schedule.times) {
+	for(var kin in allSchedules) {
+		var schedule = allSchedules[kin];
+		console.log('schedule in allSchedules: ', schedule);
 
-			if(dayToNumber[schedule.day] == dayOfWeekNumber) {
-				if((time.hour == thisHour && time.minutes >= thisMinute)
-					|| (time.hour == thisHour+1 && time.minutes <= thisMinute)) {
+		var weekDay = datObjectNumberToDay[dayOfWeekNumber];
+		if(!schedule[weekDay]) {
+			continue;
+		}
+		
+		var times = schedule[weekDay][0].times;
+		for(var i=0; i<times.length; i++) {
+			var time = times[i];
+			console.log('time object: ', time);
 
-					var scheduledEvent = new ScheduledEvent(time.hour, time.minutes, time.turnOn, schedule.kin);
-					eventsWithinTheHour.push(scheduledEvent);
-				}
+			console.log('2: ', time.hour, ' == ', thisHour, ' &&: ', time.minutes, ' >= ', thisMinute);
+			console.log('||: ', time.hour, ' == ', thisHour+1, ' && ', time.minutes, ' <= ', thisMinute);
+			if((time.hour == thisHour && time.minutes >= thisMinute)
+				|| (time.hour == thisHour+1 && time.minutes <= thisMinute)) {
+
+				var scheduledEvent = new ScheduledEvent(time.hour, time.minutes, time.turnOn, schedule.kin);
+				console.log('Push scheduledEvent: ', scheduledEvent);
+				eventsWithinTheHour.push(scheduledEvent);
 			}
-
 		}
 	}
 
