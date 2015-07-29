@@ -108,7 +108,7 @@ var receivedOnOffSchedule = function(schedule) {
 	console.log('schedule kin: ', schedule.kin)
 	console.log('all schedules: ', allSchedules);
 
-	updateScheduleInDatabase(newSchedule, kin, timezone);
+	updateScheduleInDatabase(newSchedule, kin, network);
 	//Emit changes to sockets (KillSwitch GUIs should be updated immediately)
 };
 
