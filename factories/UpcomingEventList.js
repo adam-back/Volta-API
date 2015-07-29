@@ -173,8 +173,6 @@ var UpcomingEventsList = function(scheduledEventArray){
         nodesByKin[scheduledEvent.kin] = {};
       }
 
-      //WTF was I thinking?
-      // nodesByKin[scheduledEvent].push(newNode);
       var turnOnOff = scheduledEvent.turnOn ? 'turnOn' : 'turnOff';
       nodesByKin[scheduledEvent.kin][turnOnOff] = newNode;
 
@@ -185,10 +183,6 @@ var UpcomingEventsList = function(scheduledEventArray){
         console.log('current: ', currentNode.scheduledEvent);
         console.log('new node: ', newNode.scheduledEvent);
 
-        //adjust: 
-        // √ nodesByPosition
-        // √ nodesByKin
-        // √ positionByNode
         var currentNodePosition = positionByNode[currentNode];
         nodesByPosition[currentNodePosition] = newNode;
         positionByNode[newNode] = currentNodePosition;
