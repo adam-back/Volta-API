@@ -3,7 +3,7 @@ var station_schedule = require( '../models' ).station_schedule;
 var UpcomingEventsListExports = require( './UpcomingEventList' );
 var UpcomingEventsList = UpcomingEventsListExports.UpcomingEventsList;
 var ScheduledEvent = UpcomingEventsListExports.ScheduledEvent;
-var timezones = require( './timezones' );
+var networkIsDST = require( './timezones' );
 
 var eventsWithinTheHour = [];
 var upcomingIntervalsList = new UpcomingEventsList();
@@ -42,7 +42,7 @@ var receivedOnOffSchedule = function(schedule) {
 	//WILL EITHER OF THE NEW EVENTS (ON/OFF) OCCUR BEFORE THE NEXT INTERVAL?
 	//DOES THIS KIN ALREADY HAVE AN EVENT SCHEDULED BEFORE THE NEXT INTERVAL?
 	var kin;
-	var timezone;
+	var network;
 
 	var today = new Date();
 	var newSchedule = {};
@@ -51,8 +51,8 @@ var receivedOnOffSchedule = function(schedule) {
 		if( day === 'kin' ) {
 			kin = schedule[day];
 			continue;
-		} else if( day === 'timezone' ) {
-			timezone = schedule[day];
+		} else if( day === 'network' ) { //was timezone
+			network = schedule[day];
 			continue;
 		}
 
@@ -65,7 +65,7 @@ var receivedOnOffSchedule = function(schedule) {
 		var offDate = new Date(offUTC);
 
 		//if it is Daylight time, add an hour
-		if( timezones[ timezone ] ) {
+		if( networkIsDST[ network ] ) {
 			onDate.setHours(onDate.getHours()-1);
 			offDate.setHours(offDate.getHours()-1);
 		}
@@ -113,6 +113,8 @@ var receivedOnOffSchedule = function(schedule) {
 };
 
 var updateScheduleInDatabase = function(newSchedule, kin, timezone) {
+	//timezone is actually network location that is used to determine DST
+
 	//format for database
 	var update = {};
 	update.kin = kin;
