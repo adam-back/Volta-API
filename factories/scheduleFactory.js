@@ -41,18 +41,14 @@ var receivedOnOffSchedule = function(schedule) {
 	//PERFORM TWO CHECKS
 	//WILL EITHER OF THE NEW EVENTS (ON/OFF) OCCUR BEFORE THE NEXT INTERVAL?
 	//DOES THIS KIN ALREADY HAVE AN EVENT SCHEDULED BEFORE THE NEXT INTERVAL?
-	var kin;
-	var network;
+	var kin = schedule[ 'kin' ];
+	var network = schedule[ 'network' ];
 
 	var today = new Date();
 	var newSchedule = {};
 	for( var day in schedule ) {
 		
-		if( day === 'kin' ) {
-			kin = schedule[day];
-			continue;
-		} else if( day === 'network' ) { //was timezone
-			network = schedule[day];
+		if( day === 'kin' || day === 'network' ) {
 			continue;
 		}
 
@@ -67,9 +63,10 @@ var receivedOnOffSchedule = function(schedule) {
 		console.log('onDate: ', onDate);
 
 		//if it is Daylight time, add an hour
-		if( !networkIsDST[ network ] ) {
-			onDate.setHours(onDate.getHours()+1);
-			offDate.setHours(offDate.getHours()+1);
+		if( networkIsDST[ network ] ) {
+			console.log('-1 Hour for DST');
+			onDate.setHours(onDate.getHours()=1);
+			offDate.setHours(offDate.getHours()-1);
 		}
 
 		console.log('onDate DST?: ', onDate);
@@ -103,6 +100,7 @@ var receivedOnOffSchedule = function(schedule) {
 				console.log('remove all of kin ', daySchedule.kin);
 				upcomingIntervalsList.removeAllOfKin(daySchedule.kin);	
 			}
+			console.log('after remove all of kin');
 			addEventsWithinTheHour(daySchedule);	
 		}
 	}
