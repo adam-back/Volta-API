@@ -65,7 +65,7 @@ var receivedOnOffSchedule = function(schedule) {
 		//if it is Daylight time, add an hour
 		if( networkIsDST[ network ] ) {
 			console.log('-1 Hour for DST');
-			onDate.setHours(onDate.getHours()=1);
+			onDate.setHours(onDate.getHours()-1);
 			offDate.setHours(offDate.getHours()-1);
 		}
 
@@ -96,7 +96,7 @@ var receivedOnOffSchedule = function(schedule) {
 		//is the schedule for today?
 		if(dayIsDayOfWeek(onDate, today) || dayIsDayOfWeek(offDate, today)) {
 			//does this kin have events scheduled for this interval?
-			if(upcomingIntervalsList.containsEventOfKin(daySchedule.kin)) {
+			if(upcomingIntervalsList.containsEventOfKin(daySchedule.kin) ) {
 				console.log('remove all of kin ', daySchedule.kin);
 				upcomingIntervalsList.removeAllOfKin(daySchedule.kin);	
 			}
