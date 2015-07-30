@@ -1,6 +1,6 @@
 //NEED TO BE SENT AN ENTIRE SCHEDULE NOT JUST DELTAS!
 var station_schedule = require( '../models' ).station_schedule;
-var station = require( '../../models' ).station;
+var station = require( '../models' ).station;
 
 var UpcomingEventsListExports = require( './UpcomingEventList' );
 var UpcomingEventsList = UpcomingEventsListExports.UpcomingEventsList;
