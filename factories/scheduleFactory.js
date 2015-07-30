@@ -19,7 +19,7 @@ var dayToNumber = {
   Sunday: 6
 };
 
-var datObjectNumberToDay = {
+var dayObjectNumberToDay = {
 	0: 'Sunday',
 	1: 'Monday',
 	2: 'Tuesday',
@@ -64,11 +64,15 @@ var receivedOnOffSchedule = function(schedule) {
 		var onDate = new Date(onUTC);
 		var offDate = new Date(offUTC);
 
+		console.log('onDate: ', onDate);
+
 		//if it is Daylight time, add an hour
-		if( networkIsDST[ network ] ) {
-			onDate.setHours(onDate.getHours()-1);
-			offDate.setHours(offDate.getHours()-1);
+		if( !networkIsDST[ network ] ) {
+			onDate.setHours(onDate.getHours()+1);
+			offDate.setHours(offDate.getHours()+1);
 		}
+
+		console.log('onDate DST?: ', onDate);
 
 		daySchedule.kin = schedule.kin;
 		daySchedule.times = [];
@@ -172,7 +176,7 @@ var addEventsWithinTheHour = function(daySchedule) {
 					daySchedule.times[i].turnOn,
 					daySchedule.kin);
 
-				console.log('add event');
+				console.log('\n\n\nadd event\n\n\n');
 
 				upcomingIntervalsList.insert(scheduledEvent);
 				
@@ -203,7 +207,7 @@ var gatherEventsWithinTheHour = function() {
 		var schedule = allSchedules[kin];
 		console.log('schedule in allSchedules: ', schedule);
 
-		var weekDay = datObjectNumberToDay[dayOfWeekNumber];
+		var weekDay = dayObjectNumberToDay[dayOfWeekNumber];
 		if(!schedule[weekDay]) {
 			continue;
 		}
