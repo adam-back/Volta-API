@@ -1,5 +1,7 @@
 //NEED TO BE SENT AN ENTIRE SCHEDULE NOT JUST DELTAS!
 var station_schedule = require( '../models' ).station_schedule;
+var station = require( '../../models' ).station;
+
 var UpcomingEventsListExports = require( './UpcomingEventList' );
 var UpcomingEventsList = UpcomingEventsListExports.UpcomingEventsList;
 var ScheduledEvent = UpcomingEventsListExports.ScheduledEvent;
@@ -279,7 +281,8 @@ var triggerSwitches = function() {
     io.sockets.emit( currentEvent.kin, { status: onOff } ); 
     console.log('emit to kin: ', currentEvent.kin, ' status: ', onOff);
 
-    // io.sockets.emit( req.params.kin, { status: req.body.station_status } ); 
+    //Update status in DB
+    station.update( { station_status: onOff }, { where: { kin: currentEvent.kin } } );
 
 		console.log('triggerSwitches - removeHead from list');
 		upcomingIntervalsList.removeHead();
