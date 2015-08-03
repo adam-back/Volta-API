@@ -39,6 +39,7 @@ var nextIntervalBeginsAt;
 var receivedOnOffSchedule = function(schedule) {
 
 	console.log('receivedOnOffSchedule: ', schedule);
+	var allNewDailySchedules = [];
 
 	//PERFORM TWO CHECKS
 	//WILL EITHER OF THE NEW EVENTS (ON/OFF) OCCUR BEFORE THE NEXT INTERVAL?
@@ -62,7 +63,8 @@ var receivedOnOffSchedule = function(schedule) {
 		var onDate = new Date(onUTC);
 		var offDate = new Date(offUTC);
 
-		console.log('onDate: ', onDate);
+		console.log('onDate before: ', onDate);
+		console.log('offDate before: ', offDate);
 
 		//if it is Daylight time, add an hour
 		if( networkIsDST[ network ] ) {
@@ -71,7 +73,8 @@ var receivedOnOffSchedule = function(schedule) {
 			offDate.setHours(offDate.getHours()-1);
 		}
 
-		console.log('onDate DST?: ', onDate);
+		console.log('onDate: ', onDate);
+		console.log('offDate: ', offDate);
 
 		daySchedule.kin = schedule.kin;
 		daySchedule.times = [];
@@ -98,20 +101,26 @@ var receivedOnOffSchedule = function(schedule) {
 		//is the schedule for today?
 		if(dayIsDayOfWeek(onDate, today) || dayIsDayOfWeek(offDate, today)) {
 			//does this kin have events scheduled for this interval?
-			if(upcomingIntervalsList.containsEventOfKin(daySchedule.kin) ) {
-				console.log('remove all of kin ', daySchedule.kin);
-				upcomingIntervalsList.removeAllOfKin(daySchedule.kin);	
-			}
+			// if(upcomingIntervalsList.containsEventOfKin(daySchedule.kin) ) {
+			// 	console.log('remove all of kin ', daySchedule.kin);
+			// 	upcomingIntervalsList.removeAllOfKin(daySchedule.kin);	
+			// }
 			console.log('after remove all of kin');
-			addEventsWithinTheHour(daySchedule);	
+			// addEventsWithinTheHour(daySchedule);	
+			allNewDailySchedules.push(daySchedule);
 		}
 	}
 
-	allSchedules[schedule.kin] = newSchedule;
+	//Remove all upcoming events, and add new ones
+	upcomingIntervalsList.removeAllOfKin(daySchedule.kin);
+	for(var i=0; i<allNewDailySchedules.length; i++) {
+		addEventsWithinTheHour(allNewDailySchedules[i]);
+	}
 
 	console.log('schedule kin: ', schedule.kin)
 	console.log('all schedules: ', allSchedules);
 
+	allSchedules[schedule.kin] = newSchedule;
 	updateScheduleInDatabase(newSchedule, kin, network);
 	//Emit changes to sockets (KillSwitch GUIs should be updated immediately)
 };
@@ -152,6 +161,7 @@ var updateScheduleInDatabase = function(newSchedule, kin, timezone) {
 
 //This is wrong some of the time, as it does not account for timezones
 var dayIsDayOfWeek = function(date, today) {
+	//convert something to something
   return date.getDay() === today.getDay();
 };
 
