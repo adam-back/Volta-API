@@ -76,7 +76,8 @@ app.set( 'port', port );
 
 var server = http.createServer( app );
 var io = require( 'socket.io' )( server );
-console.log( 'server io: ', io );
+console.log( '\n\nSERVER RESTARTED\n\n' );
+// console.log( 'server io: ', io );
 
 //Socket.io Settings
 var heartbeatInterval = 3600*1000; // 1 Hour in milliseconds
