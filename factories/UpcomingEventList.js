@@ -102,7 +102,11 @@ var UpcomingEventsList = function(scheduledEventArray){
     var scheduledEvent = temp.scheduledEvent;
     console.log('remove head! ', scheduledEvent, ' type: ', typeof scheduledEvent.turnOn);
     var turnOnOff = scheduledEvent.turnOn ? 'turnOn' : 'turnOff';
-    delete nodesByKin[scheduledEvent.kin][turnOnOff];
+    if( nodesByKin[ scheduledEvent.kin ] ) {
+      delete nodesByKin[scheduledEvent.kin][turnOnOff];
+    } else {
+      console.log( 'events of kin ', scheduledEvent.kin, ' does not exist' );
+    }
 
 
     console.log('Head - Object? ', nodesByKin[scheduledEvent.kin]);

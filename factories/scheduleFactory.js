@@ -272,6 +272,9 @@ var getTimeToEvent = function(scheduledEvent) {
 var triggerSwitches = function() {
 	console.log('Trigger switches');
 
+	var rightNow = new Date();
+	console.log( '\n\n' + rightNow.toUTCString() + '\n\n' );
+
 	var currentEvent = upcomingIntervalsList.head.scheduledEvent;
 	var timeToTriggerAt = {hour: currentEvent.hour, minutes: currentEvent.minutes};
 
@@ -287,12 +290,17 @@ var triggerSwitches = function() {
     }
 
     //Emit only the station_status to killerPi to reduce bandwidth
+    console.log( 'event - turn on: ', currentEvent.turnOn );
     var onOff = currentEvent.turnOn ? 'On' : 'Off';
+    var now = new Date();
+
     io.sockets.emit( currentEvent.kin, { status: onOff } ); 
-    console.log('emit to kin: ', currentEvent.kin, ' status: ', onOff);
+    console.log('emit to kin: ', currentEvent.kin, ' status: ', onOff, 'at ', now.toUTCString());
 
     //Update status in DB
+    console.log( 'Setting DB status for kin: ', currentEvent.kin, ' set to: ', onOff );
     station.update( { station_status: onOff }, { where: { kin: currentEvent.kin } } );
+    console.log( 'Set DB status for kin: ', currentEvent.kin, ' set to: ', onOff );
 
 		console.log('triggerSwitches - removeHead from list');
 		upcomingIntervalsList.removeHead();
