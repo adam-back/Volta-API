@@ -1,8 +1,8 @@
 var config = {
   'development': {
-    'username': 'adamback',
+    'username': 'dev',
     'password': null,
-    'database': 'volta',
+    'database': 'volta_development',
     'host': '127.0.0.1',
     'dialect': 'postgres',
     'port': 5432,

@@ -31,6 +31,9 @@ Object.keys( db ).forEach( function( modelName ) {
 // Create relationships
 //////////////////
 
+// One-to-one
+db.station.hasOne( db.media_schedule, { as: 'MediaSchedule' } );
+
 // One-to-many
 db.station.hasMany( db.charge_event );
 db.station.hasMany( db.plug );
@@ -47,10 +50,23 @@ db.user.hasMany( db.station_report );
 db.user.hasMany( db.charge_event );
 
 db.charge_event.hasMany( db.ekm_reading );
+db.media_company.hasMany( db.media_campaign, { as: 'MediaCampaigns' } );
 
 // Many-to-many
 db.car.belongsToMany( db.user, { through: 'user_car' } );
 db.user.belongsToMany( db.car, { through: 'user_car' } );
+
+db.media_presentation.belongsToMany( db.media_slide, { as: 'MediaSlides', through: 'media_presentation_of_slides' } );
+db.media_slide.belongsToMany( db.media_presentation, { as: 'MediaPresentations', through: 'media_presentation_of_slides' } );
+
+db.media_schedule.belongsToMany( db.media_presentation, { as: 'MediaPresentations', through: 'media_schedule_of_presentations' } );
+db.media_presentation.belongsToMany( db.media_schedule, { as: 'MediaSchedules', through: 'media_schedule_of_presentations' } );
+
+db.media_campaign.belongsToMany( db.station, { as: 'Stations', through: 'media_campaign_stations' } );
+db.station.belongsToMany( db.media_campaign, { as: 'MediaCampaigns', through: 'media_campaign_stations' } );
+
+db.media_campaign.belongsToMany( db.media_slide, { as: 'MediaSlides', through: 'media_campaign_slides' } );
+db.media_slide.belongsToMany( db.media_campaign, { as: 'MediaCampaigns', through: 'media_campaign_slides' } );
 
 //////////////////
 // Sync
