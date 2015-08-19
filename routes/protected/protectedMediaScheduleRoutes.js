@@ -12,6 +12,14 @@ router.route( '/' )
 router.route( '/kin/:kin')
   .get( controller.getMediaScheduleByKin )
 
+router.route( '/serial/:serialNumber')
+  .get( controller.getMediaScheduleBySerialNumber )
+  .post( controller.setMediaScheduleSerialNumber )
+
+router.route( '/:id' )
+	.delete( controller.deleteMediaSchedule )
+
+
 // // for http://www.baseurl.com/plug/42
 // router.route( '/:id' )
 //   .get( controller.getOnePlug )
