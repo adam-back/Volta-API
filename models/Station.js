@@ -34,6 +34,14 @@ module.exports = function( sequelize, DataTypes ) {
     in_use: DataTypes.ARRAY( DataTypes.STRING )
   }, { paranoid: true, underscored: true } );
 
+  //has the following methods:
+
+  //station.getMediaSchedule();
+  //station.setMediaSchedule();
+
+  //station.getMediaCampaigns();
+  //station.setMediaCampaigns();
+
   return station;
 
 };

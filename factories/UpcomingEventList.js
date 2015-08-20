@@ -100,9 +100,13 @@ var UpcomingEventsList = function(scheduledEventArray){
     list.length--;
 
     var scheduledEvent = temp.scheduledEvent;
-    console.log('ahhh! ', scheduledEvent, ' type: ', typeof scheduledEvent.turnOn);
+    console.log('remove head! ', scheduledEvent, ' type: ', typeof scheduledEvent.turnOn);
     var turnOnOff = scheduledEvent.turnOn ? 'turnOn' : 'turnOff';
-    delete nodesByKin[scheduledEvent.kin][turnOnOff];
+    if( nodesByKin[ scheduledEvent.kin ] ) {
+      delete nodesByKin[scheduledEvent.kin][turnOnOff];
+    } else {
+      console.log( 'events of kin ', scheduledEvent.kin, ' does not exist' );
+    }
 
 
     console.log('Head - Object? ', nodesByKin[scheduledEvent.kin]);
@@ -173,8 +177,6 @@ var UpcomingEventsList = function(scheduledEventArray){
         nodesByKin[scheduledEvent.kin] = {};
       }
 
-      //WTF was I thinking?
-      // nodesByKin[scheduledEvent].push(newNode);
       var turnOnOff = scheduledEvent.turnOn ? 'turnOn' : 'turnOff';
       nodesByKin[scheduledEvent.kin][turnOnOff] = newNode;
 
@@ -185,10 +187,6 @@ var UpcomingEventsList = function(scheduledEventArray){
         console.log('current: ', currentNode.scheduledEvent);
         console.log('new node: ', newNode.scheduledEvent);
 
-        //adjust: 
-        // √ nodesByPosition
-        // √ nodesByKin
-        // √ positionByNode
         var currentNodePosition = positionByNode[currentNode];
         nodesByPosition[currentNodePosition] = newNode;
         positionByNode[newNode] = currentNodePosition;
@@ -269,8 +267,8 @@ var UpcomingEventsList = function(scheduledEventArray){
 
       console.log('sorted bulk: ', scheduledEventArray);
       for(var i=0; i<scheduledEventArray.length; i++) {
-        var node = new makeNode(scheduledEventArray[i]);
-        list.addToTail(node);
+        // var node = new makeNode(scheduledEventArray[i]);
+        list.addToTail(scheduledEventArray[i]);
       }
 
     } else {

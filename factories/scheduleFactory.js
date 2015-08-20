@@ -1,21 +1,35 @@
 //NEED TO BE SENT AN ENTIRE SCHEDULE NOT JUST DELTAS!
+var station_schedule = require( '../models' ).station_schedule;
+var station = require( '../models' ).station;
+
 var UpcomingEventsListExports = require( './UpcomingEventList' );
 var UpcomingEventsList = UpcomingEventsListExports.UpcomingEventsList;
 var ScheduledEvent = UpcomingEventsListExports.ScheduledEvent;
+var networkIsDST = require( './timezones' );
 
 var eventsWithinTheHour = [];
 var upcomingIntervalsList = new UpcomingEventsList();
 var nextEventTimeout;
 
 var dayToNumber = {
-      Monday: 0,
-      Tuesday: 1,
-      Wednesday: 2,
-      Thursday: 3,
-      Friday: 4,
-      Saturday: 5,
-      Sunday: 6
-    };
+  Monday: 0,
+  Tuesday: 1,
+  Wednesday: 2,
+  Thursday: 3,
+  Friday: 4,
+  Saturday: 5,
+  Sunday: 6
+};
+
+var dayObjectNumberToDay = {
+	0: 'Sunday',
+	1: 'Monday',
+	2: 'Tuesday',
+	3: 'Wednesday',
+	4: 'Thursday',
+	5: 'Friday',
+	6: 'Saturday'
+};
 
 var allSchedules = {};
 var nextIntervalBeginsAt;
@@ -25,17 +39,22 @@ var nextIntervalBeginsAt;
 var receivedOnOffSchedule = function(schedule) {
 
 	console.log('receivedOnOffSchedule: ', schedule);
+	var allNewDailySchedules = [];
 
 	//PERFORM TWO CHECKS
 	//WILL EITHER OF THE NEW EVENTS (ON/OFF) OCCUR BEFORE THE NEXT INTERVAL?
 	//DOES THIS KIN ALREADY HAVE AN EVENT SCHEDULED BEFORE THE NEXT INTERVAL?
-	console.log(schedule);
+	var kin = schedule[ 'kin' ];
+	var network = schedule[ 'network' ];
 
+	var today = new Date();
 	var newSchedule = {};
-	for(var day in schedule) {
-		if(day === 'kin') {
+	for( var day in schedule ) {
+		
+		if( day === 'kin' || day === 'network' ) {
 			continue;
 		}
+
 		var daySchedule = {};
 
 		var onUTC = schedule[day].on_time_utc;
@@ -44,19 +63,34 @@ var receivedOnOffSchedule = function(schedule) {
 		var onDate = new Date(onUTC);
 		var offDate = new Date(offUTC);
 
+		console.log('onDate before: ', onDate);
+		console.log('offDate before: ', offDate);
+
+		//if it is Daylight time, add an hour
+		if( networkIsDST[ network ] ) {
+			console.log('-1 Hour for DST');
+			onDate.setHours(onDate.getHours()-1);
+			offDate.setHours(offDate.getHours()-1);
+		}
+
+		console.log('onDate: ', onDate);
+		console.log('offDate: ', offDate);
+
 		daySchedule.kin = schedule.kin;
 		daySchedule.times = [];
 		
 		daySchedule.times.push({
 			hour: onDate.getHours(),
 			minutes: onDate.getMinutes(),
-			turnOn: true
+			turnOn: true,
+			on_time_utc: onUTC
 		});
 
 		daySchedule.times.push({
 			hour: offDate.getHours(),
 			minutes: offDate.getMinutes(),
-			turnOn: false
+			turnOn: false,
+			off_time_utc: offUTC
 		});
 
 		if(!newSchedule[day]) {
@@ -64,47 +98,107 @@ var receivedOnOffSchedule = function(schedule) {
 		}
 		newSchedule[day].push(daySchedule);
 
-		//does this kin have events scheduled for this interval?
-		//if so, delete them
-		if(upcomingIntervalsList.containsEventOfKin(daySchedule.kin)) {
-			console.log('remove all of kin ', daySchedule.kin);
-			upcomingIntervalsList.removeAllOfKin(daySchedule.kin);
+		//is the schedule for today?
+		if(dayIsDayOfWeek(onDate, today) || dayIsDayOfWeek(offDate, today)) {
+			//does this kin have events scheduled for this interval?
+			// if(upcomingIntervalsList.containsEventOfKin(daySchedule.kin) ) {
+			// 	console.log('remove all of kin ', daySchedule.kin);
+			// 	upcomingIntervalsList.removeAllOfKin(daySchedule.kin);	
+			// }
+			console.log('after remove all of kin');
+			// addEventsWithinTheHour(daySchedule);	
+			allNewDailySchedules.push(daySchedule);
 		}
-		console.log('should complete removing stuff before hitting here');
+	}
 
-		//should either of the new events be completed during the current interval
-		//if either of the above times is within now and nextIntervalBeginsAt, yes
-		var now = new Date();
-		for(var i=0; i<daySchedule.times.length; i++) {
-			var time = daySchedule.times[i];
+	//Remove all upcoming events, and add new ones
+	upcomingIntervalsList.removeAllOfKin(daySchedule.kin);
+	for(var i=0; i<allNewDailySchedules.length; i++) {
+		addEventsWithinTheHour(allNewDailySchedules[i]);
+	}
 
-			if((time.hour > now.getHours() || time.hour == now.getHours() && time.minutes >= now.getMinutes())
-			 && (time.hour < nextIntervalBeginsAt.hour || 
-			 time.hour === nextIntervalBeginsAt.hour && time.minutes < nextIntervalBeginsAt.minutes)) {
+	console.log('schedule kin: ', schedule.kin)
+	console.log('all schedules: ', allSchedules);
 
-					//we should insert the event into the cache at the appropriate location
-					var scheduledEvent = new ScheduledEvent(
-						daySchedule.times[i].hour, 
-						daySchedule.times[i].minutes,
-						daySchedule.times[i].turnOn,
-						daySchedule.kin);
+	allSchedules[schedule.kin] = newSchedule;
+	updateScheduleInDatabase(newSchedule, kin, network);
+	//Emit changes to sockets (KillSwitch GUIs should be updated immediately)
+};
 
-					console.log('add event');
+var updateScheduleInDatabase = function(newSchedule, kin, timezone) {
+	//timezone is actually network location that is used to determine DST
 
-					upcomingIntervalsList.insert(scheduledEvent);
-					
-					// if scheduledEvent is the next event to occur
-					// reset nextEventTimeout
-					var timeToEvent = getTimeToEvent(upcomingIntervalsList.head.scheduledEvent);
-					nextEventTimeout = setTimeout(triggerSwitches, timeToEvent);
+	//format for database
+	var update = {};
+	update.kin = kin;
+	update.timezone = timezone;
+
+  //monday_on_time: DataTypes.STRING,
+  //monday_off_time: DataTypes.STRING,
+	for( day in newSchedule ) {
+		var daySchedule = newSchedule[day][0];
+		console.log('newSchedule[day]: ', newSchedule[day]);
+		console.log('update in DB: ', daySchedule);
+		for( var i=0; i<daySchedule.times.length; i++ ) {
+			if( daySchedule.times[i].on_time_utc ) {
+				var key = day.toLowerCase() + '_on_time';
+				update[key] = daySchedule.times[i].on_time_utc;
+			} else {
+				var key = day.toLowerCase() + '_off_time';
+				update[key] = daySchedule.times[i].off_time_utc;
 			}
 		}
 	}
 
-	allSchedules[schedule.kin] = newSchedule;
+  station_schedule.findOrCreate( { where: { kin: kin }, defaults: update } )
+  .spread( function(station_schedule, created ) {
+  	// if there is already a station_schedule for this kin, update it
+  	if( !created ) {
+  		station_schedule.update( update, { where: { kin: kin } } );
+  	}
+  });
+};
 
-	//Add to DB?
-	//Emit changes to sockets (KillSwitch GUIs should be updated immediately)
+//This is wrong some of the time, as it does not account for timezones
+var dayIsDayOfWeek = function(date, today) {
+	//convert something to something
+  return date.getDay() === today.getDay();
+};
+
+var addEventsWithinTheHour = function(daySchedule) {
+	//should either of the new events be completed during the current interval
+	//if either of the above times is within now and nextIntervalBeginsAt, yes
+	var now = new Date();
+	for(var i=0; i<daySchedule.times.length; i++) {
+		var time = daySchedule.times[i];
+
+		console.log('scheduled time: ', time);
+		console.log('server time: ', now);
+
+		if((time.hour > now.getHours() || time.hour == now.getHours() && time.minutes >= now.getMinutes())
+		 && (time.hour < nextIntervalBeginsAt.hour || 
+		 time.hour === nextIntervalBeginsAt.hour && time.minutes < nextIntervalBeginsAt.minutes)) {
+
+				//we should insert the event into the cache at the appropriate location
+				var scheduledEvent = new ScheduledEvent(
+					daySchedule.times[i].hour, 
+					daySchedule.times[i].minutes,
+					daySchedule.times[i].turnOn,
+					daySchedule.kin);
+
+				console.log('\n\n\nadd event\n\n\n');
+
+				upcomingIntervalsList.insert(scheduledEvent);
+				
+				// if scheduledEvent is the next event to occur
+				// reset nextEventTimeout
+				if(nextEventTimeout) {
+					clearTimeout(nextEventTimeout);
+				}
+				var timeToEvent = getTimeToEvent(upcomingIntervalsList.head.scheduledEvent);
+				nextEventTimeout = setTimeout(triggerSwitches, timeToEvent);
+		}
+	}
 };
 
 var gatherEventsWithinTheHour = function() {
@@ -119,18 +213,29 @@ var gatherEventsWithinTheHour = function() {
 
 	nextIntervalBeginsAt = {hour: thisHour+1, minutes: thisMinute};
 
-	for(var schedule in allSchedules) {
-		for(var time in schedule.times) {
+	for(var kin in allSchedules) {
+		var schedule = allSchedules[kin];
+		console.log('schedule in allSchedules: ', schedule);
 
-			if(dayToNumber[schedule.day] == dayOfWeekNumber) {
-				if((time.hour == thisHour && time.minutes >= thisMinute)
-					|| (time.hour == thisHour+1 && time.minutes <= thisMinute)) {
+		var weekDay = dayObjectNumberToDay[dayOfWeekNumber];
+		if(!schedule[weekDay]) {
+			continue;
+		}
+		
+		var times = schedule[weekDay][0].times;
+		for(var i=0; i<times.length; i++) {
+			var time = times[i];
+			console.log('time object: ', time);
 
-					var scheduledEvent = new ScheduledEvent(time.hour, time.minutes, time.turnOn, schedule.kin);
-					eventsWithinTheHour.push(scheduledEvent);
-				}
+			console.log('2: ', time.hour, ' == ', thisHour, ' &&: ', time.minutes, ' >= ', thisMinute);
+			console.log('||: ', time.hour, ' == ', thisHour+1, ' && ', time.minutes, ' <= ', thisMinute);
+			if((time.hour == thisHour && time.minutes >= thisMinute)
+				|| (time.hour == thisHour+1 && time.minutes <= thisMinute)) {
+
+				var scheduledEvent = new ScheduledEvent(time.hour, time.minutes, time.turnOn, schedule[weekDay][0].kin);
+				console.log('Push scheduledEvent: ', scheduledEvent);
+				eventsWithinTheHour.push(scheduledEvent);
 			}
-
 		}
 	}
 
@@ -141,7 +246,6 @@ var gatherEventsWithinTheHour = function() {
 		if(nextEventTimeout) {
 			clearTimeout(nextEventTimeout);
 		}
-
 		var timeToEvent = getTimeToEvent(upcomingIntervalsList.head.scheduledEvent);
 		nextEventTimeout = setTimeout(triggerSwitches, timeToEvent);
 	}
@@ -166,6 +270,11 @@ var getTimeToEvent = function(scheduledEvent) {
 };
 
 var triggerSwitches = function() {
+	console.log('Trigger switches');
+
+	var rightNow = new Date();
+	console.log( '\n\n' + rightNow.toUTCString() + '\n\n' );
+
 	var currentEvent = upcomingIntervalsList.head.scheduledEvent;
 	var timeToTriggerAt = {hour: currentEvent.hour, minutes: currentEvent.minutes};
 
@@ -181,8 +290,17 @@ var triggerSwitches = function() {
     }
 
     //Emit only the station_status to killerPi to reduce bandwidth
+    console.log( 'event - turn on: ', currentEvent.turnOn );
     var onOff = currentEvent.turnOn ? 'On' : 'Off';
-    io.sockets.emit( currentEvent.kin, { status:  onOff} ); 
+    var now = new Date();
+
+    io.sockets.emit( currentEvent.kin, { status: onOff } ); 
+    console.log('emit to kin: ', currentEvent.kin, ' status: ', onOff, 'at ', now.toUTCString());
+
+    //Update status in DB
+    console.log( 'Setting DB status for kin: ', currentEvent.kin, ' set to: ', onOff );
+    station.update( { station_status: onOff }, { where: { kin: currentEvent.kin } } );
+    console.log( 'Set DB status for kin: ', currentEvent.kin, ' set to: ', onOff );
 
 		console.log('triggerSwitches - removeHead from list');
 		upcomingIntervalsList.removeHead();
@@ -194,7 +312,7 @@ var triggerSwitches = function() {
 
 	// set the timer to wait for the next event
 	if(currentEvent) {
-		var timeToEvent = getTimeToEvent(upcomingIntervalsList.head.scheduledEvent);
+		var timeToEvent = getTimeToEvent(currentEvent);
 		setTimeout(triggerSwitches, timeToEvent);
 	}
 }
@@ -206,4 +324,6 @@ setInterval(gatherEventsWithinTheHour, oneHourInMilliseconds);
 module.exports = exports = {
 	receivedOnOffSchedule: receivedOnOffSchedule
 };
+
+
 
