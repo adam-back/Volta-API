@@ -21,6 +21,7 @@ module.exports = exports = {
           network: null,
           ekm_omnimeter_serial: plug.ekm_omnimeter_serial,
           ekm_push_mac: null,
+          number_on_station: plug.number_on_station
         };
         // get the station
         station.find( { where: { id: plug.station_id } } )
