@@ -59,6 +59,7 @@ var protectedAppRoutes = require( './routes/protected/protectedAppRoutes' );
 var protectedMediaScheduleRoutes = require( './routes/protected/protectedMediaScheduleRoutes' );
 var protectedMediaPresentationRoutes = require( './routes/protected/protectedMediaPresentationRoutes' );
 var protectedMediaSlideRoutes = require( './routes/protected/protectedMediaSlideRoutes' );
+var protectedReportRoutes = require( './routes/protected/protectedReportRoutes' );
 
 // Routes
 app.use( '/protected/station', protectedStationRoutes );
@@ -70,6 +71,7 @@ app.use( '/protected/mediaSchedule', protectedMediaScheduleRoutes );
 // app.use( '/mediaSchedule', protectedMediaScheduleRoutes );
 app.use( '/protected/mediaPresentation', protectedMediaPresentationRoutes );
 app.use( '/protected/mediaSlide', protectedMediaSlideRoutes );
+app.use( '/protected/reports', protectedReportRoutes );
 
 app.get('*', function( req, res ){
   res.status( 404 ).send( 'I\'m afraid I can\'t do that, Hal.' );
