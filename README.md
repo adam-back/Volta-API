@@ -147,36 +147,15 @@ Delete one plug based on plug id.
 ####App
 Endpoints for the Android and iOS apps.
 
-**GET protected/app/stations**
-Serves a JSON object which groups stations by kins. Many stations are grouped together, sharing the same basic location, address, etc.
-
-```javascript
-[{
-  // common kin, minus -01-K/W
-  kin: 001-0001-001,
-  location: 'Serra Shopping Center',
-  address: '123 Main St.',
-  gps: [ lat, long ] || null,
-  // array of stations, ordered by kiosk number
-  // station 1 would be at index 0
-  stations: [{
-    id:
-    kin:
-    etc:
-    // array of plugs for that station, ordered by number on station
-    // plug 1 would be at index 0
-    plugs: [{
-      id:
-      number_on_station:
-      etc:
-    }, {}]
-  }, {}]
-    };
-}, {}, {}]
-```
-
-**POST /protected/app/stationReport**
-Receives and saves a station_report. Responds with 204 No Content.
+**GET protected/reports/broken**
+Returns and array of plugs and their associated stations which currently have meter_status of 'error'. Fields:
+- kin
+- location
+- location_address
+- network
+- ekm_omnimeter_serial
+- ekm_push_mac
+- number_on_station
 
 ## Stack
 
