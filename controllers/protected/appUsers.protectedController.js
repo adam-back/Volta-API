@@ -98,5 +98,21 @@ module.exports = exports = {
     .catch(function( error ) {
       res.status( 500 ).send( error );
     });
+  },
+  resetPassword: function( req, res ) {
+    req.body.email = req.body.email.toLowerCase();
+
+    // get user by email
+    user.findOne( { where: { email: req.body.email } } )
+    .then(function( foundUser ) {
+      // if found
+      if ( foundUser ) {
+        // send email with reset JWT
+      }
+      res.status( 200 ).send();
+    })
+    .catch(function( error ) {
+      res.status( 500 ).send( error );
+    });
   }
 };

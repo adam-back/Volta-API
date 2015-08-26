@@ -10,4 +10,8 @@ router.route( '/create' )
 router.route( '/authenticate' )
   .post( controller.authenticate );
 
+// for http://www.baseurl.com/protected/app/user/resetPassword
+router.route( '/resetPassword' )
+  .post( controller.resetPassword );
+
 module.exports = router;
