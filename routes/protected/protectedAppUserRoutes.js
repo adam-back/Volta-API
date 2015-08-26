@@ -6,4 +6,8 @@ var controller = require( '../../controllers/protected/appUsers.protectedControl
 router.route( '/create' )
   .post( controller.createUser );
 
+// for http://www.baseurl.com/protected/app/user/authenticate
+router.route( '/authenticate' )
+  .post( controller.authenticate );
+
 module.exports = router;

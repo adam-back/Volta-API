@@ -68,5 +68,35 @@ module.exports = exports = {
       console.log( 'errror', error );
       res.status( 500 ).send( error );
     });
+  },
+  authenticate: function( req, res ) {
+    req.body.email = req.body.email.toLowerCase();
+
+    // get user by email
+    user.findOne( { where: { email: req.body.email } } )
+    .then(function( foundUser ) {
+      // if found
+      if( foundUser ) {
+        // compare to save password
+        bcrypt.compare( req.body.password1, foundUser.password, function( error, result ) {
+          if( result === true ) {
+            // create and send token back
+            res.status( 200 ).send( { token: createToken( foundUser ) } );
+
+          // password didn't match
+          } else {
+            res.status( 401 ).send( 'Please check your email and password.' );
+          }
+        });
+
+      // no user with that email found
+      } else {
+        // send not able to authenticate
+        res.status( 401 ).send( 'Please check your email and password.' );
+      }
+    })
+    .catch(function( error ) {
+      res.status( 500 ).send( error );
+    });
   }
 };
