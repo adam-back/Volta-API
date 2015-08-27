@@ -1,11 +1,39 @@
 var station = require( '../../models').station;
 var station_report = require( '../../models' ).station_report;
+var user = require( '../../models' ).user;
 var express = require( 'express' );
 var async     = require( 'async' );
 var Q = require( 'q' );
 var env = process.env.NODE_ENV || 'development';
 var config    = require( '../../config/config' )[ env ];
 var geocoder = require( 'node-geocoder' )( 'google', 'https', { apiKey: config.googleApiKey, formatter: null } );
+
+var createToken = function( user ) {
+  var payload = {
+    id: user.id,
+    first_name: user.first_name,
+    last_name: user.last_name,
+    email: user.email,
+    username: user.username,
+    facebook_id: user.facebook_id,
+    user_picture: user.user_picture,
+    car_picture: user.car_picture,
+    stored_locations: user.stored_locations,
+    favorite_stations: user.favorite_stations,
+    phone_number: user.phone_number,
+    number_of_checkins: user.number_of_checkins,
+    kwh_used: user.kwh_used,
+    freemium_level: user.freemium_level,
+    number_of_app_uses: user.number_of_app_uses,
+    is_new: user.is_new
+  };
+
+  var options = {
+    issuer: config.issuer,
+  };
+
+  return jwt.sign( payload, config.appSecret, options );
+};
 
 // ordered by kin
 var stationsWithoutGPSCache = {};

@@ -1,6 +1,6 @@
 module.exports = function( sequelize, DataTypes ) {
   var user = sequelize.define('user', {
-  	id: { 
+  	id: {
   		type: DataTypes.INTEGER,
   		autoIncrement: true,
   		primaryKey: true
@@ -17,7 +17,7 @@ module.exports = function( sequelize, DataTypes ) {
     },
     password: DataTypes.STRING,
     facebook_id: DataTypes.STRING,
-    
+
     //Path to stored image
     user_picture: DataTypes.STRING,
     car_picture: DataTypes.STRING,
@@ -33,7 +33,9 @@ module.exports = function( sequelize, DataTypes ) {
     phone_number: DataTypes.STRING,
     number_of_checkins: DataTypes.INTEGER,
     kwh_used: DataTypes.DECIMAL,
-    freemium_level: DataTypes.INTEGER
+    freemium_level: DataTypes.INTEGER,
+    number_of_app_uses: DataTypes.INTEGER,
+    is_new: DataTypes.BOOLEAN
   }, { paranoid: true, underscored: true } );
 
   return user;
