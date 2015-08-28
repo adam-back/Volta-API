@@ -68,7 +68,7 @@ app.use( '/protected/station/network', protectedNetworkRoutes );
 app.use( '/protected/plug', protectedPlugRoutes );
 app.use( '/protected/app', protectedAppRoutes );
 app.use( '/protected/app/user', protectedAppUserRoutes );
-app.use( '/protected/app/user/favorite', protectedAppFavoriteRoutes );
+app.use( '/protected/app/favorites', protectedAppFavoriteRoutes );
 
 app.use( '/protected/mediaSchedule', protectedMediaScheduleRoutes );
 // app.use( '/mediaSchedule', protectedMediaScheduleRoutes );

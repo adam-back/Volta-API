@@ -1,6 +1,7 @@
 var station = require( '../../models').station;
 var station_report = require( '../../models' ).station_report;
 var user = require( '../../models' ).user;
+var geocodeCache = require( '../../factories/geocodeCache.js' ).geocodeCache;
 var express = require( 'express' );
 var async     = require( 'async' );
 var Q = require( 'q' );
@@ -34,9 +35,6 @@ var createToken = function( user ) {
 
   return jwt.sign( payload, config.appSecret, options );
 };
-
-// ordered by kin
-var stationsWithoutGPSCache = {};
 
 var connectStationsWithPlugs = function( stations ) {
   var deferred = Q.defer();
@@ -151,9 +149,9 @@ var geocodeGroupsWithoutGPS = function( groupsOfStations ) {
 
   async.forEachOf( groupsOfStations, function(group, kin, cb ) {
     // if we already have it cached
-    if ( stationsWithoutGPSCache[ kin ] ) {
+    if ( geocodeCache[ kin ] ) {
       // add the location
-      group.gps = [ stationsWithoutGPSCache[ kin ][ 0 ].latitude, stationsWithoutGPSCache[ kin ][ 0 ].longitude ];
+      group.gps = [ geocodeCache[ kin ][ 0 ].latitude, geocodeCache[ kin ][ 0 ].longitude ];
       group.androidGPS = {
         latitude: group.gps[ 0 ],
         longitude: group.gps[ 1 ]
@@ -167,7 +165,7 @@ var geocodeGroupsWithoutGPS = function( groupsOfStations ) {
       geocoder.geocode( group.address )
       .then(function( gpx ) {
         // add to cache
-        stationsWithoutGPSCache[ kin ] = gpx;
+        geocodeCache[ kin ] = [ gpx[ 0 ].latitude, gpx[ 0 ].longitude ];
         // add the location
         group.gps = [ gpx[ 0 ].latitude, gpx[ 0 ].longitude ];
         group.androidGPS = {
@@ -220,7 +218,6 @@ module.exports = exports = {
     })
     .then(function( geocoded ) {
       // add the geocoded kins and return
-      console.log( 'geocoded', geocoded );
       res.json( readyForReturn.concat( geocoded ) );
     })
     .catch(function( error ) {
