@@ -56,6 +56,7 @@ var protectedPlugRoutes = require( './routes/protected/protectedPlugRoutes' );
 var protectedNetworkRoutes = require( './routes/protected/protectedNetworkRoutes' );
 var protectedAppRoutes = require( './routes/protected/protectedAppRoutes' );
 var protectedAppUserRoutes = require( './routes/protected/protectedAppUserRoutes' );
+var protectedAppFavoriteRoutes = require( './routes/protected/protectedAppFavoriteRoutes' );
 var protectedMediaScheduleRoutes = require( './routes/protected/protectedMediaScheduleRoutes' );
 var protectedMediaPresentationRoutes = require( './routes/protected/protectedMediaPresentationRoutes' );
 var protectedMediaSlideRoutes = require( './routes/protected/protectedMediaSlideRoutes' );
@@ -67,6 +68,7 @@ app.use( '/protected/station/network', protectedNetworkRoutes );
 app.use( '/protected/plug', protectedPlugRoutes );
 app.use( '/protected/app', protectedAppRoutes );
 app.use( '/protected/app/user', protectedAppUserRoutes );
+app.use( '/protected/app/user/favorite', protectedAppFavoriteRoutes );
 
 app.use( '/protected/mediaSchedule', protectedMediaScheduleRoutes );
 // app.use( '/mediaSchedule', protectedMediaScheduleRoutes );
