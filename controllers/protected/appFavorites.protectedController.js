@@ -28,7 +28,9 @@ var groupByKin = function( stations ) {
     // kin: {
       // kin: common kin,
       // location: coloquial location, eg. Serra Shopping Center,
-      // address: common location_address,
+      // adddress: full address,
+      // addressLine1: 123 Main St.
+      // addressLine2: Tucson, AZ 85720,
       // gps: [ lat, long ],
       // number_available: [ avail, total ],
       // distance: crow flies in miles
@@ -52,6 +54,16 @@ var groupByKin = function( stations ) {
       groupedByKin[ cutKin ].gps = null;
       groupedByKin[ cutKin ].number_available = [ 0, 0 ];
       groupedByKin[ cutKin ].distance = null;
+    }
+
+    var splitAddress = station.location_address.split( ', ' );
+
+    groupedByKin[ cutKin ].addressLine1 = splitAddress[ 0 ];
+    if ( splitAddress.length === 3 ) {
+      groupedByKin[ cutKin ].addressLine2 = splitAddress[ 1 ] + ', ' + splitAddress[ 2 ];
+    } else {
+      groupedByKin[ cutKin ].addressLine1 += ', ' + splitAddress[ 1 ];
+      groupedByKin[ cutKin ].addressLine2 = splitAddress[ 2 ] + ', ' + splitAddress[ 3 ];
     }
 
     // grouping started

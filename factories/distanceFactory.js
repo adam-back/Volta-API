@@ -16,5 +16,6 @@ exports.getDistanceFromLatLonInMiles = function( start, finish ) {
   // distanceInKm
   var d = radiusOfEarthInKm * c;
   var miles = 0.621371 * d;
-  return miles;
+  // round to 10th
+  return Math.round( 10 * miles ) / 10;
 };
