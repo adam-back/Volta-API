@@ -1,5 +1,5 @@
 exports.convertDegreesToRadians = function( degrees ) {
-  return degree * ( Math.PI / 180 );
+  return degrees * ( Math.PI / 180 );
 };
 
 // for making calculations "as the crow flies"

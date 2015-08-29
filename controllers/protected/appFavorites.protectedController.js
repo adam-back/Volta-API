@@ -126,9 +126,7 @@ var findDistances = function( userCoords, favorites ) {
 
 module.exports = exports = {
   getFavoriteStations: function( req, res ) {
-    var query = url.parse( req.url, true ).query;
-
-    user.find( { where: { id: query.id } } )
+    user.find( { where: { id: req.query.id } } )
     .then(function( foundUser ) {
       // if you can find the user
       if ( foundUser ) {
@@ -140,7 +138,7 @@ module.exports = exports = {
             return geocodeGroupsWithoutGPS( groupByKin( stations ) );
           })
           .then(function( geocoded ) {
-            res.send( findDistances( query.userCoords, geocoded ) );
+            res.send( findDistances( req.query.userCoords, geocoded ) );
           })
           .catch(function( error ) {
             res.status( 500 ).send( 'There was an error finding you favorites. Let\'s try again later.' );
