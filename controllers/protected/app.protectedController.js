@@ -151,7 +151,7 @@ var geocodeGroupsWithoutGPS = function( groupsOfStations ) {
     // if we already have it cached
     if ( geocodeCache[ kin ] ) {
       // add the location
-      group.gps = [ geocodeCache[ kin ][ 0 ].latitude, geocodeCache[ kin ][ 0 ].longitude ];
+      group.gps = [ geocodeCache[ kin ][ 0 ], geocodeCache[ kin ][ 0 ] ];
       group.androidGPS = {
         latitude: group.gps[ 0 ],
         longitude: group.gps[ 1 ]

@@ -40,6 +40,7 @@ var groupByKin = function( stations ) {
 
   var numberOfStations = stations.length;
   for ( var i = 0; i < numberOfStations; i++ ) {
+    console.log( 'grouped', groupByKin );
     var station = stations[ i ];
     // cut off the station number and K/W
     // 001-0001-001-01-K becomes 001-0001-001
@@ -86,6 +87,9 @@ var groupByKin = function( stations ) {
       available += 1;
       total += 1;
     }
+
+    groupedByKin[ cutKin ].number_available[ 0 ] = available;
+    groupedByKin[ cutKin ].number_available[ 1 ] = total;
   }
 
   for ( var kin in groupedByKin ) {
@@ -165,6 +169,7 @@ module.exports = exports = {
       }
     })
     .catch(function( error ) {
+      console.log( 'error', error );
       res.status( 500 ).send( error );
     });
   }
