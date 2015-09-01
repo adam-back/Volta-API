@@ -48,7 +48,6 @@ module.exports = exports = {
       } else {
         bcrypt.hash( req.body.password1, 8, function( error, hashAndSalted ) {
           if ( error ) {
-            console.log( 'error', error );
             res.status( 500 ).send( error );
           } else {
             console.log( 'hashAndSalted', hashAndSalted );
