@@ -10,8 +10,12 @@ module.exports = function( sequelize, DataTypes ) {
       type: DataTypes.DATE,
       defaultValue: DataTypes.NOW
     },
-    location_stamp: DataTypes.ARRAY(DataTypes.DECIMAL),
+    location_stamp: DataTypes.ARRAY( DataTypes.DECIMAL ),
     message: DataTypes.TEXT,
+    station_location: DataTypes.STRING,
+    station_number: DataTypes.INTEGER,
+    callback_number: DataTypes.STRING,
+    name: DataTypes.STRING,
     picture_path: DataTypes.STRING
   }, { 'underscored': true } );
 
