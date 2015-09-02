@@ -160,7 +160,7 @@ module.exports = exports = {
             res.status( 500 ).send( 'There was an error finding you favorites. Let\'s try again later.' );
           });
         } else {
-          res.send( favoriteStations );
+          res.send( [] );
         }
 
       // no user found
@@ -169,7 +169,6 @@ module.exports = exports = {
       }
     })
     .catch(function( error ) {
-      console.log( 'error', error );
       res.status( 500 ).send( error );
     });
   }
