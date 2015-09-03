@@ -53,10 +53,8 @@ var countStationAvailability = function( usageCollection ) {
 var findDistances = function( userCoords, favorites ) {
   var numberOfFaves = favorites.length;
   for ( var i = 0; i < numberOfFaves; i++ ) {
-    console.log( 'here', favorites[ i ]  );
     favorites[ i ].distance = calculateDistance( userCoords, favorites[ i ].gps );
   }
-  console.log( 'done'  );
 
   return favorites;
 };
