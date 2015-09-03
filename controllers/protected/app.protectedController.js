@@ -8,6 +8,7 @@ var Q = require( 'q' );
 var env = process.env.NODE_ENV || 'development';
 var config    = require( '../../config/config' )[ env ];
 var geocoder = require( 'node-geocoder' )( 'google', 'https', { apiKey: config.googleApiKey, formatter: null } );
+var calculateDistance = require( '../../factories/distanceFactory.js' ).getDistanceFromLatLonInMiles;
 
 var createToken = function( user ) {
   var payload = {
@@ -34,6 +35,30 @@ var createToken = function( user ) {
   };
 
   return jwt.sign( payload, config.appSecret, options );
+};
+
+var countStationAvailability = function( usageCollection ) {
+  var numberOfPlugsAvailable = 0;
+
+  var numberOfPlugs = usageCollection.length;
+  for ( var i = 0; i < numberOfPlugs; i++ ) {
+    if ( usageCollection[ i ] === 'false' ) {
+      numberOfPlugsAvailable++;
+    }
+  }
+
+  return numberOfPlugsAvailable;
+};
+
+var findDistances = function( userCoords, favorites ) {
+  var numberOfFaves = favorites.length;
+  for ( var i = 0; i < numberOfFaves; i++ ) {
+    console.log( 'here', favorites[ i ]  );
+    favorites[ i ].distance = calculateDistance( userCoords, favorites[ i ].gps );
+  }
+  console.log( 'done'  );
+
+  return favorites;
 };
 
 var connectStationsWithPlugs = function( stations ) {
@@ -115,12 +140,41 @@ var groupByKin = function( stationsWithPlugs ) {
       groupedByKin[ cutKin ].location = station.location;
       groupedByKin[ cutKin ].address = station.location_address;
       groupedByKin[ cutKin ].gps = null;
-      groupedByKin[ cutKin ].androidGPS = null;
+      groupedByKin[ cutKin ].number_available = [ 0, 0 ];
+      groupedByKin[ cutKin ].distance = null;
       groupedByKin[ cutKin ].stations = [];
+    }
+
+    var splitAddress = station.location_address.split( ', ' );
+
+    groupedByKin[ cutKin ].addressLine1 = splitAddress[ 0 ];
+    if ( splitAddress.length === 3 ) {
+      groupedByKin[ cutKin ].addressLine2 = splitAddress[ 1 ] + ', ' + splitAddress[ 2 ];
+    } else {
+      groupedByKin[ cutKin ].addressLine1 += ', ' + splitAddress[ 1 ];
+      groupedByKin[ cutKin ].addressLine2 = splitAddress[ 2 ] + ', ' + splitAddress[ 3 ];
     }
 
     // add to the grouping by site number
     groupedByKin[ cutKin ].stations[ station.site_number - 1 ] = station;
+
+    // count availability
+    var available = groupedByKin[ cutKin ].number_available[ 0 ];
+    var total = groupedByKin[ cutKin ].number_available[ 1 ];
+    // if there is in-use data
+    if ( Array.isArray( station.in_use ) ) {
+      available += countStationAvailability( station.in_use );
+      total += station.in_use.length;
+    } else {
+      // this is a fudge
+      // assume station has at least one plug
+      // assume it's available
+      available += 1;
+      total += 1;
+    }
+
+    groupedByKin[ cutKin ].number_available[ 0 ] = available;
+    groupedByKin[ cutKin ].number_available[ 1 ] = total;
 
     // if the grouping doesn't have GPS yet and the station can provide it
     if ( !Array.isArray( groupedByKin[ cutKin ].gps ) && Array.isArray( station.location_gps ) ) {
@@ -205,6 +259,8 @@ module.exports = exports = {
       return groupByKin( stationsAndPlugs );
     })
     .then(function( groupedKin ) {
+      // count availability
+
       // add stations with GPS to ready
       for ( var kin in groupedKin ) {
         if ( Array.isArray( groupedKin[ kin ].gps ) ) {
@@ -217,8 +273,10 @@ module.exports = exports = {
       return geocodeGroupsWithoutGPS( groupedKin );
     })
     .then(function( geocoded ) {
-      // add the geocoded kins and return
-      res.json( readyForReturn.concat( geocoded ) );
+      var ready = readyForReturn.concat( geocoded );
+
+      // measure as-the-crow flies distances
+      res.json( findDistances( req.query.userCoords, ready ) );
     })
     .catch(function( error ) {
       console.log( 'error', error );

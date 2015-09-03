@@ -8,7 +8,6 @@ var config    = require( '../../config/config' )[ env ];
 var calculateDistance = require( '../../factories/distanceFactory.js' ).getDistanceFromLatLonInMiles;
 var geocodeCache = require( '../../factories/geocodeCache.js' ).geocodeCache;
 var geocoder = require( 'node-geocoder' )( 'google', 'https', { apiKey: config.googleApiKey, formatter: null } );
-var url = require( 'url' );
 
 var countStationAvailability = function( usageCollection ) {
   var numberOfPlugsAvailable = 0;
