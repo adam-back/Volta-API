@@ -40,7 +40,6 @@ var groupByKin = function( stations ) {
 
   var numberOfStations = stations.length;
   for ( var i = 0; i < numberOfStations; i++ ) {
-    console.log( 'grouped', groupByKin );
     var station = stations[ i ];
     // cut off the station number and K/W
     // 001-0001-001-01-K becomes 001-0001-001

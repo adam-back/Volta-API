@@ -221,6 +221,7 @@ module.exports = exports = {
       res.json( readyForReturn.concat( geocoded ) );
     })
     .catch(function( error ) {
+      console.log( 'error', error );
       res.status( 500 ).send( error );
     });
   },
