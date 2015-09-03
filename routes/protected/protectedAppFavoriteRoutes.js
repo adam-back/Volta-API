@@ -4,8 +4,8 @@ var controller = require( '../../controllers/protected/appFavorites.protectedCon
 
 // for http://www.baseurl.com/protected/app/favorites
 router.route( '/' )
-  .get( controller.getFavoriteStations );
-  // .post( controller.addFavoriteStation )
+  .get( controller.getFavoriteStations )
+  .post( controller.addFavoriteStation );
   // .delete( controller.removeFavoriteStation );
 
 module.exports = router;

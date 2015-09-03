@@ -170,5 +170,24 @@ module.exports = exports = {
     .catch(function( error ) {
       res.status( 500 ).send( error );
     });
+  },
+  addFavoriteStation: function( req, res ) {
+    // get stations associated with that cut kin
+    station.findAll( { where: { location: req.body.location } } )
+    .then(function( stations ) {
+      return user.find( { where: { id: req.body.userId } } )
+      .then(function( user ) {
+        // add stations to user favorites
+        var numberOfStations = stations.length;
+        for ( var i = 0; i < numberOfStations; i++ ) {
+          user.favorite_stations.push( stations[ i ].id );
+        }
+
+        res.send( 'Location added to favorites.' );
+      });
+    })
+    .catch(function( error ) {
+      res.status( 500 ).send( error );
+    });
   }
 };
