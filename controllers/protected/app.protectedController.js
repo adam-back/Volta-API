@@ -8,32 +8,28 @@ var Q = require( 'q' );
 var env = process.env.NODE_ENV || 'development';
 var config    = require( '../../config/config' )[ env ];
 var geocoder = require( 'node-geocoder' )( 'google', 'https', { apiKey: config.googleApiKey, formatter: null } );
+var calculateDistance = require( '../../factories/distanceFactory.js' ).getDistanceFromLatLonInMiles;
 
-var createToken = function( user ) {
-  var payload = {
-    id: user.id,
-    first_name: user.first_name,
-    last_name: user.last_name,
-    email: user.email,
-    username: user.username,
-    facebook_id: user.facebook_id,
-    user_picture: user.user_picture,
-    car_picture: user.car_picture,
-    stored_locations: user.stored_locations,
-    favorite_stations: user.favorite_stations,
-    phone_number: user.phone_number,
-    number_of_checkins: user.number_of_checkins,
-    kwh_used: user.kwh_used,
-    freemium_level: user.freemium_level,
-    number_of_app_uses: user.number_of_app_uses,
-    is_new: user.is_new
-  };
+var countStationAvailability = function( usageCollection ) {
+  var numberOfPlugsAvailable = 0;
 
-  var options = {
-    issuer: config.issuer,
-  };
+  var numberOfPlugs = usageCollection.length;
+  for ( var i = 0; i < numberOfPlugs; i++ ) {
+    if ( usageCollection[ i ] === 'false' ) {
+      numberOfPlugsAvailable++;
+    }
+  }
 
-  return jwt.sign( payload, config.appSecret, options );
+  return numberOfPlugsAvailable;
+};
+
+var findDistances = function( userCoords, favorites ) {
+  var numberOfFaves = favorites.length;
+  for ( var i = 0; i < numberOfFaves; i++ ) {
+    favorites[ i ].distance = calculateDistance( userCoords, favorites[ i ].gps );
+  }
+
+  return favorites;
 };
 
 var connectStationsWithPlugs = function( stations ) {
@@ -78,17 +74,14 @@ var connectStationsWithPlugs = function( stations ) {
   return deferred.promise;
 };
 
-var groupByKin = function( stationsWithPlugs ) {
+var groupByKin = function( stationsWithPlugs, userFaves ) {
   var deferred = Q.defer();
   var groupedByKin = {
       // kin: common kin,
       // location: coloquial location, eg. Serra Shopping Center,
       // address: common location_address,
       // gps: [ lat, long ],
-      // androidGPS: {
-          // latitude:,
-          // longitude:
-      // },
+      // ids: [],
       // stations: array of stations
         // [{
             // id:
@@ -115,12 +108,51 @@ var groupByKin = function( stationsWithPlugs ) {
       groupedByKin[ cutKin ].location = station.location;
       groupedByKin[ cutKin ].address = station.location_address;
       groupedByKin[ cutKin ].gps = null;
-      groupedByKin[ cutKin ].androidGPS = null;
+      groupedByKin[ cutKin ].ids = [];
+      groupedByKin[ cutKin ].number_available = [ 0, 0 ];
+      groupedByKin[ cutKin ].distance = null;
       groupedByKin[ cutKin ].stations = [];
+      groupedByKin[ cutKin ].favorite = false;
+    }
+
+    if ( userFaves && userFaves.length > 0 ) {
+      // if this is a user favorite
+      if ( userFaves.indexOf( station.id ) !== -1 ) {
+        groupedByKin[ cutKin ].favorite = true;
+      }
+    }
+
+    var splitAddress = station.location_address.split( ', ' );
+
+    groupedByKin[ cutKin ].addressLine1 = splitAddress[ 0 ];
+    if ( splitAddress.length === 3 ) {
+      groupedByKin[ cutKin ].addressLine2 = splitAddress[ 1 ] + ', ' + splitAddress[ 2 ];
+    } else {
+      groupedByKin[ cutKin ].addressLine1 += ', ' + splitAddress[ 1 ];
+      groupedByKin[ cutKin ].addressLine2 = splitAddress[ 2 ] + ', ' + splitAddress[ 3 ];
     }
 
     // add to the grouping by site number
     groupedByKin[ cutKin ].stations[ station.site_number - 1 ] = station;
+    groupedByKin[ cutKin ].ids.push( station.id );
+
+    // count availability
+    var available = groupedByKin[ cutKin ].number_available[ 0 ];
+    var total = groupedByKin[ cutKin ].number_available[ 1 ];
+    // if there is in-use data
+    if ( Array.isArray( station.in_use ) ) {
+      available += countStationAvailability( station.in_use );
+      total += station.in_use.length;
+    } else {
+      // this is a fudge
+      // assume station has at least one plug
+      // assume it's available
+      available += 1;
+      total += 1;
+    }
+
+    groupedByKin[ cutKin ].number_available[ 0 ] = available;
+    groupedByKin[ cutKin ].number_available[ 1 ] = total;
 
     // if the grouping doesn't have GPS yet and the station can provide it
     if ( !Array.isArray( groupedByKin[ cutKin ].gps ) && Array.isArray( station.location_gps ) ) {
@@ -151,11 +183,7 @@ var geocodeGroupsWithoutGPS = function( groupsOfStations ) {
     // if we already have it cached
     if ( geocodeCache[ kin ] ) {
       // add the location
-      group.gps = [ geocodeCache[ kin ][ 0 ], geocodeCache[ kin ][ 0 ] ];
-      group.androidGPS = {
-        latitude: group.gps[ 0 ],
-        longitude: group.gps[ 1 ]
-      };
+      group.gps = [ geocodeCache[ kin ][ 0 ], geocodeCache[ kin ][ 1 ] ];
       geocodedGroups.push( group );
       cb( null );
 
@@ -168,10 +196,6 @@ var geocodeGroupsWithoutGPS = function( groupsOfStations ) {
         geocodeCache[ kin ] = [ gpx[ 0 ].latitude, gpx[ 0 ].longitude ];
         // add the location
         group.gps = [ gpx[ 0 ].latitude, gpx[ 0 ].longitude ];
-        group.androidGPS = {
-          latitude: group.gps[ 0 ],
-          longitude: group.gps[ 1 ]
-        };
         geocodedGroups.push( group );
         cb( null );
       })
@@ -180,11 +204,11 @@ var geocodeGroupsWithoutGPS = function( groupsOfStations ) {
       });
     }
   }, function( error ) {
-    if ( error ) {
-      deferred.reject( error );
-    } else {
+    // if ( error ) {
+    //   deferred.reject( error );
+    // } else {
       deferred.resolve( geocodedGroups );
-    }
+    // }
   });
 
   return deferred.promise;
@@ -197,14 +221,25 @@ module.exports = exports = {
     // get all stations
     station.findAll()
     .then(function( stations ) {
-      // connect all those stations with their respective plugs
       return connectStationsWithPlugs( stations );
     })
     .then(function( stationsAndPlugs ) {
-      // group similar stations by kin
-      return groupByKin( stationsAndPlugs );
+      // if the user is logged in
+      if ( req.query.id ) {
+        // get their favorites
+        return user.find( { where: { id: req.query.id } } )
+        .then(function( foundUser ) {
+          return groupByKin( stationsAndPlugs, foundUser.favorite_stations );
+        });
+      // not logged in
+      } else {
+        // group similar stations by kin
+        return groupByKin( stationsAndPlugs );
+      }
     })
     .then(function( groupedKin ) {
+      // count availability
+
       // add stations with GPS to ready
       for ( var kin in groupedKin ) {
         if ( Array.isArray( groupedKin[ kin ].gps ) ) {
@@ -217,8 +252,10 @@ module.exports = exports = {
       return geocodeGroupsWithoutGPS( groupedKin );
     })
     .then(function( geocoded ) {
-      // add the geocoded kins and return
-      res.json( readyForReturn.concat( geocoded ) );
+      var ready = readyForReturn.concat( geocoded );
+
+      // measure as-the-crow flies distances
+      res.json( findDistances( req.query.userCoords, ready ) );
     })
     .catch(function( error ) {
       res.status( 500 ).send( error );

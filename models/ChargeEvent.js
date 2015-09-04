@@ -1,6 +1,6 @@
 module.exports = function( sequelize, DataTypes ) {
 	var charge_event = sequelize.define('charge_event', {
-		id: { 
+		id: {
 			type: DataTypes.INTEGER,
 			autoIncrement: true,
 			primaryKey: true
