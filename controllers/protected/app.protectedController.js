@@ -10,33 +10,6 @@ var config    = require( '../../config/config' )[ env ];
 var geocoder = require( 'node-geocoder' )( 'google', 'https', { apiKey: config.googleApiKey, formatter: null } );
 var calculateDistance = require( '../../factories/distanceFactory.js' ).getDistanceFromLatLonInMiles;
 
-var createToken = function( user ) {
-  var payload = {
-    id: user.id,
-    first_name: user.first_name,
-    last_name: user.last_name,
-    email: user.email,
-    username: user.username,
-    facebook_id: user.facebook_id,
-    user_picture: user.user_picture,
-    car_picture: user.car_picture,
-    stored_locations: user.stored_locations,
-    favorite_stations: user.favorite_stations,
-    phone_number: user.phone_number,
-    number_of_checkins: user.number_of_checkins,
-    kwh_used: user.kwh_used,
-    freemium_level: user.freemium_level,
-    number_of_app_uses: user.number_of_app_uses,
-    is_new: user.is_new
-  };
-
-  var options = {
-    issuer: config.issuer,
-  };
-
-  return jwt.sign( payload, config.appSecret, options );
-};
-
 var countStationAvailability = function( usageCollection ) {
   var numberOfPlugsAvailable = 0;
 
@@ -101,7 +74,7 @@ var connectStationsWithPlugs = function( stations ) {
   return deferred.promise;
 };
 
-var groupByKin = function( stationsWithPlugs ) {
+var groupByKin = function( stationsWithPlugs, userFaves ) {
   var deferred = Q.defer();
   var groupedByKin = {
       // kin: common kin,
@@ -141,6 +114,14 @@ var groupByKin = function( stationsWithPlugs ) {
       groupedByKin[ cutKin ].number_available = [ 0, 0 ];
       groupedByKin[ cutKin ].distance = null;
       groupedByKin[ cutKin ].stations = [];
+      groupedByKin[ cutKin ].favorite = false;
+    }
+
+    if ( userFaves && userFaves.length > 0 ) {
+      // if this is a user favorite
+      if ( userFaves.indexOf( station.id ) !== -1 ) {
+        groupedKin[ cutKin ].favorite = true;
+      }
     }
 
     var splitAddress = station.location_address.split( ', ' );
@@ -199,15 +180,13 @@ var geocodeGroupsWithoutGPS = function( groupsOfStations ) {
   var deferred = Q.defer();
   var geocodedGroups = [];
 
+  console.log( '\n\ngroupsOfStations without GPS', groupsOfStations );
+  console.log( '\n\nGPS cache', geocodeCache );
   async.forEachOf( groupsOfStations, function(group, kin, cb ) {
     // if we already have it cached
     if ( geocodeCache[ kin ] ) {
       // add the location
-      group.gps = [ geocodeCache[ kin ][ 0 ], geocodeCache[ kin ][ 0 ] ];
-      group.androidGPS = {
-        latitude: group.gps[ 0 ],
-        longitude: group.gps[ 1 ]
-      };
+      group.gps = [ geocodeCache[ kin ][ 0 ], geocodeCache[ kin ][ 1 ] ];
       geocodedGroups.push( group );
       cb( null );
 
@@ -216,14 +195,11 @@ var geocodeGroupsWithoutGPS = function( groupsOfStations ) {
       // use geocoder service
       geocoder.geocode( group.address )
       .then(function( gpx ) {
+        console.log( 'gpx', gpx[ 0 ] );
         // add to cache
         geocodeCache[ kin ] = [ gpx[ 0 ].latitude, gpx[ 0 ].longitude ];
         // add the location
         group.gps = [ gpx[ 0 ].latitude, gpx[ 0 ].longitude ];
-        group.androidGPS = {
-          latitude: group.gps[ 0 ],
-          longitude: group.gps[ 1 ]
-        };
         geocodedGroups.push( group );
         cb( null );
       })
@@ -232,11 +208,11 @@ var geocodeGroupsWithoutGPS = function( groupsOfStations ) {
       });
     }
   }, function( error ) {
-    if ( error ) {
-      deferred.reject( error );
-    } else {
+    // if ( error ) {
+    //   deferred.reject( error );
+    // } else {
       deferred.resolve( geocodedGroups );
-    }
+    // }
   });
 
   return deferred.promise;
@@ -249,8 +225,17 @@ module.exports = exports = {
     // get all stations
     station.findAll()
     .then(function( stations ) {
-      // connect all those stations with their respective plugs
-      return connectStationsWithPlugs( stations );
+      // if the user is logged in
+      if ( req.query.id ) {
+        // get their favorites
+        return user.find( { where: { id: req.query.id } } )
+        .then(function( foundUser ) {
+          return connectStationsWithPlugs( stations, foundUser.favorite_stations );
+        });
+      // not logged in
+      } else {
+        return connectStationsWithPlugs( stations );
+      }
     })
     .then(function( stationsAndPlugs ) {
       // group similar stations by kin
