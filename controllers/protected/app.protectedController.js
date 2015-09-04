@@ -180,8 +180,6 @@ var geocodeGroupsWithoutGPS = function( groupsOfStations ) {
   var deferred = Q.defer();
   var geocodedGroups = [];
 
-  console.log( '\n\ngroupsOfStations without GPS', groupsOfStations );
-  console.log( '\n\nGPS cache', geocodeCache );
   async.forEachOf( groupsOfStations, function(group, kin, cb ) {
     // if we already have it cached
     if ( geocodeCache[ kin ] ) {
@@ -195,7 +193,6 @@ var geocodeGroupsWithoutGPS = function( groupsOfStations ) {
       // use geocoder service
       geocoder.geocode( group.address )
       .then(function( gpx ) {
-        console.log( 'gpx', gpx[ 0 ] );
         // add to cache
         geocodeCache[ kin ] = [ gpx[ 0 ].latitude, gpx[ 0 ].longitude ];
         // add the location
