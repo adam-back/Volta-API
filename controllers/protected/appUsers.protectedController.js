@@ -6,7 +6,7 @@ var config    = require( '../../config/config' )[ env ];
 var bcrypt = require( 'bcrypt' );
 var jwt = require( 'jsonwebtoken' );
 
-var createToken = function( user ) {
+var createToken = function( user, expirationInMinutes ) {
   var payload = {
     id: user.id,
     first_name: user.first_name,
@@ -29,6 +29,10 @@ var createToken = function( user ) {
   var options = {
     issuer: config.issuer,
   };
+
+  if( expirationInMinutes ) {
+    options.expiresInMinutes = expirationInMinutes;
+  }
 
   return jwt.sign( payload, config.appSecret, options );
 };
@@ -106,9 +110,15 @@ module.exports = exports = {
     .then(function( foundUser ) {
       // if found
       if ( foundUser ) {
-        // send email with reset JWT
+        res.status( 200 ).send( {
+          user: {
+            id: foundUser.id,
+            email_address: foundUser.email_address
+          }
+        } );
+      } else {
+        res.status( 200 ).send();
       }
-      res.status( 200 ).send();
     })
     .catch(function( error ) {
       res.status( 500 ).send( error );
