@@ -120,7 +120,7 @@ var groupByKin = function( stationsWithPlugs, userFaves ) {
     if ( userFaves && userFaves.length > 0 ) {
       // if this is a user favorite
       if ( userFaves.indexOf( station.id ) !== -1 ) {
-        groupedKin[ cutKin ].favorite = true;
+        groupedByKin[ cutKin ].favorite = true;
       }
     }
 
@@ -222,21 +222,21 @@ module.exports = exports = {
     // get all stations
     station.findAll()
     .then(function( stations ) {
+      return connectStationsWithPlugs( stations );
+    })
+    .then(function( stationsAndPlugs ) {
       // if the user is logged in
       if ( req.query.id ) {
         // get their favorites
         return user.find( { where: { id: req.query.id } } )
         .then(function( foundUser ) {
-          return connectStationsWithPlugs( stations, foundUser.favorite_stations );
+          return groupByKin( stationsAndPlugs, foundUser.favorite_stations );
         });
       // not logged in
       } else {
-        return connectStationsWithPlugs( stations );
+        // group similar stations by kin
+        return groupByKin( stationsAndPlugs );
       }
-    })
-    .then(function( stationsAndPlugs ) {
-      // group similar stations by kin
-      return groupByKin( stationsAndPlugs );
     })
     .then(function( groupedKin ) {
       // count availability
@@ -259,7 +259,6 @@ module.exports = exports = {
       res.json( findDistances( req.query.userCoords, ready ) );
     })
     .catch(function( error ) {
-      console.log( 'error', error );
       res.status( 500 ).send( error );
     });
   },
