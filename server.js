@@ -14,6 +14,7 @@ var issuer           = require( './config/config' )[ env ].issuer;
 var app = express();
 
 var jwtCheck = jwt( { secret: jwtSecret, issuer: issuer } );
+
 // Configuration
 app.use( '/protected', jwtCheck );
 app.use( logger( 'dev' ) );
@@ -74,7 +75,6 @@ app.use( '/protected/mediaSchedule', protectedMediaScheduleRoutes );
 // app.use( '/mediaSchedule', protectedMediaScheduleRoutes );
 app.use( '/protected/mediaPresentation', protectedMediaPresentationRoutes );
 app.use( '/protected/mediaSlide', protectedMediaSlideRoutes );
-app.use( '/protected/reports', protectedReportRoutes );
 
 app.get('*', function( req, res ){
   res.status( 404 ).send( 'I\'m afraid I can\'t do that, Hal.' );

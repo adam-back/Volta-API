@@ -38,6 +38,7 @@ module.exports = exports = {
   addMediaSchedule: function ( req, res ) {
     // Validate that a station with same KIN doesn't exist, create it
     // console.log( 'add schedule - body: ', req.body );
+    req.body.kiosk_media_last_updated_at = new Date();
     mediaSchedule.findOrCreate( { where: { kin: req.body.kin }, defaults: req.body } )
     .spread(function( schedule, created ) {
       // send boolean
@@ -133,6 +134,10 @@ module.exports = exports = {
     });
   },
 
+  //check if media schedule has changed since last check
+  //if so, return schedule
+  //else, return {}
+  //^this will save data at the kiosk making the request
   getMediaScheduleBySerialNumber: function( req, res ) {
     var serialNumber = req.params.serialNumber;
 
@@ -146,19 +151,52 @@ module.exports = exports = {
         throw new Error( 'no schedules for serialNumber', serialNumber );
       }
 
+      var toReturn = {};
 
-      var schedule = JSON.parse( schedules[ 0 ].dataValues.schedule );
-      //test
-      // schedule.forceRefresh = {
-      //   slides: [ 'http://techslides.com/demos/sample-videos/small.webm' ],
-      //   presentations: [ 24 ]
-      // };
-      //end test
-      console.log( 'schedules returned by serialNumber', schedule );
-      res.json( schedule );
+      var kioskLastUpdatedAtUtcString = schedules[ 0 ].dataValues.kiosk_media_last_updated_at;
+      var scheduleLastUpdatedAtUtcString = schedules[ 0 ].dataValues.updated_at;
+
+      if( kioskLastUpdatedAtUtcString || scheduleLastUpdatedAtUtcString ) {
+        var kioskLastUpdatedAt = new Date( JSON.parse( kioskLastUpdatedAtUtcString ) );
+        var scheduleLastUpdatedAt = new Date( JSON.parse( scheduleLastUpdatedAtUtcString ) );
+
+        if( scheduleLastUpdatedAt.getTime() > kioskLastUpdatedAt.getTime() ) {
+          var schedule = JSON.parse( schedules[ 0 ].dataValues.schedule );
+          //test
+          // schedule.forceRefresh = {
+          //   slides: [ 'http://techslides.com/demos/sample-videos/small.webm' ],
+          //   presentations: [ 24 ]
+          // };
+          //end test
+          console.log( 'schedules returned by serialNumber', schedule );
+          toReturn = schedule;
+        } 
+      }
+
+      //return schedule or {}
+      res.json( toReturn );
+
+      //set kiosk_media_last_updated_at in database
+      mediaSchedule.find( { where: { kin: req.body.kin } } )
+      .then(function( mediaScheduleToUpdate ) {
+        console.log( 'set kiosk_media_last_updated_at in database', mediaScheduleToUpdate );
+
+        mediaScheduleToUpdate.kiosk_media_last_updated_at = new Date();
+
+        mediaScheduleToUpdate.save()
+        .then(function( successMediaSchedule ) {
+          res.json( successMediaSchedule );
+        })
+        .catch(function( error ) {
+          console.log( 'error saving kiosk_media_last_updated_at', error );
+        })
+      })
+      .catch(function( error ) {
+        console.log( 'promise error before saving kiosk_media_last_updated_at', error );
+      });
     })
     .catch(function( error ) {
-      console.log( 'promise blew up', error );
+      console.log( 'promise blew up in getMediaScheduleBySerialNumber', error );
       res.status( 500 ).send( error );
     });
   },
