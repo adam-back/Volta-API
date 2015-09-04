@@ -38,6 +38,7 @@ module.exports = exports = {
   addMediaSchedule: function ( req, res ) {
     // Validate that a station with same KIN doesn't exist, create it
     // console.log( 'add schedule - body: ', req.body );
+    req.body.schedule_last_updated_at = new Date();
     mediaSchedule.findOrCreate( { where: { kin: req.body.kin }, defaults: req.body } )
     .spread(function( schedule, created ) {
       // send boolean
@@ -53,6 +54,7 @@ module.exports = exports = {
   },
 
   updateMediaSchedule: function ( req, res ) {
+    req.body.schedule_last_updated_at = new Date();
     console.log( '\n\n UPDATE MEDIA SCHEDULE \n\n' );
     console.log( req.body );
     mediaSchedule.find( { where: { kin: req.body.kin } } )
@@ -96,6 +98,7 @@ module.exports = exports = {
   },
 
   setMediaScheduleSerialNumber: function( req, res ) {
+    req.body.schedule_last_updated_at = new Date();
     mediaSchedule.find( { where: { kin: req.body.kin } } )
     .then(function( mediaScheduleToUpdate ) {
       for ( var i = 0; i < req.body.changes.length; i++ ) {
@@ -133,6 +136,10 @@ module.exports = exports = {
     });
   },
 
+  //check if media schedule has changed since last check
+  //if so, return schedule
+  //else, return {}
+  //^this will save data at the kiosk making the request
   getMediaScheduleBySerialNumber: function( req, res ) {
     var serialNumber = req.params.serialNumber;
 
@@ -142,25 +149,70 @@ module.exports = exports = {
       }
     })
     .then( function( schedules ) {
+      console.log( 'found', schedules );
       if( !schedules ) {
         throw new Error( 'no schedules for serialNumber', serialNumber );
       }
 
+      var toReturn = {};
 
-      var schedule = JSON.parse( schedules[ 0 ].dataValues.schedule );
-      //test
-      // schedule.forceRefresh = {
-      //   slides: [ 'http://techslides.com/demos/sample-videos/small.webm' ],
-      //   presentations: [ 24 ]
-      // };
-      //end test
-      console.log( 'schedules returned by serialNumber', schedule );
-      res.json( schedule );
+      var kioskLastUpdatedAtUtcString = schedules[ 0 ].dataValues.kiosk_media_last_updated_at;
+      var scheduleLastUpdatedAtUtcString = schedules[ 0 ].dataValues.schedule_last_updated_at;
+
+      if( kioskLastUpdatedAtUtcString && scheduleLastUpdatedAtUtcString ) {
+        var kioskLastUpdatedAt = new Date( kioskLastUpdatedAtUtcString );
+        var scheduleLastUpdatedAt = new Date( scheduleLastUpdatedAtUtcString );
+
+        console.log( 's: ', scheduleLastUpdatedAt.getTime(), 'k:', kioskLastUpdatedAt.getTime() );
+        if( scheduleLastUpdatedAt.getTime() > kioskLastUpdatedAt.getTime() ) {
+          var schedule = JSON.parse( schedules[ 0 ].dataValues.schedule );
+          //test
+          // schedule.forceRefresh = {
+          //   slides: [ 'http://techslides.com/demos/sample-videos/small.webm' ],
+          //   presentations: [ 24 ]
+          // };
+          //end test
+          console.log( 'schedules returned by serialNumber', schedule );
+          toReturn = schedule;
+        } 
+      }
+
+      //set kiosk_media_last_updated_at in database
+      mediaSchedule.find( { where: { serial_number: serialNumber } } )
+      .then(function( mediaScheduleToUpdate ) {
+        // var mediaScheduleToUpdate = schedules;
+        console.log( 'set kiosk_media_last_updated_at in database', mediaScheduleToUpdate );
+
+        mediaScheduleToUpdate.kiosk_media_last_updated_at = new Date();
+
+        console.log( '\n\n1\n\n' );
+
+        mediaScheduleToUpdate.save()
+        .then(function( successMediaSchedule ) {
+          console.log( '\n\n3\n\n' );
+
+          // res.json( successMediaSchedule );
+        })
+        .catch(function( error ) {
+          console.log( '\n\n4\n\n' );
+
+          console.log( 'error saving kiosk_media_last_updated_at', error );
+        })
+        console.log( '\n\n2\n\n' );
+
+      })
+      .catch(function( error ) {
+        console.log( 'promise error before saving kiosk_media_last_updated_at', error );
+      });
+      //return schedule or {}
+      console.log( '\n\n RETURNING: ', toReturn, '\n\n' );
+      res.json( toReturn );
     })
     .catch(function( error ) {
-      console.log( 'promise blew up', error );
+      console.log( 'promise blew up in getMediaScheduleBySerialNumber', error );
       res.status( 500 ).send( error );
     });
+
   },
 
   getMediaScheduleByKin: function ( req, res ) {

@@ -1,12 +1,13 @@
 var config = {
   'development': {
-    'username': 'dev',
+    'username': 'adamback',
     'password': null,
-    'database': 'volta_development',
+    'database': 'volta',
     'host': '127.0.0.1',
     'dialect': 'postgres',
     'port': 5432,
     'secret': 'iamallama',
+    'appSecret': 'notsosecret',
     'issuer': 'seniorllama',
     'googleApiKey': null
   },
@@ -18,6 +19,7 @@ var config = {
     'dialect': 'postgres',
     'port': 5432,
     'secret': process.env.JWT_SECRET,
+    'appSecret': process.env.APP_JWT_SECRET,
     'issuer': process.env.JWT_ISSUER,
     'googleApiKey': process.env.GOOGLE_API_KEY
   }

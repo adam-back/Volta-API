@@ -10,6 +10,7 @@ module.exports = function( sequelize, DataTypes ) {
 		kin: DataTypes.STRING,
 		serial_number: DataTypes.STRING,
 		kiosk_media_last_updated_at: DataTypes.DATE,
+		schedule_last_updated_at: DataTypes.DATE,
 		active: DataTypes.BOOLEAN
 
 	}, { underscored: true } );
