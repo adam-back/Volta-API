@@ -31,7 +31,8 @@ var groupByKin = function( stations ) {
       // addressLine1: 123 Main St.
       // addressLine2: Tucson, AZ 85720,
       // gps: [ lat, long ],
-      // favorite
+      // favorite:
+      // ids: []
       // number_available: [ avail, total ],
       // distance: crow flies in miles
     // }
@@ -52,22 +53,24 @@ var groupByKin = function( stations ) {
       groupedByKin[ cutKin ].location = station.location;
       groupedByKin[ cutKin ].address = station.location_address;
       groupedByKin[ cutKin ].gps = null;
+      groupedByKin[ cutKin ].ids = [];
       groupedByKin[ cutKin ].number_available = [ 0, 0 ];
       groupedByKin[ cutKin ].distance = null;
       groupedByKin[ cutKin ].favorite = true;
-    }
 
-    var splitAddress = station.location_address.split( ', ' );
+      var splitAddress = station.location_address.split( ', ' );
 
-    groupedByKin[ cutKin ].addressLine1 = splitAddress[ 0 ];
-    if ( splitAddress.length === 3 ) {
-      groupedByKin[ cutKin ].addressLine2 = splitAddress[ 1 ] + ', ' + splitAddress[ 2 ];
-    } else {
-      groupedByKin[ cutKin ].addressLine1 += ', ' + splitAddress[ 1 ];
-      groupedByKin[ cutKin ].addressLine2 = splitAddress[ 2 ] + ', ' + splitAddress[ 3 ];
+      groupedByKin[ cutKin ].addressLine1 = splitAddress[ 0 ];
+      if ( splitAddress.length === 3 ) {
+        groupedByKin[ cutKin ].addressLine2 = splitAddress[ 1 ] + ', ' + splitAddress[ 2 ];
+      } else {
+        groupedByKin[ cutKin ].addressLine1 += ', ' + splitAddress[ 1 ];
+        groupedByKin[ cutKin ].addressLine2 = splitAddress[ 2 ] + ', ' + splitAddress[ 3 ];
+      }
     }
 
     // grouping started
+    groupedByKin[ cutKin ].ids.push( station.id );
     // if the grouping doesn't have GPS yet and the station can provide it
     if ( !Array.isArray( groupedByKin[ cutKin ].gps ) && Array.isArray( station.location_gps ) ) {
       // add GPS
@@ -174,7 +177,7 @@ module.exports = exports = {
   },
   addFavoriteStation: function( req, res ) {
     // get stations associated with that cut kin
-    station.findAll( { where: { location: req.body.group.location } } )
+    station.findAll( { where: { id: { $in: req.body.group } } } )
     .then(function( stations ) {
       return user.find( { where: { id: req.body.userId } } )
       .then(function( user ) {
@@ -187,6 +190,30 @@ module.exports = exports = {
 
         return user.updateAttributes( { 'favorite_stations': favorites } );
       });
+    })
+    .then(function() {
+      res.send();
+    })
+    .catch(function( error ) {
+      res.status( 500 ).send( error );
+    });
+  },
+  removeFavoriteStation: function( req, res ) {
+    user.find( { where: { id: req.body.userId } } )
+    .then(function( user ) {
+      var favorites = user.favorite_stations;
+      var idsToRemove = {};
+      for ( var i = 0; i < req.body.group.length; i++ ) {
+        idsToRemove[ req.body.group[ i ] ] = true;
+      }
+
+      for ( var j = 0; j < favorites.length; j++ ) {
+        if ( idsToRemove[ favorites[ j ] ] === true ) {
+          favorites.splice( j, 1 );
+        }
+      }
+
+      return user.updateAttributes( { 'favorite_stations': favorites } );
     })
     .then(function() {
       res.send();
