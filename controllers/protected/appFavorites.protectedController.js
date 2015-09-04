@@ -31,6 +31,7 @@ var groupByKin = function( stations ) {
       // addressLine1: 123 Main St.
       // addressLine2: Tucson, AZ 85720,
       // gps: [ lat, long ],
+      // favorite
       // number_available: [ avail, total ],
       // distance: crow flies in miles
     // }
@@ -53,6 +54,7 @@ var groupByKin = function( stations ) {
       groupedByKin[ cutKin ].gps = null;
       groupedByKin[ cutKin ].number_available = [ 0, 0 ];
       groupedByKin[ cutKin ].distance = null;
+      groupedByKin[ cutKin ].favorite = true;
     }
 
     var splitAddress = station.location_address.split( ', ' );
