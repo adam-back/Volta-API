@@ -174,18 +174,24 @@ module.exports = exports = {
   },
   addFavoriteStation: function( req, res ) {
     // get stations associated with that cut kin
-    station.findAll( { where: { location: req.body.location } } )
+    station.findAll( { where: { location: req.body.group.location } } )
     .then(function( stations ) {
       return user.find( { where: { id: req.body.userId } } )
       .then(function( user ) {
+        var favorites = user.favorite_stations || [];
         // add stations to user favorites
         var numberOfStations = stations.length;
         for ( var i = 0; i < numberOfStations; i++ ) {
-          user.favorite_stations.push( stations[ i ].id );
+          favorites.push( stations[ i ].id );
         }
 
-        res.send( 'Location added to favorites.' );
+        console.log( 'user.favorites', favorites );
+
+        return user.updateAttributes( { 'favorite_stations': favorites } );
       });
+    })
+    .then(function() {
+      res.send();
     })
     .catch(function( error ) {
       res.status( 500 ).send( error );
