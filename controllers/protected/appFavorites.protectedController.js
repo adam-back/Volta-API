@@ -185,8 +185,6 @@ module.exports = exports = {
           favorites.push( stations[ i ].id );
         }
 
-        console.log( 'user.favorites', favorites );
-
         return user.updateAttributes( { 'favorite_stations': favorites } );
       });
     })
