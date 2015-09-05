@@ -6,6 +6,47 @@ var express = require( 'express' );
 var async     = require( 'async' );
 // var chainer = new Sequelize.Utils.QueryChainer;
 
+var updateMediaScheduleHelper = function( req, res, where ) {
+  mediaSchedule.find( where )
+    .then(function( mediaScheduleToUpdate ) {
+      console.log( 'found media schedule', mediaScheduleToUpdate );
+
+      for( var key in req.body ) {
+        mediaScheduleToUpdate[ key ] = req.body[ key ];
+      }
+      // for ( var i = 0; i < req.body.changes.length; i++ ) {
+      //   var field = req.body.changes[ i ][ 0 ];
+      //   var newData = req.body.changes[ i ][ 2 ];
+      //   mediaScheduleToUpdate[ field ] = newData;
+      // }
+
+      mediaScheduleToUpdate.save()
+      .then(function( successMediaSchedule ) {
+        res.json( successMediaSchedule );
+      })
+      .catch(function( error ) {
+        console.log( 'error', error );
+        // var query = {};
+        // // get the title that of the colum that errored
+        // var errorColumn = Object.keys( error.fields );
+        // // get the value that errored
+        // var duplicateValue = error.fields[ errorColumn ];
+        // query[ errorColumn ] = duplicateValue;
+
+        // // where conflicting key, value
+        // mediaSchedule.find( { where: query } )
+        // .then(function( duplicatemediaSchedule ) {
+        //   error.duplicatemediaSchedule = duplicatemediaSchedule;
+        // 409 = conflict
+        res.status( 409 ).send( error );
+      })
+    })
+    .catch(function( error ) {
+      console.log( 'promise error', error );
+      res.status( 500 ).send( error );
+    });
+}
+
 // NOTE: uses query instead of params
 module.exports = exports = {
   getAllMediaSchedules: function ( req, res ) {
@@ -57,44 +98,8 @@ module.exports = exports = {
     req.body.schedule_last_updated_at = new Date();
     console.log( '\n\n UPDATE MEDIA SCHEDULE \n\n' );
     console.log( req.body );
-    mediaSchedule.find( { where: { kin: req.body.kin } } )
-    .then(function( mediaScheduleToUpdate ) {
-      console.log( 'found media schedule', mediaScheduleToUpdate );
-
-      for( var key in req.body ) {
-        mediaScheduleToUpdate[ key ] = req.body[ key ];
-      }
-      // for ( var i = 0; i < req.body.changes.length; i++ ) {
-      //   var field = req.body.changes[ i ][ 0 ];
-      //   var newData = req.body.changes[ i ][ 2 ];
-      //   mediaScheduleToUpdate[ field ] = newData;
-      // }
-
-      mediaScheduleToUpdate.save()
-      .then(function( successMediaSchedule ) {
-        res.json( successMediaSchedule );
-      })
-      .catch(function( error ) {
-        console.log( 'error', error );
-        // var query = {};
-        // // get the title that of the colum that errored
-        // var errorColumn = Object.keys( error.fields );
-        // // get the value that errored
-        // var duplicateValue = error.fields[ errorColumn ];
-        // query[ errorColumn ] = duplicateValue;
-
-        // // where conflicting key, value
-        // mediaSchedule.find( { where: query } )
-        // .then(function( duplicatemediaSchedule ) {
-        //   error.duplicatemediaSchedule = duplicatemediaSchedule;
-        // 409 = conflict
-        res.status( 409 ).send( error );
-      })
-    })
-    .catch(function( error ) {
-      console.log( 'promise error', error );
-      res.status( 500 ).send( error );
-    });
+    
+    updateMediaScheduleHelper( req, res, { where: { kin: req.body.kin } } );
   },
 
   setMediaScheduleSerialNumber: function( req, res ) {
@@ -154,59 +159,8 @@ module.exports = exports = {
         throw new Error( 'no schedules for serialNumber', serialNumber );
       }
 
-      var toReturn = {};
-
-      var kioskLastUpdatedAtUtcString = schedules[ 0 ].dataValues.kiosk_media_last_updated_at;
-      var scheduleLastUpdatedAtUtcString = schedules[ 0 ].dataValues.schedule_last_updated_at;
-
-      if( kioskLastUpdatedAtUtcString && scheduleLastUpdatedAtUtcString ) {
-        var kioskLastUpdatedAt = new Date( kioskLastUpdatedAtUtcString );
-        var scheduleLastUpdatedAt = new Date( scheduleLastUpdatedAtUtcString );
-
-        console.log( 's: ', scheduleLastUpdatedAt.getTime(), 'k:', kioskLastUpdatedAt.getTime() );
-        if( scheduleLastUpdatedAt.getTime() > kioskLastUpdatedAt.getTime() ) {
-          var schedule = JSON.parse( schedules[ 0 ].dataValues.schedule );
-          //test
-          // schedule.forceRefresh = {
-          //   slides: [ 'http://techslides.com/demos/sample-videos/small.webm' ],
-          //   presentations: [ 24 ]
-          // };
-          //end test
-          console.log( 'schedules returned by serialNumber', schedule );
-          toReturn = schedule;
-        } 
-      }
-
-      //set kiosk_media_last_updated_at in database
-      mediaSchedule.find( { where: { serial_number: serialNumber } } )
-      .then(function( mediaScheduleToUpdate ) {
-        // var mediaScheduleToUpdate = schedules;
-        console.log( 'set kiosk_media_last_updated_at in database', mediaScheduleToUpdate );
-
-        mediaScheduleToUpdate.kiosk_media_last_updated_at = new Date();
-
-        console.log( '\n\n1\n\n' );
-
-        mediaScheduleToUpdate.save()
-        .then(function( successMediaSchedule ) {
-          console.log( '\n\n3\n\n' );
-
-          // res.json( successMediaSchedule );
-        })
-        .catch(function( error ) {
-          console.log( '\n\n4\n\n' );
-
-          console.log( 'error saving kiosk_media_last_updated_at', error );
-        })
-        console.log( '\n\n2\n\n' );
-
-      })
-      .catch(function( error ) {
-        console.log( 'promise error before saving kiosk_media_last_updated_at', error );
-      });
-      //return schedule or {}
       console.log( '\n\n RETURNING: ', toReturn, '\n\n' );
-      res.json( toReturn );
+      res.json( schedules );
     })
     .catch(function( error ) {
       console.log( 'promise blew up in getMediaScheduleBySerialNumber', error );
