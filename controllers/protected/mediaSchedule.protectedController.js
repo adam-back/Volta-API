@@ -79,7 +79,6 @@ module.exports = exports = {
   addMediaSchedule: function ( req, res ) {
     // Validate that a station with same KIN doesn't exist, create it
     // console.log( 'add schedule - body: ', req.body );
-    req.body.schedule_last_updated_at = new Date();
     mediaSchedule.findOrCreate( { where: { kin: req.body.kin }, defaults: req.body } )
     .spread(function( schedule, created ) {
       // send boolean
@@ -95,7 +94,6 @@ module.exports = exports = {
   },
 
   updateMediaSchedule: function ( req, res ) {
-    req.body.schedule_last_updated_at = new Date();
     console.log( '\n\n UPDATE MEDIA SCHEDULE \n\n' );
     console.log( req.body );
     
@@ -103,7 +101,6 @@ module.exports = exports = {
   },
 
   setMediaScheduleSerialNumber: function( req, res ) {
-    req.body.schedule_last_updated_at = new Date();
     mediaSchedule.find( { where: { kin: req.body.kin } } )
     .then(function( mediaScheduleToUpdate ) {
       for ( var i = 0; i < req.body.changes.length; i++ ) {
@@ -141,10 +138,6 @@ module.exports = exports = {
     });
   },
 
-  //check if media schedule has changed since last check
-  //if so, return schedule
-  //else, return {}
-  //^this will save data at the kiosk making the request
   getMediaScheduleBySerialNumber: function( req, res ) {
     var serialNumber = req.params.serialNumber;
 
@@ -159,7 +152,6 @@ module.exports = exports = {
         throw new Error( 'no schedules for serialNumber', serialNumber );
       }
 
-      console.log( '\n\n RETURNING: ', toReturn, '\n\n' );
       res.json( schedules );
     })
     .catch(function( error ) {
