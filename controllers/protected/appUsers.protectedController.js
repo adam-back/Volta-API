@@ -54,21 +54,18 @@ module.exports = exports = {
           if ( error ) {
             res.status( 500 ).send( error );
           } else {
-            console.log( 'hashAndSalted', hashAndSalted );
             user.create( { email: req.body.email, password: hashAndSalted, is_new: true, number_of_app_uses: 1 } )
             .then(function( created ) {
               res.status( 201 ).send( { token: createToken( created ) } );
             })
             .catch(function( error ) {
-              console.log( 'on create', error );
               res.status( 500 ).send( error );
-            })
+            });
           }
         });
       }
     })
     .catch(function( error ) {
-      console.log( 'errror', error );
       res.status( 500 ).send( error );
     });
   },
@@ -81,7 +78,7 @@ module.exports = exports = {
       // if found
       if( foundUser ) {
         // compare to save password
-        bcrypt.compare( req.body.password1, foundUser.password, function( error, result ) {
+        bcrypt.compare( req.body.password, foundUser.password, function( error, result ) {
           if( result === true ) {
             // create and send token back
             res.status( 200 ).send( { token: createToken( foundUser ) } );
