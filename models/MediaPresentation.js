@@ -7,7 +7,8 @@ module.exports = function( sequelize, DataTypes ) {
 			primaryKey: true
 		},
 		name: DataTypes.STRING,
-		active: DataTypes.BOOLEAN
+		active: DataTypes.BOOLEAN,
+		slide_order: DataTypes.ARRAY(DataTypes.INTEGER)
 
 	}, { underscored: true } );
 
