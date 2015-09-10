@@ -5,6 +5,7 @@ var station = require( '../../models').station;
 var express = require( 'express' );
 var async = require( 'async' );
 
+//DO NOT ALTER, MEDIA PLAYERS IN FIELD RELY ON THIS!
 var getMediaPresentations = function( req, res, whereObject, keyToGet ) {
   mediaPresentation.findAll( whereObject )
   .then( function( presentations ) {
@@ -18,7 +19,7 @@ var getMediaPresentations = function( req, res, whereObject, keyToGet ) {
       var array = [];
       for( var key in obj ) {
         var contents = {};
-        contents.key = key;
+        contents.key = key; 
         contents.contents = obj[ key ];
         array.push( contents );
       }
@@ -29,12 +30,35 @@ var getMediaPresentations = function( req, res, whereObject, keyToGet ) {
       presentation.contents.getMediaSlides()
       .then( function( slideData ) {
         console.log( 'slideData', slideData );
-        var slideIds = [];
+
+        var slidesById = {};
+        // var slideIds = [];
+
         for( var i=0; i<slideData.length; i++ ) {
           console.log('slideId: ', slideData[ i ].dataValues[ keyToGet ] );
-          slideIds.push( slideData[ i ].dataValues[ keyToGet ] );
+          var slideId = slideData[ i ].dataValues.id;
+          var slideValue = slideData[ i ].dataValues[ keyToGet ];
+          // slideIds.push( slideData[ i ].dataValues[ keyToGet ] );
+          slidesById[ slideId ] = slideValue;
         }
-        presentation.contents.dataValues.slideIds = slideIds;
+
+        console.log( 'slidesById', slidesById );
+
+        //order the urls
+        var orderedURLs = [];
+        var slideOrder = presentation.contents.dataValues.slide_order;
+        for( var i=0; i<slideOrder.length; i++ ) {
+          var slideId = slideOrder[ i ];
+          if( !slidesById[ slideId ] ) {
+            console.log( 'MISSING SLIDE URL', slideId );
+            throw new Error( 'Slide ' + slideId + ' is missing URL' );
+          }
+
+          orderedURLs.push( slidesById[ slideId ] );
+        }
+
+        // presentation.contents.dataValues.slideIds = slideIds;
+        presentation.contents.dataValues.slideIds = orderedURLs;
         callback( null );
       })
       .catch( function( error ) {
@@ -42,6 +66,7 @@ var getMediaPresentations = function( req, res, whereObject, keyToGet ) {
       });
     }, function( error ) {
       if( error ) {
+        console.log( '\n\n', error, '\n\n' );
         throw new Error( 'Slides are missing' );
       } else {
         res.json( presentations );
@@ -62,9 +87,13 @@ module.exports = exports = {
   
   addMediaPresentation: function ( req, res ) {
     // Validate that a station with same KIN doesn't exist, create it
+    // need to save the order of the slides here
+    // need a new column to maintain order
+    // slideOrder [ Strings ]
     var newPresentation = {
       name: req.body.name,
-      active: false
+      active: false,
+      slide_order: req.body.slideOrder
     };
 
     console.log( '\n\n ADD PRESENTATION \n\n' );
@@ -82,6 +111,7 @@ module.exports = exports = {
           mediaSlideIds.push( req.body.mediaSlides[ i ].id );
         }
         console.log( 'ids:', mediaSlideIds );
+
         presentation.addMediaSlides( mediaSlideIds );
       }
 
