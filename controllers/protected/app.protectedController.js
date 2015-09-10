@@ -255,7 +255,11 @@ module.exports = exports = {
       var ready = readyForReturn.concat( geocoded );
 
       // measure as-the-crow flies distances
-      res.json( findDistances( req.query.userCoords, ready ) );
+      if ( req.query.userCoords ) {
+        res.json( findDistances( req.query.userCoords, ready ) );
+      } else {
+        res.json( ready );
+      }
     })
     .catch(function( error ) {
       res.status( 500 ).send( error );
