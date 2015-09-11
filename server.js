@@ -75,6 +75,7 @@ app.use( '/protected/mediaSchedule', protectedMediaScheduleRoutes );
 // app.use( '/mediaSchedule', protectedMediaScheduleRoutes );
 app.use( '/protected/mediaPresentation', protectedMediaPresentationRoutes );
 app.use( '/protected/mediaSlide', protectedMediaSlideRoutes );
+app.use( '/protected/reports', protectedReportRoutes );
 
 app.get('*', function( req, res ){
   res.status( 404 ).send( 'I\'m afraid I can\'t do that, Hal.' );

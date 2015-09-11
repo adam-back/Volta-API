@@ -10,4 +10,8 @@ router.route( '/stations' )
 router.route( '/stationReport' )
   .post( controller.saveReport );
 
+// for http://www.baseurl.com/protected/app/sponsors
+router.route( '/sponsors' )
+  .get( controller.getAppSponsors );
+
 module.exports = router;
