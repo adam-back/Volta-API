@@ -42,6 +42,9 @@ module.exports = function( sequelize, DataTypes ) {
   //station.getMediaCampaigns();
   //station.setMediaCampaigns();
 
+  //station.getAppSponsors();
+  //station.setAppSponsors();
+
   return station;
 
 };

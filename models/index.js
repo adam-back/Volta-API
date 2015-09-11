@@ -68,6 +68,9 @@ db.station.belongsToMany( db.media_campaign, { as: 'MediaCampaigns', through: 'm
 db.media_campaign.belongsToMany( db.media_slide, { as: 'MediaSlides', through: 'media_campaign_slides' } );
 db.media_slide.belongsToMany( db.media_campaign, { as: 'MediaCampaigns', through: 'media_campaign_slides' } );
 
+db.app_sponsor.belongsToMany( db.station, { as: 'Stations', through: 'station_app_sponsors' } );
+db.station.belongsToMany( db.app_sponsor, { as: 'AppSponsors', through: 'station_app_sponsors' } );
+
 //////////////////
 // Sync
 //////////////////
