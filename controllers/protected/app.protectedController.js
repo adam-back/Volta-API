@@ -33,7 +33,7 @@ var findDistances = function( userCoords, favorites ) {
   return favorites;
 };
 
-var connectStationsWithPlugs = function( stations ) {
+var connectStationsWithPlugsAndSponsors = function( stations ) {
   var deferred = Q.defer();
   var stationsAndPlugs = [];
 
@@ -44,22 +44,34 @@ var connectStationsWithPlugs = function( stations ) {
     // get the associated plugs for the station
     station.getPlugs()
     .then(function( plugs ) {
-      // if there are plugs, i.e. push and cloudgate installed
-      if ( plugs && plugs.length > 0 ) {
-        // create a plugs field on the station
-        plainStation.plugs = [];
-        // for each plug on the station
-        for ( var i = 0; i < plugs.length; i++ ) {
-          // push the values of plug to the plugs array on station
-          plainStation.plugs[ plugs[ i ].number_on_station - 1 ] = plugs[ i ].get( { plain: true } );
-        }
-      // station not metered, no plugs
-      } else {
-        plainStation.plugs = null;
-      }
+      return station.getAppSponsors()
+      .then(function( appSponsors ) {
+        // if there are sponsors
+        plainStation.app_sponsors = [];
 
-      stationsAndPlugs.push( plainStation );
-      cb( null );
+        if ( appSponsors && appSponsors.length > 0 ) {
+          for ( var i = 0; i < appSponsors.length; i++ ) {
+            plainStation.app_sponsors.push( appSponsors[ i ].get( { plain: true } ) );
+          }
+        }
+
+        // if there are plugs, i.e. push and cloudgate installed
+        if ( plugs && plugs.length > 0 ) {
+          // create a plugs field on the station
+          plainStation.plugs = [];
+          // for each plug on the station
+          for ( var i = 0; i < plugs.length; i++ ) {
+            // push the values of plug to the plugs array on station
+            plainStation.plugs[ plugs[ i ].number_on_station - 1 ] = plugs[ i ].get( { plain: true } );
+          }
+        // station not metered, no plugs
+        } else {
+          plainStation.plugs = null;
+        }
+
+        stationsAndPlugs.push( plainStation );
+        cb( null );
+      })
     })
     .catch(function( error ) {
       cb( error );
@@ -83,6 +95,7 @@ var groupByKin = function( stationsWithPlugs, userFaves ) {
       // address: common location_address,
       // gps: [ lat, long ],
       // ids: [],
+      // app_sponsors: []
       // stations: array of stations
         // [{
             // id:
@@ -110,6 +123,7 @@ var groupByKin = function( stationsWithPlugs, userFaves ) {
       groupedByKin[ cutKin ].address = station.location_address;
       groupedByKin[ cutKin ].gps = null;
       groupedByKin[ cutKin ].ids = [];
+      groupedByKin[ cutKin ].app_sponsors = [];
       groupedByKin[ cutKin ].number_available = [ 0, 0 ];
       groupedByKin[ cutKin ].distance = null;
       groupedByKin[ cutKin ].stations = [];
@@ -164,6 +178,13 @@ var groupByKin = function( stationsWithPlugs, userFaves ) {
         longitude: station.location_gps[ 1 ]
       };
     }
+
+    if ( groupedByKin[ cutKin ].app_sponsors.length === 0 ) {
+      if ( station.app_sponsors.length !== 0 ) {
+        groupedByKin[ cutKin ].app_sponsors = station.app_sponsors;
+      }
+    }
+
     cb( null );
   }, function( error ) {
     if ( error ) {
@@ -222,7 +243,7 @@ module.exports = exports = {
     // get all stations
     station.findAll()
     .then(function( stations ) {
-      return connectStationsWithPlugs( stations );
+      return connectStationsWithPlugsAndSponsors( stations );
     })
     .then(function( stationsAndPlugs ) {
       // if the user is logged in
@@ -253,13 +274,13 @@ module.exports = exports = {
       return geocodeGroupsWithoutGPS( groupedKin );
     })
     .then(function( geocoded ) {
-      var ready = readyForReturn.concat( geocoded );
+      readyForReturn = readyForReturn.concat( geocoded );
 
       // measure as-the-crow flies distances
       if ( req.query.userCoords ) {
-        res.json( findDistances( req.query.userCoords, ready ) );
+        res.json( findDistances( req.query.userCoords, readyForReturn ) );
       } else {
-        res.json( ready );
+        res.json( readyForReturn );
       }
     })
     .catch(function( error ) {
@@ -276,6 +297,23 @@ module.exports = exports = {
     });
   },
   getAppSponsors: function ( req, res ) {
+    // app_sponsor.create( { company: 'Chevy', networks: [ 'SD', 'OC', 'LA', 'SB', 'NoCal' ], website_url: 'http://www.chevrolet.com/', twitter_url: 'https://twitter.com/chevyvolt', facebook_url: 'https://www.facebook.com/chevroletvolt/info?tab=page_info', instagram_url: 'https://instagram.com/chevrolet/?hl=en', logo_url: 'http://img2.wikia.nocookie.net/__cb20141116144915/logopedia/images/f/f4/Chevrolet_logo-2.png', station_query: { where: { network: { $in: [ 'SD', 'OC', 'LA', 'SB', 'NoCAl' ] } } }, banner_url: 'http://cdn.realestate.ph/ad3_320x50.jpg' } );
+
+    // app_sponsor.findAll( { where: { company: 'Chevy' } } )
+    // .then(function( sponsor ) {
+    //   console.log( 'sponsor', sponsor );
+    //   return sponsor[0].setStations([])
+    //   .then(function( nothing ) {
+    //     return station.findAll( sponsor[ 0 ].dataValues.station_query )
+    //     .then(function( stations ) {
+    //       return sponsor[ 0].addStations( stations );
+    //     });
+    //   })
+    // })
+    // .then(function( done ) {
+    //  console.log( 'done', done );
+    // })
+
     // app_sponsor.create( { company: 'Chevy', networks: [ 'SD', 'OC', 'LA', 'SB', 'NoCal' ], website_url: 'http://www.chevrolet.com/', twitter_url: 'https://twitter.com/chevyvolt', facebook_url: 'https://www.facebook.com/chevroletvolt/info?tab=page_info', instagram_url: 'https://instagram.com/chevrolet/?hl=en', logo_url: 'http://img2.wikia.nocookie.net/__cb20141116144915/logopedia/images/f/f4/Chevrolet_logo-2.png', station_query: { where: { network: { $in: [ 'SD', 'OC', 'LA', 'SB', 'NoCAl' ] } } }, banner_url: 'http://cdn.realestate.ph/ad3_320x50.jpg' } );
     app_sponsor.findAll( { where: { current: true } } )
     .then(function( sponsors ) {
