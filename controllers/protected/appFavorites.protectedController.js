@@ -203,17 +203,24 @@ module.exports = exports = {
     .then(function( user ) {
       var favorites = user.favorite_stations;
       var idsToRemove = {};
+      var newFavorites = [];
+
       for ( var i = 0; i < req.body.group.length; i++ ) {
         idsToRemove[ req.body.group[ i ] ] = true;
       }
 
+      console.log( 'favorites', favorites );
+      console.log( 'idsToRemove', idsToRemove );
+
+
       for ( var j = 0; j < favorites.length; j++ ) {
-        if ( idsToRemove[ favorites[ j ] ] === true ) {
-          favorites.splice( j, 1 );
+        if ( idsToRemove[ favorites[ j ] ] !== true ) {
+          newFavorites.push( favorites[ j ] );
         }
       }
 
-      return user.updateAttributes( { 'favorite_stations': favorites } );
+      console.log( 'favorites after=', favorites );
+      return user.updateAttributes( { 'favorite_stations': newFavorites } );
     })
     .then(function() {
       res.send();
