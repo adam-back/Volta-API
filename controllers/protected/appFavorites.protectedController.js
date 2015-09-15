@@ -209,17 +209,12 @@ module.exports = exports = {
         idsToRemove[ req.body.group[ i ] ] = true;
       }
 
-      console.log( 'favorites', favorites );
-      console.log( 'idsToRemove', idsToRemove );
-
-
       for ( var j = 0; j < favorites.length; j++ ) {
         if ( idsToRemove[ favorites[ j ] ] !== true ) {
           newFavorites.push( favorites[ j ] );
         }
       }
 
-      console.log( 'favorites after=', favorites );
       return user.updateAttributes( { 'favorite_stations': newFavorites } );
     })
     .then(function() {
