@@ -297,7 +297,7 @@ module.exports = exports = {
     });
   },
   getAppSponsors: function ( req, res ) {
-    // app_sponsor.create( { company: 'Chevy', networks: [ 'SD', 'OC', 'LA', 'SB', 'NoCal' ], website_url: 'http://www.chevrolet.com/', twitter_url: 'https://twitter.com/chevyvolt', facebook_url: 'https://www.facebook.com/chevroletvolt/info?tab=page_info', instagram_url: 'https://instagram.com/chevrolet/?hl=en', logo_url: 'http://img2.wikia.nocookie.net/__cb20141116144915/logopedia/images/f/f4/Chevrolet_logo-2.png', station_query: { where: { network: { $in: [ 'SD', 'OC', 'LA', 'SB', 'NoCAl' ] } } }, banner_url: 'http://cdn.realestate.ph/ad3_320x50.jpg', current: true, order: 3 } );
+    // app_sponsor.create( { company: 'Chevrolet', networks: [ 'SD', 'OC', 'LA', 'SB', 'NoCal' ], website_url: 'http://www.chevrolet.com/', twitter_url: 'https://twitter.com/chevyvolt', facebook_url: 'https://www.facebook.com/chevroletvolt/info?tab=page_info', instagram_url: 'https://instagram.com/chevrolet/?hl=en', logo_url: 'http://img2.wikia.nocookie.net/__cb20141116144915/logopedia/images/f/f4/Chevrolet_logo-2.png', station_query: { where: { network: { $in: [ 'SD', 'OC', 'LA', 'SB', 'NoCAl' ] } } }, banner_url: 'http://cdn.realestate.ph/ad3_320x50.jpg', current: true, order: 3 } );
 
     // Create associations
     // app_sponsor.findAll( { where: { company: 'Chevrolet' } } )
