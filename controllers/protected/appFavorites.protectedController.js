@@ -54,6 +54,7 @@ var groupByKin = function( stations ) {
       groupedByKin[ cutKin ].address = station.location_address;
       groupedByKin[ cutKin ].gps = null;
       groupedByKin[ cutKin ].ids = [];
+      groupedByKin[ cutKin ].app_sponsors = [];
       groupedByKin[ cutKin ].number_available = [ 0, 0 ];
       groupedByKin[ cutKin ].distance = null;
       groupedByKin[ cutKin ].favorite = true;
@@ -75,6 +76,12 @@ var groupByKin = function( stations ) {
     if ( !Array.isArray( groupedByKin[ cutKin ].gps ) && Array.isArray( station.location_gps ) ) {
       // add GPS
       groupedByKin[ cutKin ].gps = station.location_gps;
+    }
+
+    if ( groupedByKin[ cutKin ].app_sponsors.length === 0 ) {
+      if ( station.app_sponsors.length !== 0 ) {
+        groupedByKin[ cutKin ].app_sponsors = station.app_sponsors;
+      }
     }
 
     var available = groupedByKin[ cutKin ].number_available[ 0 ];
@@ -145,8 +152,15 @@ var findDistances = function( userCoords, favorites ) {
 
 module.exports = exports = {
   getFavoriteStations: function( req, res ) {
+    var deferred = Q.defer();
+    var stationsAndPlugs = [];
+
+    console.log( '\n\ngetFavoriteStations\n\n' ); 
+
     user.find( { where: { id: req.query.id } } )
     .then(function( foundUser ) {
+    console.log( '\n\n Found User \n\n' ); 
+
       // if you can find the user
       if ( foundUser ) {
         // check for favorites
@@ -154,24 +168,83 @@ module.exports = exports = {
           // get stations by id
           station.findAll( { where: { id: { $in: foundUser.favorite_stations } } } )
           .then(function( stations ) {
-            return geocodeGroupsWithoutGPS( groupByKin( stations ) );
-          })
-          .then(function( geocoded ) {
-            res.send( findDistances( req.query.userCoords, geocoded ) );
-          })
-          .catch(function( error ) {
-            res.status( 500 ).send( 'There was an error finding you favorites. Let\'s try again later.' );
+            console.log( '\n\n Found All Stations \n\n' ); 
+
+            async.each( stations, function( station, cb ) {
+              // get only the values of the station
+              var plainStation = station.get( { plain: true } );
+              // get the associated plugs for the station
+              station.getPlugs()
+              .then(function( plugs ) {
+                return station.getAppSponsors()
+                .then(function( appSponsors ) {
+                  // if there are sponsors
+                  plainStation.app_sponsors = [];
+
+                  if ( appSponsors && appSponsors.length > 0 ) {
+                    for ( var i = 0; i < appSponsors.length; i++ ) {
+                      plainStation.app_sponsors.push( appSponsors[ i ].get( { plain: true } ) );
+                    }
+                  }
+
+                  // if there are plugs, i.e. push and cloudgate installed
+                  if ( plugs && plugs.length > 0 ) {
+                    // create a plugs field on the station
+                    plainStation.plugs = [];
+                    // for each plug on the station
+                    for ( var i = 0; i < plugs.length; i++ ) {
+                      // push the values of plug to the plugs array on station
+                      plainStation.plugs[ plugs[ i ].number_on_station - 1 ] = plugs[ i ].get( { plain: true } );
+                    }
+                  // station not metered, no plugs
+                  } else {
+                    plainStation.plugs = null;
+                  }
+
+                  stationsAndPlugs.push( plainStation );
+                  cb( null );
+                })
+              })
+              .catch(function( error ) {
+                cb( error );
+              });
+            }, function( error ) {
+              if ( error ) {
+                console.log( '\n\n ERROR ASYNC EACH', error, ' \n\n' ); 
+
+                deferred.reject( error );
+              } else {
+                // deferred.resolve( stationsAndPlugs );
+                console.log( '\n\n COMPLETED ASYNC EACH \n\n' ); 
+
+                geocodeGroupsWithoutGPS( groupByKin( stationsAndPlugs ) )
+                .then(function( geocoded ) {
+                  console.log( '\n\n GEOCODED \n\n' ); 
+
+                  res.send( findDistances( req.query.userCoords, geocoded ) );
+                })
+                .catch(function( error ) {
+                  res.status( 500 ).send( 'There was an error finding you favorites. Let\'s try again later.' );
+                });
+              }
+            });
           });
         } else {
+          console.log( '\n\n SEND EMPTY ARRAY \n\n' ); 
+
           res.send( [] );
         }
 
       // no user found
       } else {
+        console.log( '\n\n COULD NOT FIND USER \n\n' ); 
+
         res.status( 404 ).send( 'Could not find a user with that ID' );
       }
     })
     .catch(function( error ) {
+      console.log( '\n\n ORIGINAL ERROR \n\n' ); 
+
       res.status( 500 ).send( error );
     });
   },
@@ -203,17 +276,19 @@ module.exports = exports = {
     .then(function( user ) {
       var favorites = user.favorite_stations;
       var idsToRemove = {};
+      var newFavorites = [];
+
       for ( var i = 0; i < req.body.group.length; i++ ) {
         idsToRemove[ req.body.group[ i ] ] = true;
       }
 
       for ( var j = 0; j < favorites.length; j++ ) {
-        if ( idsToRemove[ favorites[ j ] ] === true ) {
-          favorites.splice( j, 1 );
+        if ( idsToRemove[ favorites[ j ] ] !== true ) {
+          newFavorites.push( favorites[ j ] );
         }
       }
 
-      return user.updateAttributes( { 'favorite_stations': favorites } );
+      return user.updateAttributes( { 'favorite_stations': newFavorites } );
     })
     .then(function() {
       res.send();

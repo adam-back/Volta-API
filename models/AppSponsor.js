@@ -14,6 +14,7 @@ module.exports = function( sequelize, DataTypes ) {
 		logo_url: DataTypes.TEXT,
 		station_query: DataTypes.JSON,
 		banner_url: DataTypes.TEXT,
+		order: DataTypes.INTEGER,
 		start: DataTypes.DATE,
 		end: DataTypes.DATE,
 		current: DataTypes.BOOLEAN
