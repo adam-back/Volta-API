@@ -1,6 +1,7 @@
 var station_schedule = require( '../../models' ).station_schedule;
 var receivedOnOffSchedule = require( '../../factories/scheduleFactory' ).receivedOnOffSchedule;
 var express = require( 'express' );
+var io = require( '../../server' ).io;
 
 module.exports = exports = {
 	getSchedule: function ( req, res ) {
@@ -29,6 +30,9 @@ module.exports = exports = {
 	setSchedule: function( req, res ) {
     console.log('schedule received ', req.body.schedules);
     receivedOnOffSchedule(req.body.schedules);
+
+    //Emit the new schedule
+    io.sockets.emit( req.params.kin, { schedule: req.body.schedules } );
     
     //scheduleFactory handles the Database updates for schedules
     res.json('Update Complete');
