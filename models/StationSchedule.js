@@ -11,11 +11,6 @@ module.exports = function( sequelize, DataTypes ) {
       allowNull: false
     },
 
-    timezone: {
-      type: DataTypes.STRING,
-      allowNull: false
-    },
-
     monday_on_time: DataTypes.STRING,
     monday_off_time: DataTypes.STRING,
 
