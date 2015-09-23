@@ -17,8 +17,6 @@ var jwtCheck = jwt( { secret: jwtSecret, issuer: issuer } );
 
 var server = http.createServer( app );
 var io = require( 'socket.io' )( server );
-console.log( '\n\nSERVER RESTARTED\n\n' );
-console.log( '\n\n\nserver io: ', io );
 module.exports = exports = { io: io };
 
 // Configuration

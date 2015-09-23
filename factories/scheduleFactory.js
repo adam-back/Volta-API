@@ -5,12 +5,9 @@ var station = require( '../models' ).station;
 //receivedOnOffSchedule({'Monday':{on_time_utc:new Date().toUTCString(), off_time_utc:new Date().toUTCString()}});
 //{ Monday: {off_time_utc, on_time_utc} }
 var receivedOnOffSchedule = function( schedule ) {
-	console.log('receivedOnOffSchedule: ', schedule);
 
 	var allNewDailySchedules = [];
 	var kin = schedule[ 'kin' ];
-
-
 
 	var today = new Date();
 	var newSchedule = {};
@@ -33,16 +30,12 @@ var updateScheduleInDatabase = function( newSchedule, kin ) {
 	var update = {};
 	update.kin = kin;
 
-	console.log( 'updateScheduleInDatabase', newSchedule );
-
   //monday_on_time: DataTypes.STRING,
   //monday_off_time: DataTypes.STRING,
 	for( day in newSchedule ) {
 		update[ day.toLowerCase() + '_on_time' ] = JSON.stringify( newSchedule[ day ].on_time );
 		update[ day.toLowerCase() + '_off_time' ] = JSON.stringify( newSchedule[ day ].off_time );
 	}
-
-	console.log( 'schedule update fields: ', update );
 
   station_schedule.findOrCreate( { where: { kin: kin }, defaults: update } )
   .spread( function(station_schedule, created ) {

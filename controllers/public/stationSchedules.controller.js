@@ -3,7 +3,6 @@ var receivedOnOffSchedule = require( '../../factories/scheduleFactory' ).receive
 var express = require( 'express' );
 
 var server = require( '../../server' );
-console.log( '\n\n\nserver', server );
 var io = require( '../../server' ).io;
 
 module.exports = exports = {
@@ -31,7 +30,6 @@ module.exports = exports = {
 
 	//breakout from station controller
 	setSchedule: function( req, res ) {
-    console.log('schedule received ', req.body.schedules);
     receivedOnOffSchedule(req.body.schedules);
 
     //Emit the new schedule

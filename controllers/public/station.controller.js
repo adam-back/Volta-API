@@ -36,8 +36,6 @@ module.exports = exports = {
       var io = require( '../../server' ).io;
     }
 
-    console.log( 'DIRECT ON/OFF - set station ', req.params.kin, ' status to ', req.body.station_status );
-    
     //Emit only the station_status to killerPi to reduce bandwidth
     io.sockets.emit( req.params.kin, { status: req.body.station_status } ); 
 
