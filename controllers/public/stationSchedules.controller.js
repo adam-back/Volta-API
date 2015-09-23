@@ -1,6 +1,9 @@
 var station_schedule = require( '../../models' ).station_schedule;
 var receivedOnOffSchedule = require( '../../factories/scheduleFactory' ).receivedOnOffSchedule;
 var express = require( 'express' );
+
+var server = require( '../../server' );
+console.log( '\n\n\nserver', server );
 var io = require( '../../server' ).io;
 
 module.exports = exports = {
