@@ -30,12 +30,12 @@ module.exports = exports = {
 
 	//breakout from station controller
 	setSchedule: function( req, res ) {
-    receivedOnOffSchedule(req.body.schedules);
-
-    //Emit the new schedule
-    io.sockets.emit( req.params.kin, { schedule: req.body.schedules } );
-    
-    //scheduleFactory handles the Database updates for schedules
-    res.json('Update Complete');
+    receivedOnOffSchedule( req.body.schedules, function( savedSchedule ) {
+	    //Emit the new schedule
+	    io.sockets.emit( req.params.kin, { schedule: req.body.schedules } );
+	    
+	    //scheduleFactory handles the Database updates for schedules
+	    res.json('Update Complete');
+    });
 	}
 }
