@@ -155,12 +155,8 @@ module.exports = exports = {
     var deferred = Q.defer();
     var stationsAndPlugs = [];
 
-    console.log( '\n\ngetFavoriteStations\n\n' ); 
-
     user.find( { where: { id: req.query.id } } )
     .then(function( foundUser ) {
-    console.log( '\n\n Found User \n\n' ); 
-
       // if you can find the user
       if ( foundUser ) {
         // check for favorites
@@ -168,7 +164,6 @@ module.exports = exports = {
           // get stations by id
           station.findAll( { where: { id: { $in: foundUser.favorite_stations } } } )
           .then(function( stations ) {
-            console.log( '\n\n Found All Stations \n\n' ); 
 
             async.each( stations, function( station, cb ) {
               // get only the values of the station
@@ -183,7 +178,8 @@ module.exports = exports = {
 
                   if ( appSponsors && appSponsors.length > 0 ) {
                     for ( var i = 0; i < appSponsors.length; i++ ) {
-                      plainStation.app_sponsors.push( appSponsors[ i ].get( { plain: true } ) );
+                      // uncomment this line Oct. 1 for Chevy
+                      // plainStation.app_sponsors.push( appSponsors[ i ].get( { plain: true } ) );
                     }
                   }
 
@@ -203,24 +199,18 @@ module.exports = exports = {
 
                   stationsAndPlugs.push( plainStation );
                   cb( null );
-                })
+                });
               })
               .catch(function( error ) {
                 cb( error );
               });
             }, function( error ) {
               if ( error ) {
-                console.log( '\n\n ERROR ASYNC EACH', error, ' \n\n' ); 
-
                 deferred.reject( error );
               } else {
                 // deferred.resolve( stationsAndPlugs );
-                console.log( '\n\n COMPLETED ASYNC EACH \n\n' ); 
-
                 geocodeGroupsWithoutGPS( groupByKin( stationsAndPlugs ) )
                 .then(function( geocoded ) {
-                  console.log( '\n\n GEOCODED \n\n' ); 
-
                   res.send( findDistances( req.query.userCoords, geocoded ) );
                 })
                 .catch(function( error ) {
@@ -230,21 +220,15 @@ module.exports = exports = {
             });
           });
         } else {
-          console.log( '\n\n SEND EMPTY ARRAY \n\n' ); 
-
           res.send( [] );
         }
 
       // no user found
       } else {
-        console.log( '\n\n COULD NOT FIND USER \n\n' ); 
-
         res.status( 404 ).send( 'Could not find a user with that ID' );
       }
     })
     .catch(function( error ) {
-      console.log( '\n\n ORIGINAL ERROR \n\n' ); 
-
       res.status( 500 ).send( error );
     });
   },
