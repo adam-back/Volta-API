@@ -15,6 +15,10 @@ var app = express();
 
 var jwtCheck = jwt( { secret: jwtSecret, issuer: issuer } );
 
+var server = http.createServer( app );
+var io = require( 'socket.io' )( server );
+module.exports = exports = { io: io };
+
 // Configuration
 app.use( '/protected', jwtCheck );
 app.use( logger( 'dev' ) );
@@ -88,11 +92,6 @@ app.get('*', function( req, res ){
 var port = process.env.PORT || 3000;
 app.set( 'port', port );
 
-var server = http.createServer( app );
-var io = require( 'socket.io' )( server );
-console.log( '\n\nSERVER RESTARTED\n\n' );
-// console.log( 'server io: ', io );
-
 //Socket.io Settings
 var heartbeatInterval = 3600*1000; // 1 Hour in milliseconds
 io.set('close timeout', 0);
@@ -114,7 +113,6 @@ io.set('heartbeat interval', heartbeatInterval/2); // 30 Minutes in milliseconds
 // io.engine.pingTimeout = heartbeatInterval*2;
 // io.engine.transports = ['websocket'];
 
-module.exports = { io: io };
 
 // Create listeners
 server.on( 'error', function() {
