@@ -34,8 +34,6 @@ var updateScheduleInDatabase = function( newSchedule, kin, callback ) {
 		update[ day.toLowerCase() + '_off_time' ] = JSON.stringify( newSchedule[ day ].off_time );
 	}
 
-	console.log( 'LOOK HERE!', update );
-
   station_schedule.findOrCreate( { where: { kin: kin }, defaults: update } )
   .spread( function(station_schedule, created ) {
   	// if there is already a station_schedule for this kin, update it
