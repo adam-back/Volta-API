@@ -4,7 +4,7 @@ var station = require( '../models' ).station;
 
 //receivedOnOffSchedule({'Monday':{on_time_utc:new Date().toUTCString(), off_time_utc:new Date().toUTCString()}});
 //{ Monday: {off_time_utc, on_time_utc} }
-var receivedOnOffSchedule = function( schedule ) {
+var receivedOnOffSchedule = function( schedule, callback ) {
 
 	var allNewDailySchedules = [];
 	var kin = schedule[ 'kin' ];
@@ -20,13 +20,10 @@ var receivedOnOffSchedule = function( schedule ) {
 		newSchedule[ day ] = schedule[ day ];
 	}
 
-	updateScheduleInDatabase( newSchedule, kin );
-
-	//TO DO: 
-	//Emit changes to sockets (KillSwitch GUIs should be updated immediately)
+	updateScheduleInDatabase( newSchedule, kin, callback );
 };
 
-var updateScheduleInDatabase = function( newSchedule, kin ) {
+var updateScheduleInDatabase = function( newSchedule, kin, callback ) {
 	var update = {};
 	update.kin = kin;
 
@@ -41,7 +38,14 @@ var updateScheduleInDatabase = function( newSchedule, kin ) {
   .spread( function(station_schedule, created ) {
   	// if there is already a station_schedule for this kin, update it
   	if( !created ) {
-  		station_schedule.update( update, { where: { kin: kin } } );
+  		station_schedule.update( update, { where: { kin: kin } } )
+  		.then( function( updated ) {
+  				if( callback ) {
+  					callback( update );
+  				}
+  		} );
+  	} else if( callback ) {
+  		callback( update );
   	}
   });
 };
