@@ -32,7 +32,7 @@ module.exports = exports = {
 	setSchedule: function( req, res ) {
     receivedOnOffSchedule( req.body.schedules, function( savedSchedule ) {
 	    //Emit the new schedule
-	    io.sockets.emit( req.params.kin, { schedule: req.body.schedules } );
+	    io.sockets.emit( req.params.kin, { schedule: savedSchedule } );
 	    
 	    //scheduleFactory handles the Database updates for schedules
 	    res.json('Update Complete');
