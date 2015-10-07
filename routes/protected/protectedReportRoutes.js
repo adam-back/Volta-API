@@ -6,4 +6,8 @@ var controller = require( '../../controllers/protected/reports.protectedControll
 router.route( '/broken' )
   .get( controller.getBrokenPlugs );
 
+// for http://www.baseurl.com/protected/reports/one/123-1234-123-01-k
+router.route( '/one/:kin' )
+  .get( controller.getOneStationAnalytics );
+
 module.exports = router;
