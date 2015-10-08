@@ -7,6 +7,8 @@ var Q = require( 'q' );
 var env = process.env.NODE_ENV || 'development';
 var config    = require( '../../config/config' )[ env ];
 var apiRequest = require('../../factories/ekmFactory.js').makeGetRequestToApi;
+var geocoder = require( 'node-geocoder' )( 'google', 'https', { apiKey: config.googleApiKey, formatter: null } );
+var greatCircleDistance = require( '../../factories/distanceFactory.js' ).getDistanceFromLatLonInMiles;
 
 module.exports = exports = {
   getBrokenPlugs: function ( req, res ) {
@@ -52,6 +54,70 @@ module.exports = exports = {
             }
           });
           res.send( broken );
+        }
+      });
+    })
+    .catch(function( error ) {
+      res.status( 500 ).send( error );
+    });
+  },
+  getStationsWithoutCoordinates: function( req, res ) {
+    station.findAll( { where: { location_gps: { $ne: null } } } )
+    .then(function( stations ) {
+      res.send( stations );
+    })
+    .catch(function( error ) {
+      res.status( 500 ).send( 500 );
+    });
+  },
+  getMismatchedStationCoordinates: function( req, res ) {
+    var mismatched = [];
+    // get all the stations
+    station.findAll( { where: { location_gps: { $ne: null } } } )
+    .then(function( stationsWithCoordinates ) {
+      var addressCache = {
+        // address: [ coordinates ]
+      };
+
+      var time = 0;
+      // go through all of the stations
+      async.each( stationsWithCoordinates, function( station, cb ) {
+        // check if we've cached the GPS coordinates for that station
+        if ( addressCache[ station.location_address ] === undefined ) {
+          // check the station's geocode against the saved coordinates on the model
+          // use geocoder service
+          time += 1000;
+          setTimeout(function() {
+            geocoder.geocode( station.location_address )
+            .then(function( gpx ) {
+              // add to cache
+              addressCache[ station.location_address ] = [ gpx[ 0 ].latitude, gpx[ 0 ].longitude ];
+              cb( null );
+            })
+            .catch(function( error ) {
+              cb( error );
+            });
+          }, time);
+        } else {
+          cb( null );
+        }
+      }, function( error ) {
+        // end of each loop
+        if ( error ) {
+          throw error;
+        } else {
+          // loop over address cache
+          for ( var i = 0; i < stationsWithCoordinates.length; i++ ) {
+            var station = stationsWithCoordinates[ i ];
+            // check the station's geocode against the saved coordinates on the model
+            if ( greatCircleDistance( addressCache[ station.location_address ], station.location_gps ) > 1 ) {
+              console.log( 'mismtached', greatCircleDistance( addressCache[ station.location_address ], station.location_gps ) );
+              console.log( 'mismtached lat long', addressCache[ station.location_address ], station.location_gps );
+              mismatched.push( station );
+            }
+          }
+
+          res.send( mismatched );
         }
       });
     })
