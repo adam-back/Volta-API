@@ -111,8 +111,6 @@ module.exports = exports = {
             var station = stationsWithCoordinates[ i ];
             // check the station's geocode against the saved coordinates on the model
             if ( greatCircleDistance( addressCache[ station.location_address ], station.location_gps ) > 1 ) {
-              console.log( 'mismtached', greatCircleDistance( addressCache[ station.location_address ], station.location_gps ) );
-              console.log( 'mismtached lat long', addressCache[ station.location_address ], station.location_gps );
               mismatched.push( station );
             }
           }
