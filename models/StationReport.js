@@ -16,7 +16,8 @@ module.exports = function( sequelize, DataTypes ) {
     station_number: DataTypes.INTEGER,
     callback_number: DataTypes.STRING,
     name: DataTypes.STRING,
-    picture_path: DataTypes.STRING
+    picture_path: DataTypes.STRING,
+    email: DataTypes.STRING
   }, { 'underscored': true } );
 
   return station_report;
