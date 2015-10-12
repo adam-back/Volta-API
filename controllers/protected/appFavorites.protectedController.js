@@ -178,8 +178,7 @@ module.exports = exports = {
 
                   if ( appSponsors && appSponsors.length > 0 ) {
                     for ( var i = 0; i < appSponsors.length; i++ ) {
-                      // uncomment this line Oct. 1 for Chevy
-                      // plainStation.app_sponsors.push( appSponsors[ i ].get( { plain: true } ) );
+                      plainStation.app_sponsors.push( appSponsors[ i ].get( { plain: true } ) );
                     }
                   }
 
