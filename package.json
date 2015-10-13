@@ -13,6 +13,7 @@
     "express-jwt": "^3.0.1",
     "express-sanitizer": "^0.1.1",
     "jade": "^1.9.2",
+    "json2csv": "^2.12.0",
     "jsonwebtoken": "^5.0.5",
     "morgan": "^1.5.2",
     "node-geocoder": "^2.21.2",

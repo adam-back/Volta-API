@@ -9,6 +9,7 @@ var config    = require( '../../config/config' )[ env ];
 var apiRequest = require('../../factories/ekmFactory.js').makeGetRequestToApi;
 var geocoder = require( 'node-geocoder' )( 'google', 'https', { apiKey: config.googleApiKey, formatter: null } );
 var greatCircleDistance = require( '../../factories/distanceFactory.js' ).getDistanceFromLatLonInMiles;
+var json2csv = require( 'json2csv' );
 
 module.exports = exports = {
   getBrokenPlugs: function ( req, res ) {
@@ -71,9 +72,24 @@ module.exports = exports = {
     });
   },
   getStationsWithoutCoordinates: function( req, res ) {
+    var type = req.params.output;
+
     station.findAll( { where: { location_gps: null }, order: 'kin ASC' } )
     .then(function( stations ) {
-      res.send( stations );
+      if ( type === 'Web' ) {
+        res.send( stations );
+      } else if ( type === 'CSV' ) {
+        var fields = [ 'kin', 'location', 'location_address', 'network' ];
+        var fieldNames = [ 'KIN', 'Location', 'Address', 'Network' ];
+
+        json2csv({ data: stations, fields: fields, fieldNames: fieldNames }, function( err, csv ) {
+          if ( err )  {
+            throw err;
+          } else {
+            res.send( csv );
+          }
+        });
+      }
     })
     .catch(function( error ) {
       res.status( 500 ).send( error );
