@@ -62,12 +62,12 @@ module.exports = exports = {
     });
   },
   getStationsWithoutCoordinates: function( req, res ) {
-    station.findAll( { where: { location_gps: { $ne: null } } } )
+    station.findAll( { where: { location_gps: null }, order: 'kin ASC' } )
     .then(function( stations ) {
       res.send( stations );
     })
     .catch(function( error ) {
-      res.status( 500 ).send( 500 );
+      res.status( 500 ).send( error );
     });
   },
   getMismatchedStationCoordinates: function( req, res ) {

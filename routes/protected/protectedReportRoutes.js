@@ -10,6 +10,10 @@ router.route( '/broken' )
 router.route( '/one/:kin' )
   .get( controller.getOneStationAnalytics );
 
+// for http://www.baseurl.com/protected/reports/withoutCoordinates
+router.route( '/withoutCoordinates' )
+  .get( controller.getStationsWithoutCoordinates );
+
 // for http://www.baseurl.com/protected/reports/wrongCoordinates
 router.route( '/wrongCoordinates' )
   .get( controller.getMismatchedStationCoordinates );
