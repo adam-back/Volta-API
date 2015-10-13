@@ -25,7 +25,8 @@ module.exports = exports = {
           network: null,
           ekm_omnimeter_serial: plug.ekm_omnimeter_serial,
           ekm_push_mac: null,
-          number_on_station: plug.number_on_station
+          number_on_station: plug.number_on_station,
+          ekm_url: 'http://io.ekmpush.com/readMeter/'
         };
         // get the station
         station.find( { where: { id: plug.station_id } } )
@@ -36,6 +37,14 @@ module.exports = exports = {
           data.network = stationAssociatedWithPlug.network;
           data.ekm_push_mac = stationAssociatedWithPlug.ekm_push_mac;
 
+          if( plug.ekm_omnimeter_serial.match( /3[0]{1}[0-9]{7}|3[0]{2}[0-9]{6}|3[0]{3}[0-9]{5}|3[0]{4}[0-9]{4}|3[0]{5}[0-9]{3}|3[0]{6}[0-9]{2}|3[0]{7}[0-9]{1}|3[0]{8}/ ) ) {
+            //version 4
+            data.ekm_url += 'v4';
+          } else {
+            //version 3
+            data.ekm_url += 'v3';
+          }
+          data.ekm_url += '/key/' + config.ekmApiKey + '/count/10/format/html/meters/' + plug.ekm_omnimeter_serial;
           broken.push( data );
           cb( null );
         })
