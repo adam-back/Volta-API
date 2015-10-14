@@ -9,10 +9,12 @@ var config    = require( '../../config/config' )[ env ];
 var apiRequest = require('../../factories/ekmFactory.js').makeGetRequestToApi;
 var geocoder = require( 'node-geocoder' )( 'google', 'https', { apiKey: config.googleApiKey, formatter: null } );
 var greatCircleDistance = require( '../../factories/distanceFactory.js' ).getDistanceFromLatLonInMiles;
-var json2csv = require( 'json2csv' );
+var generateCSV = require( '../../factories/csvFactory' ).generateCSV;
 
 module.exports = exports = {
   getBrokenPlugs: function ( req, res ) {
+    var type = req.params.output;
+
     var broken = [];
     // find all the plugs where there is an omnimeter and the meter status is error
     plug.findAll( { where: { meter_status: 'error', ekm_omnimeter_serial: { $ne: null } } } )
@@ -56,14 +58,27 @@ module.exports = exports = {
         if ( error ) {
           throw Error( error );
         } else {
-          broken.sort(function( a, b ) {
-            if ( a.kin.toLowerCase() < b.kin.toLowerCase() ) {
-              return -1;
-            } else {
-              return 1;
-            }
-          });
-          res.send( broken );
+          if ( type === 'Web' ) {
+            broken.sort(function( a, b ) {
+              if ( a.kin.toLowerCase() < b.kin.toLowerCase() ) {
+                return -1;
+              } else {
+                return 1;
+              }
+            });
+            res.send( broken );
+          } else if ( type === 'CSV' ) {
+            var fields = [ 'kin', 'location', 'location_address', 'network', 'ekm_omnimeter_serial', 'ekm_push_mac', 'number_on_station', 'ekm_url' ];
+            var fieldNames = [ 'KIN', 'Location', 'Address', 'Network', 'Omnimeter S/N', 'Push MAC', 'Plug #', 'EKM Url' ];
+
+            generateCSV( broken, fields, fieldNames )
+            .then(function( csv ) {
+              res.send( csv );
+            })
+            .catch(function( error ) {
+              throw error;
+            });
+          }
         }
       });
     })
@@ -82,23 +97,22 @@ module.exports = exports = {
         var fields = [ 'kin', 'location', 'location_address', 'network' ];
         var fieldNames = [ 'KIN', 'Location', 'Address', 'Network' ];
 
-        json2csv({ data: stations, fields: fields, fieldNames: fieldNames }, function( err, csv ) {
-          if ( err )  {
-            throw err;
-          } else {
-            res.send( csv );
-          }
-        });
+        return generateCSV( stations, fields, fieldNames );
       }
+    })
+    .then(function( csv ) {
+      res.send( csv );
     })
     .catch(function( error ) {
       res.status( 500 ).send( error );
     });
   },
   getMismatchedStationCoordinates: function( req, res ) {
+    var type = req.params.output;
+
     var mismatched = [];
     // get all the stations
-    station.findAll( { where: { location_gps: { $ne: null } } } )
+    station.findAll( { where: { location_gps: { $ne: null } }, attributes: [ 'kin', 'location', 'location_address', 'location_gps', 'network' ] } )
     .then(function( stationsWithCoordinates ) {
       var addressCache = {
         // address: [ coordinates ]
@@ -135,12 +149,29 @@ module.exports = exports = {
           for ( var i = 0; i < stationsWithCoordinates.length; i++ ) {
             var station = stationsWithCoordinates[ i ];
             // check the station's geocode against the saved coordinates on the model
-            if ( greatCircleDistance( addressCache[ station.location_address ], station.location_gps ) > 1 ) {
-              mismatched.push( station );
+            var distance = greatCircleDistance( addressCache[ station.location_address ], station.location_gps );
+            if (  distance > 1 ) {
+              var plain = station.get( { plain: true } );
+              plain.distance = distance;
+              plain.location_gps = plain.location_gps.toString();
+              mismatched.push( plain );
             }
           }
 
-          res.send( mismatched );
+          if ( type === 'Web' ) {
+            res.send( mismatched );
+          } else if ( type === 'CSV' ) {
+            var fields = [ 'kin', 'location', 'location_address', 'location_gps', 'network', 'distance' ];
+            var fieldNames = [ 'KIN', 'Location', 'Address', 'Network', 'GPS Coordinates', 'Difference (mi.)' ];
+
+            generateCSV( mismatched, fields, fieldNames )
+            .then(function( csv ) {
+              res.send( csv );
+            })
+            .catch(function( error ) {
+              throw error;
+            });
+          }
         }
       });
     })
@@ -148,6 +179,8 @@ module.exports = exports = {
       res.status( 500 ).send( error );
     });
   },
+
+  // not complete
   getOneStationAnalytics: function (req, res) {
     var returnData = {
       kin: null,
