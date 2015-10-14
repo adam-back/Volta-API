@@ -17,7 +17,9 @@ module.exports = function( sequelize, DataTypes ) {
 		order: DataTypes.INTEGER,
 		start: DataTypes.DATE,
 		end: DataTypes.DATE,
-		current: DataTypes.BOOLEAN
+		current: DataTypes.BOOLEAN,
+		banner_click_url: DataTypes.STRING,
+		logo_click_url: DataTypes.STRING
 	}, { underscored: true } );
 
 	return app_sponsor;

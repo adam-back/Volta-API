@@ -51,8 +51,7 @@ var connectStationsWithPlugsAndSponsors = function( stations ) {
 
         if ( appSponsors && appSponsors.length > 0 ) {
           for ( var i = 0; i < appSponsors.length; i++ ) {
-            // Uncomment the line below on Oct. 1st (embargo)
-            // plainStation.app_sponsors.push( appSponsors[ i ].get( { plain: true } ) );
+            plainStation.app_sponsors.push( appSponsors[ i ].get( { plain: true } ) );
           }
         }
 
