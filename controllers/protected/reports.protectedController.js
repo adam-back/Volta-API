@@ -161,8 +161,8 @@ module.exports = exports = {
           if ( type === 'Web' ) {
             res.send( mismatched );
           } else if ( type === 'CSV' ) {
-            var fields = [ 'kin', 'location', 'location_address', 'location_gps', 'network', 'distance' ];
-            var fieldNames = [ 'KIN', 'Location', 'Address', 'Network', 'GPS Coordinates', 'Difference (mi.)' ];
+            var fields = [ 'kin', 'location', 'network', 'location_address', 'location_gps', 'distance' ];
+            var fieldNames = [ 'KIN', 'Location', 'Network', 'Address', 'GPS Coordinates', 'Difference (mi.)' ];
 
             generateCSV( mismatched, fields, fieldNames )
             .then(function( csv ) {
