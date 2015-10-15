@@ -39,6 +39,10 @@ There are public and private endpoints. Private endpoints may only be accessed w
 **GET /stations**
 Serves all the stations currently in the database.
 
+**GET /stations/:kin**
+Kill switch - DO NOT CHANGE!
+Get the kill switch status based on kin.
+
 **PUT /stations/:kin**
 Kill switch - DO NOT CHANGE!
 Update the kill switch status based on kin.
@@ -51,8 +55,18 @@ Serves all the plugs currently in the database, collected into a JSON object by 
 **POST /stationReport**
 Receives and saves a station_report. Responds with 204 No Content.
 
+#### Station Schedules
+**GET /stationSchedule**
+Gets all stations' schedules.
+
+**GET /stationSchedule/:kin**
+Gets one station's schedule.
+
+**PUT /stationSchedule/:kin**
+Sets one station's schedule.
+
 ### Private
-All private endpoints are prepended with `/protected/`.
+All private endpoints are prepended with `/protected/` and are checked by JWT.
 
 #### Stations
 **/protected/station**
@@ -65,12 +79,18 @@ Add station to the database.
 *PATCH*
 Update a station.
 
+**GET /protected/station/count**
+Count the number of stations in the system.
+
 **/protected/station/:kin**
 *GET*
 Serves one station based on the kin.
 
 *DELETE*
 Delete station to the database with a given kin. Also deletes associated plugs.
+
+*PUT*
+Set one station's kill switch status based on the kin.
 
 #### Network
 **GET protected/station/network/top10**
@@ -144,10 +164,59 @@ Get one plug based on plug id.
 *DELETE*
 Delete one plug based on plug id.
 
-####App
+#### App
 Endpoints for the Android and iOS apps.
 
-**GET protected/reports/broken**
+**GET protected/app/stations**
+Collects the stations and plugs in a format easily displayed by the Ionic app. Also takes a querystring of the user's location to estimate distance.
+
+**POST protected/app/stationReport**
+Save a user-submitted report, comment, or suggestion.
+
+**GET protected/app/sponsors**
+Get the sponsors for the sponsorship page.
+
+#### App User
+**POST protected/app/user/create**
+Creates a user with email address and password. No other info is collected at this time.
+
+**POST protected/app/user/authenticate**
+Takes user credentials, authenticates if possible, returning a JWT.
+
+**POST protected/app/user/resetPassword**
+Verifies that there is user in the system, returning email and id to App-Server so that it may send a reset email.
+
+**PATCH protected/app/user/resetPassword**
+Takes direct input from App-Server to set new password for user.
+
+#### App Favorites
+**protected/app/favorites**
+*GET*
+Uses the id in the querystring to find a user's favorited stations.
+
+*POST*
+Adds a station to the user's favorites.
+
+*PATCH*
+Removes a station from the user's favorite. Did not use DELETE, because we're not deleting a resource, just modifying a list.
+
+#### Reports
+**GET**
+*protected/reports/dashboard*
+Get data for the Station-Manager dashboard, including:
+- Cumulative kWh
+  - Number of trees
+  - Carbon offset
+  - Number of miles
+  - Number of gallons of gas
+- Number of charge events
+- Last 10 charge events
+- Graph data for:
+  - Broken stations
+  - In-use stations
+  - Stations without GPS coordinates
+
+*protected/reports/broken/:output*
 Returns and array of plugs and their associated stations which currently have meter_status of 'error'. Fields:
 - kin
 - location
@@ -156,6 +225,17 @@ Returns and array of plugs and their associated stations which currently have me
 - ekm_omnimeter_serial
 - ekm_push_mac
 - number_on_station
+
+Can return for web display or as CSV.
+
+*protected/reports/one/:kin*
+In-progress. Will return report data for one station.
+
+*protected/reports/withoutCoordiates/:output*
+Returns the stations without GPS coordinates for web display or as CSV.
+
+*protected/reports/wrongCoordinates/:output*
+Gets the stations with GPS coordinates, then runs the stations' addresses through the Google geocode API. It then compares the save coordinates with what Google thinks they should be, throwing a flag on anything that has more than one mile difference. Returns for web display or csv.
 
 ## Stack
 
@@ -173,18 +253,14 @@ Returns and array of plugs and their associated stations which currently have me
 ### Configure
 Run `npm install`.
 
-Create a file in the root directory called `private.js`. This should include:
-```javascript
-module.exports = {
-  APIkey: // your key
-};
- ```
 
 Create a local PostgreSQL database using with the name `volta`. Fill the 'development' object in `config/config.js` with your own information:
 ```javascript
 // change these
 'username': 'someRootUsername',
 'password': 'yourLocalDBPW',
+'googleApiKey': 'dev google api server key',
+'ekmApiKey': 'our EKM key'
 // these stay the same
 'database': 'volta',
 'host': '127.0.0.1',
@@ -192,6 +268,7 @@ Create a local PostgreSQL database using with the name `volta`. Fill the 'develo
 'port': 5432,
 'secret': 'iamallama',
 'issuer': 'seniorllama'
+'appSecret': 'notsosecret',
 ```
 
 ### Starting the server
@@ -217,7 +294,8 @@ First, create a remote database. Currently, the database is a Amazon RDS Postgre
 The server itself has been successfully deployed on AWS, Heroku, and Azure. It connects to the remote database with environmental variables:
 
 - NODE_ENV = production
-- APIkey = EKM API key
+- EKM_API_KEY = ekm key
+- GOOGLE_API_KEY = server-side key
 
 From RDS:
 - DB_USERNAME = Master username
@@ -238,4 +316,6 @@ Your own, matching Auth-API:
 These should match the authentication API's values.
 - JWT_SECRET = JSON web token secret string
 - JWT_ISSUER = JWT `iss` field to match
+
+- APP_JWT_SECRET = JWT web token secret string for requests from App-Server
 
