@@ -254,7 +254,7 @@ module.exports = exports = {
         .catch(function( error ) {
           cb( error );
         });
-      } function( error ) {
+      }, function( error ) {
         if ( error ) {
           throw error;
         } else {
