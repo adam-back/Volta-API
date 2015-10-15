@@ -155,12 +155,12 @@ module.exports = exports = {
         labels: [ 'Needs Coordinates', 'Has Coordinates' ],
         data: []
       },
-
       cumulative: {
         total: 0,
         calcs: {}
       },
-      recentCharges: []
+      recentCharges: [],
+      brokenStations: []
     };
 
     var saveData = function( key, total, subtract ) {
@@ -198,6 +198,10 @@ module.exports = exports = {
     })
     .then(function( numberOfChargeEvents ) {
       data.cumulative.calcs.events = numberOfChargeEvents;
+      return helper.getBrokenPlugs();
+    })
+    .then(function( brokenStuff ) {
+      data.brokenStations = brokenStuff;
       return charge_event.findAll( { order: 'id DESC', limit: 10, attributes: [ 'time_start', 'id', 'station_id', 'plug_id' ] } );
     })
     .then(function( lastTenEvents ) {
