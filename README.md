@@ -173,18 +173,14 @@ Returns and array of plugs and their associated stations which currently have me
 ### Configure
 Run `npm install`.
 
-Create a file in the root directory called `private.js`. This should include:
-```javascript
-module.exports = {
-  APIkey: // your key
-};
- ```
 
 Create a local PostgreSQL database using with the name `volta`. Fill the 'development' object in `config/config.js` with your own information:
 ```javascript
 // change these
 'username': 'someRootUsername',
 'password': 'yourLocalDBPW',
+'googleApiKey': 'dev google api server key',
+'ekmApiKey': 'our EKM key'
 // these stay the same
 'database': 'volta',
 'host': '127.0.0.1',
@@ -192,6 +188,7 @@ Create a local PostgreSQL database using with the name `volta`. Fill the 'develo
 'port': 5432,
 'secret': 'iamallama',
 'issuer': 'seniorllama'
+'appSecret': 'notsosecret',
 ```
 
 ### Starting the server
@@ -217,7 +214,8 @@ First, create a remote database. Currently, the database is a Amazon RDS Postgre
 The server itself has been successfully deployed on AWS, Heroku, and Azure. It connects to the remote database with environmental variables:
 
 - NODE_ENV = production
-- APIkey = EKM API key
+- EKM_API_KEY = ekm key
+- GOOGLE_API_KEY = server-side key
 
 From RDS:
 - DB_USERNAME = Master username
@@ -238,4 +236,6 @@ Your own, matching Auth-API:
 These should match the authentication API's values.
 - JWT_SECRET = JSON web token secret string
 - JWT_ISSUER = JWT `iss` field to match
+
+- APP_JWT_SECRET = JWT web token secret string for requests from App-Server
 
