@@ -10,6 +10,8 @@ var apiRequest = require('../../factories/ekmFactory.js').makeGetRequestToApi;
 var geocoder = require( 'node-geocoder' )( 'google', 'https', { apiKey: config.googleApiKey, formatter: null } );
 var greatCircleDistance = require( '../../factories/distanceFactory.js' ).getDistanceFromLatLonInMiles;
 var generateCSV = require( '../../factories/csvFactory' ).generateCSV;
+var moment = require( 'moment-timezone' );
+moment().tz( "America/Los_Angeles" ).format();
 
 module.exports = exports = {
   getBrokenPlugs: function ( req, res ) {
@@ -178,6 +180,95 @@ module.exports = exports = {
     .catch(function( error ) {
       res.status( 500 ).send( error );
     });
+  },
+  getDashboardData: function( req, res ) {
+    var data = {
+      broken: {
+        labels: [ 'Error', 'OK' ],
+        data: []
+      },
+      currentUsage: {
+        labels: [ 'In Use', 'Available' ],
+        data: []
+      },
+      needMeter: {
+        labels: [ 'Needs Meter', 'Metered' ],
+        data: []
+      },
+      needGPS: {
+        labels: [ 'Needs Coordinates', 'Has Coordinates' ],
+        data: []
+      },
+
+      cumulative: 0,
+      recentCharges: []
+    };
+
+    var saveData = function( key, total, subtract ) {
+      data[ key ].data[ 0 ] = subtract;
+      data[ key ].data[ 1 ] = total - subtract;
+    };
+
+    plug.count()
+    .then(function( totalPlugs ) {
+      return plug.count( { where: { meter_status: 'error', ekm_omnimeter_serial: { $ne: null } } } )
+      .then(function( errorPlugs ) {
+        saveData( 'broken', totalPlugs, errorPlugs );
+        return plug.count( { where: { in_use: true } } );
+      })
+      .then(function( inUsePlugs ) {
+        saveData( 'currentUsage', totalPlugs, inUsePlugs );
+        return station.count();
+      });
+    })
+    .then(function( totalStations ) {
+      return station.count( { where: { in_use: null } } )
+      .then(function( numberOfUnmeteredStations ) {
+        saveData( 'needMeter', totalStations, numberOfUnmeteredStations );
+        return station.count( { where: { location_gps: null } } );
+      })
+      .then(function( stationsWithCoordinates ) {
+        saveData( 'needGPS', totalStations, stationsWithCoordinates );
+        return station.sum( 'cumulative_kwh' );
+      });
+    })
+    .then(function( summativeKwh ) {
+      data.cumulative = summativeKwh;
+      return charge_event.findAll( { order: 'id DESC', limit: 10, attributes: [ 'time_start', 'id' ] } );
+    })
+    .then(function( lastTenEvents ) {
+      async.each(lastTenEvents, function( charge, cb ) {
+        var plainCharge = charge.get( { plain: true } );
+        plainCharge.time_start = moment( charge.time_start ).format( 'h mm A');
+        charge.getStation()
+        .then(function( station ) {
+          plainCharge.kin = station.kin;
+          plainCharge.location_address = station.location_address;
+          return charge.getPlug();
+        })
+        .then(function( plug ) {
+          plainCharge.ekm_omnimeter_serial = plug.ekm_omnimeter_serial;
+          data.recentCharges.push( plainCharge );
+          cb( null );
+        })
+        .catch(function( error ) {
+          cb( error );
+        });
+      } function( error ) {
+        if ( error ) {
+          throw error;
+        } else {
+          data.recentCharges.sort(function( a, b ) {
+            return b.id - a.id;
+          });
+          res.send( data );
+        }
+      });
+    })
+    .catch(function( error ) {
+      res.status( 500 ).send( error );
+    })
+
   },
 
   // not complete
