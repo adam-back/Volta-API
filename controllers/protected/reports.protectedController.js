@@ -6,10 +6,11 @@ var async     = require( 'async' );
 var Q = require( 'q' );
 var env = process.env.NODE_ENV || 'development';
 var config    = require( '../../config/config' )[ env ];
-var apiRequest = require('../../factories/ekmFactory.js').makeGetRequestToApi;
+var ekm = require('../../factories/ekmFactory.js');
 var geocoder = require( 'node-geocoder' )( 'google', 'https', { apiKey: config.googleApiKey, formatter: null } );
 var greatCircleDistance = require( '../../factories/distanceFactory.js' ).getDistanceFromLatLonInMiles;
 var generateCSV = require( '../../factories/csvFactory' ).generateCSV;
+var helper = require( '../../factories/reportHelpers' );
 var moment = require( 'moment-timezone' );
 moment().tz( "America/Los_Angeles" ).format();
 
@@ -31,7 +32,7 @@ module.exports = exports = {
           ekm_omnimeter_serial: plug.ekm_omnimeter_serial,
           ekm_push_mac: null,
           number_on_station: plug.number_on_station,
-          ekm_url: 'http://io.ekmpush.com/readMeter/'
+          ekm_url: null
         };
         // get the station
         station.find( { where: { id: plug.station_id } } )
@@ -41,15 +42,8 @@ module.exports = exports = {
           data.location_address = stationAssociatedWithPlug.location_address;
           data.network = stationAssociatedWithPlug.network;
           data.ekm_push_mac = stationAssociatedWithPlug.ekm_push_mac;
+          data.ekm_url = ekm.makeMeterUrl( plug.ekm_omnimeter_serial );
 
-          if( plug.ekm_omnimeter_serial.match( /3[0]{1}[0-9]{7}|3[0]{2}[0-9]{6}|3[0]{3}[0-9]{5}|3[0]{4}[0-9]{4}|3[0]{5}[0-9]{3}|3[0]{6}[0-9]{2}|3[0]{7}[0-9]{1}|3[0]{8}/ ) ) {
-            //version 4
-            data.ekm_url += 'v4';
-          } else {
-            //version 3
-            data.ekm_url += 'v3';
-          }
-          data.ekm_url += '/key/' + config.ekmApiKey + '/count/10/format/html/meters/' + plug.ekm_omnimeter_serial;
           broken.push( data );
           cb( null );
         })
@@ -200,7 +194,10 @@ module.exports = exports = {
         data: []
       },
 
-      cumulative: 0,
+      cumulative: {
+        total: 0,
+        calcs: {}
+      },
       recentCharges: []
     };
 
@@ -233,21 +230,28 @@ module.exports = exports = {
       });
     })
     .then(function( summativeKwh ) {
-      data.cumulative = summativeKwh;
-      return charge_event.findAll( { order: 'id DESC', limit: 10, attributes: [ 'time_start', 'id' ] } );
+      data.cumulative.total = summativeKwh;
+      data.cumulative.calcs = helper.convertKwhToConsumerEquivalents( summativeKwh );
+      return charge_event.count();
+    })
+    .then(function( numberOfChargeEvents ) {
+      data.cumulative.calcs.events = numberOfChargeEvents;
+      return charge_event.findAll( { order: 'id DESC', limit: 10, attributes: [ 'time_start', 'id', 'station_id', 'plug_id' ] } );
     })
     .then(function( lastTenEvents ) {
       async.each(lastTenEvents, function( charge, cb ) {
         var plainCharge = charge.get( { plain: true } );
-        plainCharge.time_start = moment( charge.time_start ).format( 'h mm A');
-        charge.getStation()
+        plainCharge.time_start = moment( charge.time_start ).format( 'h:mm A');
+        station.find( { where: { id: charge.station_id } } )
         .then(function( station ) {
+          plainCharge.location = station.location;
           plainCharge.kin = station.kin;
           plainCharge.location_address = station.location_address;
-          return charge.getPlug();
+          return plug.find( { where: { id: charge.plug_id } } );
         })
         .then(function( plug ) {
           plainCharge.ekm_omnimeter_serial = plug.ekm_omnimeter_serial;
+          plainCharge.ekm_link = ekm.makeMeterUrl( plug.ekm_omnimeter_serial );
           data.recentCharges.push( plainCharge );
           cb( null );
         })
@@ -261,13 +265,14 @@ module.exports = exports = {
           data.recentCharges.sort(function( a, b ) {
             return b.id - a.id;
           });
+
           res.send( data );
         }
       });
     })
     .catch(function( error ) {
       res.status( 500 ).send( error );
-    })
+    });
 
   },
 
@@ -317,14 +322,14 @@ module.exports = exports = {
       var kwh = 0;
       if ( Array.isArray( plugs ) && plugs.length > 0 ) {
         async.each(plugs, function ( plug, cb ) {
-          apiRequest("http://io.ekmpush.com/readMeter/v3/key/" + config.ekmApiKey + "/count/1/format/json/meters/" + plug.ekm_omnimeter_serial)
+          ekm.makeGetRequestToApi("http://io.ekmpush.com/readMeter/v3/key/" + config.ekmApiKey + "/count/1/format/json/meters/" + plug.ekm_omnimeter_serial)
           .then(function( data ) {
             khw += data.readMeter.ReadSet[ 0 ].ReadData[ 0 ].kWh_Tot;
             cb(null);
           })
           .catch(function( error ) {
             cb(error);
-          })
+          });
         }, function (error) {
           if ( error ) {
             throw error;
@@ -338,7 +343,7 @@ module.exports = exports = {
             returnData.miles = Math.round( 10 * ( kwh * 5.44 ) ) / 10;
             res.send( returnData );
           }
-        })
+        });
       } else {
         res.status( 404 ).send();
       }
@@ -348,20 +353,3 @@ module.exports = exports = {
     });
   }
 };
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
