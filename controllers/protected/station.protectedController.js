@@ -4,6 +4,15 @@ var express = require( 'express' );
 var async     = require( 'async' );
 
 module.exports = exports = {
+  countStations: function ( req, res ) {
+    station.count()
+    .then(function( number ) {
+      res.json( number );
+    })
+    .catch(function( error ) {
+      res.status( 500 ).send( error );
+    });
+  },
   getAllStations: function ( req, res ) {
     // query database for all rows of stations
     station.findAll()
