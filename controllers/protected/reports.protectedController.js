@@ -18,65 +18,27 @@ module.exports = exports = {
   getBrokenPlugs: function ( req, res ) {
     var type = req.params.output;
 
-    var broken = [];
-    // find all the plugs where there is an omnimeter and the meter status is error
-    plug.findAll( { where: { meter_status: 'error', ekm_omnimeter_serial: { $ne: null } } } )
-    .then(function( plugs ) {
-      //for each one of the plugs
-      async.each(plugs, function( plug, cb ) {
-        var data = {
-          kin: null,
-          location: null,
-          location_address: null,
-          network: null,
-          ekm_omnimeter_serial: plug.ekm_omnimeter_serial,
-          ekm_push_mac: null,
-          number_on_station: plug.number_on_station,
-          ekm_url: null
-        };
-        // get the station
-        station.find( { where: { id: plug.station_id } } )
-        .then(function( stationAssociatedWithPlug ) {
-          data.kin = stationAssociatedWithPlug.kin;
-          data.location = stationAssociatedWithPlug.location;
-          data.location_address = stationAssociatedWithPlug.location_address;
-          data.network = stationAssociatedWithPlug.network;
-          data.ekm_push_mac = stationAssociatedWithPlug.ekm_push_mac;
-          data.ekm_url = ekm.makeMeterUrl( plug.ekm_omnimeter_serial );
-
-          broken.push( data );
-          cb( null );
-        })
-        .catch(function( error ) {
-          cb( error );
-        });
-      }, function( error ) {
-        if ( error ) {
-          throw Error( error );
-        } else {
-          if ( type === 'Web' ) {
-            broken.sort(function( a, b ) {
-              if ( a.kin.toLowerCase() < b.kin.toLowerCase() ) {
-                return -1;
-              } else {
-                return 1;
-              }
-            });
-            res.send( broken );
-          } else if ( type === 'CSV' ) {
-            var fields = [ 'kin', 'location', 'location_address', 'network', 'ekm_omnimeter_serial', 'ekm_push_mac', 'number_on_station', 'ekm_url' ];
-            var fieldNames = [ 'KIN', 'Location', 'Address', 'Network', 'Omnimeter S/N', 'Push MAC', 'Plug #', 'EKM Url' ];
-
-            generateCSV( broken, fields, fieldNames )
-            .then(function( csv ) {
-              res.send( csv );
-            })
-            .catch(function( error ) {
-              throw error;
-            });
+    helper.getBrokenPlugs()
+    .then(function( broken ) {
+      if ( type === 'Web' ) {
+        broken.sort(function( a, b ) {
+          if ( a.kin.toLowerCase() < b.kin.toLowerCase() ) {
+            return -1;
+          } else {
+            return 1;
           }
-        }
-      });
+        });
+
+        return broken;
+      } else if ( type === 'CSV' ) {
+        var fields = [ 'kin', 'location', 'location_address', 'network', 'ekm_omnimeter_serial', 'ekm_push_mac', 'number_on_station', 'ekm_url' ];
+        var fieldNames = [ 'KIN', 'Location', 'Address', 'Network', 'Omnimeter S/N', 'Push MAC', 'Plug #', 'EKM Url' ];
+
+        return generateCSV( broken, fields, fieldNames );
+      }
+    })
+    .then(function( formattedReturn ) {
+      res.send( formattedReturn );
     })
     .catch(function( error ) {
       res.status( 500 ).send( error );

@@ -1,4 +1,9 @@
 var moment = require( 'moment' );
+var Q = require( 'q' );
+var station = require( '../models').station;
+var plug = require( '../models').plug;
+var async     = require( 'async' );
+var ekm = require( './ekmFactory.js' );
 
 exports.findMedian = function( collection ) {
   collection.sort(function( a, b ) {
@@ -87,4 +92,54 @@ exports.countChargesAndDuration = function( chargeEvents ) {
   data.medianDurationOfEvent = exports.findMedian( chargeDurations );
 
   return true;
+};
+
+exports.getBrokenPlugs = function () {
+  var deferred = Q.defer();
+  var broken = [];
+
+  // find all the plugs where there is an omnimeter and the meter status is error
+  plug.findAll( { where: { meter_status: 'error', ekm_omnimeter_serial: { $ne: null } } } )
+  .then(function( plugs ) {
+    //for each one of the plugs
+    async.each(plugs, function( plug, cb ) {
+      var data = {
+        kin: null,
+        location: null,
+        location_address: null,
+        network: null,
+        ekm_omnimeter_serial: plug.ekm_omnimeter_serial,
+        ekm_push_mac: null,
+        number_on_station: plug.number_on_station,
+        ekm_url: null
+      };
+      // get the station
+      station.find( { where: { id: plug.station_id } } )
+      .then(function( stationAssociatedWithPlug ) {
+        data.kin = stationAssociatedWithPlug.kin;
+        data.location = stationAssociatedWithPlug.location;
+        data.location_address = stationAssociatedWithPlug.location_address;
+        data.network = stationAssociatedWithPlug.network;
+        data.ekm_push_mac = stationAssociatedWithPlug.ekm_push_mac;
+        data.ekm_url = ekm.makeMeterUrl( plug.ekm_omnimeter_serial );
+
+        broken.push( data );
+        cb( null );
+      })
+      .catch(function( error ) {
+        cb( error );
+      });
+    }, function( error ) {
+      if ( error ) {
+        throw error;
+      } else {
+        deferred.resolve( broken );
+      }
+    });
+  })
+  .catch(function( error ) {
+    deferred.reject( error );
+  });
+
+  return deferred.promise;
 };
