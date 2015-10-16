@@ -11,8 +11,6 @@ var geocoder = require( 'node-geocoder' )( 'google', 'https', { apiKey: config.g
 var greatCircleDistance = require( '../../factories/distanceFactory.js' ).getDistanceFromLatLonInMiles;
 var generateCSV = require( '../../factories/csvFactory' ).generateCSV;
 var helper = require( '../../factories/reportHelpers' );
-var moment = require( 'moment-timezone' );
-moment().tz( "America/Los_Angeles" ).format();
 
 module.exports = exports = {
   getBrokenPlugs: function ( req, res ) {
@@ -207,7 +205,7 @@ module.exports = exports = {
     .then(function( lastTenEvents ) {
       async.each(lastTenEvents, function( charge, cb ) {
         var plainCharge = charge.get( { plain: true } );
-        plainCharge.time_start = moment( charge.time_start ).format( 'h:mm A');
+        plainCharge.time_start = charge.time_start );
         station.find( { where: { id: charge.station_id } } )
         .then(function( station ) {
           plainCharge.location = station.location;
