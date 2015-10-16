@@ -205,7 +205,7 @@ module.exports = exports = {
     .then(function( lastTenEvents ) {
       async.each(lastTenEvents, function( charge, cb ) {
         var plainCharge = charge.get( { plain: true } );
-        plainCharge.time_start = charge.time_start );
+        plainCharge.time_start = charge.time_start;
         station.find( { where: { id: charge.station_id } } )
         .then(function( station ) {
           plainCharge.location = station.location;
