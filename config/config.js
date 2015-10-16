@@ -9,7 +9,8 @@ var config = {
     'secret': 'iamallama',
     'appSecret': 'notsosecret',
     'issuer': 'seniorllama',
-    'googleApiKey': null
+    'googleApiKey': null,
+    'ekmApiKey': null
   },
   'production': {
     'username': process.env.DB_USERNAME,
@@ -21,7 +22,8 @@ var config = {
     'secret': process.env.JWT_SECRET,
     'appSecret': process.env.APP_JWT_SECRET,
     'issuer': process.env.JWT_ISSUER,
-    'googleApiKey': process.env.GOOGLE_API_KEY
+    'googleApiKey': process.env.GOOGLE_API_KEY,
+    'ekmApiKey': process.env.EKM_API_KEY
   }
 };
 

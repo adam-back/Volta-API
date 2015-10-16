@@ -8,6 +8,10 @@ router.route( '/' )
   .post( controller.addStation )
   .patch( controller.editStation );
 
+// for http://www.baseurl.com/protected/station/count
+router.route( '/count' )
+  .get( controller.countStations );
+
 // for http://www.baseurl.com/protected/station/001-0001-001-01-K
 router.route( '/:kin' )
   .get( controller.getOneStation )
