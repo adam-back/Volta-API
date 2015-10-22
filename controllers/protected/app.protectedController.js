@@ -1,5 +1,6 @@
 var station = require( '../../models').station;
 var station_report = require( '../../models' ).station_report;
+var station_image = require( '../../models' ).station_image;
 var user = require( '../../models' ).user;
 var app_sponsor = require( '../../models' ).app_sponsor;
 var geocodeCache = require( '../../factories/geocodeCache.js' ).geocodeCache;
@@ -63,9 +64,9 @@ var connectStationsWithPlugsAndSponsors = function( stations ) {
           // create a plugs field on the station
           plainStation.plugs = [];
           // for each plug on the station
-          for ( var i = 0; i < plugs.length; i++ ) {
+          for ( var j = 0; j < plugs.length; j++ ) {
             // push the values of plug to the plugs array on station
-            plainStation.plugs[ plugs[ i ].number_on_station - 1 ] = plugs[ i ].get( { plain: true } );
+            plainStation.plugs[ plugs[ j ].number_on_station - 1 ] = plugs[ j ].get( { plain: true } );
           }
         // station not metered, no plugs
         } else {
@@ -74,7 +75,7 @@ var connectStationsWithPlugsAndSponsors = function( stations ) {
 
         stationsAndPlugs.push( plainStation );
         cb( null );
-      })
+      });
     })
     .catch(function( error ) {
       cb( error );
@@ -90,12 +91,54 @@ var connectStationsWithPlugsAndSponsors = function( stations ) {
   return deferred.promise;
 };
 
+var attachImages = function( groups ) {
+  var deferred = Q.defer();
+
+  async.forEachOf(groups, function( group, commonKin, cb ) {
+    station.find( { where: { kin: group.stations[ 0 ].kin } } )
+    .then(function( foundStation ) {
+      return foundStation.getStation_images();
+    })
+    .then(function( images ) {
+      // if there are images for this station
+      if ( images.length > 0 ) {
+        // loop through them
+        for ( var i = 0; i < images.length; i++ ) {
+          // if it's the thumbnail
+          if (  images[ i ].link.match( /thumb/ ) !== null ) {
+            groups[ commonKin ].thumbnail = images[ i ].link ;
+
+          // it's a full-size image
+          } else {
+            groups[ commonKin ].images.push( images[ i ].link );
+          }
+        }
+      }
+
+      cb( null );
+    })
+    .catch(function( error ) {
+      cb( error );
+    });
+  }, function( error ) {
+    if ( error ) {
+      deferred.reject( error );
+    } else {
+      deferred.resolve( groups );
+    }
+  });
+
+  return deferred.promise;
+};
+
 var groupByKin = function( stationsWithPlugs, userFaves ) {
   var deferred = Q.defer();
   var groupedByKin = {
       // kin: common kin,
       // location: coloquial location, eg. Serra Shopping Center,
       // address: common location_address,
+      // thumbnail: url
+      // images: [ url, url ],
       // gps: [ lat, long ],
       // ids: [],
       // app_sponsors: []
@@ -124,7 +167,10 @@ var groupByKin = function( stationsWithPlugs, userFaves ) {
       groupedByKin[ cutKin ].kin = cutKin;
       groupedByKin[ cutKin ].location = station.location;
       groupedByKin[ cutKin ].address = station.location_address;
+      groupedByKin[ cutKin ].thumbnail = null;
+      groupedByKin[ cutKin ].images = [];
       groupedByKin[ cutKin ].gps = null;
+      groupedByKin[ cutKin ].url = null;
       groupedByKin[ cutKin ].ids = [];
       groupedByKin[ cutKin ].app_sponsors = [];
       groupedByKin[ cutKin ].number_available = [ 0, 0 ];
@@ -263,18 +309,21 @@ module.exports = exports = {
       }
     })
     .then(function( groupedKin ) {
+      return attachImages( groupedKin );
+    })
+    .then(function( groupsWithImages ) {
       // count availability
 
       // add stations with GPS to ready
-      for ( var kin in groupedKin ) {
-        if ( Array.isArray( groupedKin[ kin ].gps ) ) {
-          readyForReturn.push( groupedKin[ kin ] );
+      for ( var kin in groupsWithImages ) {
+        if ( Array.isArray( groupsWithImages[ kin ].gps ) ) {
+          readyForReturn.push( groupsWithImages[ kin ] );
           // delete it so it won't get geocoded
-          delete groupedKin[ kin ];
+          delete groupsWithImages[ kin ];
         }
       }
       // send the rest to be geocoded
-      return geocodeGroupsWithoutGPS( groupedKin );
+      return geocodeGroupsWithoutGPS( groupsWithImages );
     })
     .then(function( geocoded ) {
       readyForReturn = readyForReturn.concat( geocoded );
