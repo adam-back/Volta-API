@@ -65,6 +65,17 @@ Gets one station's schedule.
 **PUT /stationSchedule/:kin**
 Sets one station's schedule.
 
+#### Station Images
+**GET /stationImages**
+NOT REALLY A GET. Normally route is commented-out to avoid duplicates. It is a helper route and should only be used to populate the database as necessary.
+
+You'll need the AWS-CLI setup with credentials on your own system.
+
+1. Gets stations from Volta's S3 bucket 'volta-mobile-assets/gallery'
+2. Adds the links for those assets to the database table 'station_image'
+3. Associates each image with the first station with that common kin
+  - For example: all the images for 001-0001-001 with be associated with 001-0001-001-01-K
+
 ### Private
 All private endpoints are prepended with `/protected/` and are checked by JWT.
 
