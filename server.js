@@ -51,7 +51,7 @@ app.use( '/stations', stationRoutes );
 app.use( '/plugs', plugRoutes );
 app.use( '/stationReport', reportRoutes );
 app.use ('/stationSchedule', scheduleRoutes);
-app.use ('/stationImages', imageRoutes);
+// app.use ('/stationImages', imageRoutes);
 
 ////
 // Authentication Required
