@@ -40,6 +40,7 @@ db.station.hasMany( db.plug );
 db.station.hasMany( db.weather_reading );
 db.station.hasMany( db.station_rating );
 db.station.hasMany( db.station_report );
+db.station.hasMany( db.station_image );
 db.station.hasMany( db.ekm_reading );
 
 db.plug.hasMany( db.charge_event );
@@ -47,6 +48,7 @@ db.plug.hasMany( db.ekm_reading );
 
 db.user.hasMany( db.station_rating );
 db.user.hasMany( db.station_report );
+db.user.hasMany( db.station_image );
 db.user.hasMany( db.charge_event );
 
 db.charge_event.hasMany( db.ekm_reading );

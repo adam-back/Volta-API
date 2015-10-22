@@ -44,12 +44,14 @@ var stationRoutes = require( './routes/public/stationRoutes' );
 var plugRoutes = require( './routes/public/plugRoutes' );
 var reportRoutes = require( './routes/public/stationReportRoutes' );
 var scheduleRoutes = require( './routes/public/scheduleRoutes' );
+var imageRoutes = require( './routes/public/stationImageRoutes' );
 
 // Routes
 app.use( '/stations', stationRoutes );
 app.use( '/plugs', plugRoutes );
 app.use( '/stationReport', reportRoutes );
 app.use ('/stationSchedule', scheduleRoutes);
+// app.use ('/stationImages', imageRoutes);
 
 ////
 // Authentication Required
