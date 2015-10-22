@@ -23,7 +23,7 @@ exports.addS3ImagesToDatabase = function() {
   var s3LinkPrefix = 'https://s3-us-west-2.amazonaws.com/volta-mobile-assets/';
 
   // get all stations
-  station.findAll()
+  station.findAll( { order: 'kin' } )
   .then(function( stations ) {
     // organize by common kin
     var commonKins = exports.groupByCommonKin( stations );
