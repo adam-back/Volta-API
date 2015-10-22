@@ -11,7 +11,7 @@ module.exports = function( sequelize, DataTypes ) {
     date_taken: DataTypes.DATE,
     location_stamp: DataTypes.ARRAY( DataTypes.DECIMAL ),
     approved: {
-      type: Sequelize.BOOLEAN,
+      type: DataTypes.BOOLEAN,
       allowNull: false,
       defaultValue: false,
     }
