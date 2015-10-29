@@ -25,7 +25,7 @@ module.exports = exports = {
     mediaSlide.findOrCreate( { where: { name: req.body.name }, defaults: req.body } )
     .spread(function( Slide, created ) {
       // send boolean
-      res.json( { successfullyAddedMediaSlide: created } );
+      res.json( Slide );
     });
   },
 
