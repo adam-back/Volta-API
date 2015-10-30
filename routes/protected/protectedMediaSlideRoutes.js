@@ -11,8 +11,8 @@ router.route( '/' )
 // router.route( '/kin/:kin')
 //   .get( controller.getMediaSlidesByKin )
 
-// router.route( '/schedule/:id')
-// 	.get( controller.getMediaSlideBySchedule )
+router.route( '/:id')
+	.delete( controller.deleteMediaSlide )
 
 // // for http://www.baseurl.com/plug/42
 // router.route( '/:id' )
