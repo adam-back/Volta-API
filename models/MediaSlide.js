@@ -10,7 +10,7 @@ module.exports = function( sequelize, DataTypes ) {
 		mediaUrl: DataTypes.STRING,
 		active: DataTypes.BOOLEAN
 
-	}, { underscored: true } );
+	}, { paranoid: true, underscored: true } );
 
 	return media_slide;
 	

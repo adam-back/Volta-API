@@ -9,7 +9,7 @@ module.exports = function( sequelize, DataTypes ) {
 		},
 		name: DataTypes.STRING
 
-	}, { underscored: true } );
+	}, { paranoid: true, underscored: true } );
 
 	return media_company;
 
