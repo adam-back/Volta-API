@@ -178,10 +178,7 @@ module.exports = exports = {
 
                   if ( appSponsors && appSponsors.length > 0 ) {
                     for ( var i = 0; i < appSponsors.length; i++ ) {
-                      // Chevy ads disabled on production
-                      if( config.host.match(/voltadb-dev/g) ) {
-                        plainStation.app_sponsors.push( appSponsors[ i ].get( { plain: true } ) );
-                      }
+                      plainStation.app_sponsors.push( appSponsors[ i ].get( { plain: true } ) );
                     }
                   }
 
