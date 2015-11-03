@@ -3,6 +3,7 @@ var station = require( '../../models').station;
 var app_sponsor = require( '../../models' ).app_sponsor;
 var express = require( 'express' );
 var async     = require( 'async' );
+var appSponsorFactory = require( '../../factories/appSponsorFactory' );
 
 module.exports = exports = {
   countStations: function ( req, res ) {
@@ -60,48 +61,16 @@ module.exports = exports = {
       // if the station is newly created
       if ( created ) {
         id = foundStation.id;
-        // check if it needs to be associated
-        return app_sponsor.findAll()
-        .then(function( sponsors ) {
-          async.each(sponsors, function( sponsor, cb ) {
-            if ( sponsor.station_query ) {
-              var query = sponsor.station_query;
-              // see if that individual station matches the query for sponsorship
-              query.where.id = foundStation.id;
-
-              station.count( query )
-              .then(function( number ) {
-                // if it matches
-                if ( number === 1 ) {
-                  // associate
-                  return sponsor.addStation( foundStation );
-                }
-              })
-              .then(function() {
-                // successfully associated or done
-                cb( null );
-              })
-              .catch(function( error ) {
-                cb( error );
-              });
-            } else {
-              cb( null );
-            }
-          }, function( error ) {
-            if ( error ) {
-              throw 'Error creating station: ' + error;
-            } else {
-              // send boolean
-              res.json( { successfullyAddedStation: true } );
-            }
-          });
+        // associate if needed
+        return appSponsorFactory.associateStationWithAppSponsors( foundStation )
+        .then(function() {
+          res.json( { successfullyAddedStation: true } );
         });
       } else {
         res.json( { successfullyAddedStation: false } );
       }
     })
     .catch(function( error ) {
-      console.log( 'in error', error );
       if ( successfullyAddedStation ) {
         // while this is async,
         // don't quite care
