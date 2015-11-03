@@ -34,7 +34,7 @@ exports.associateStationWithAppSponsors = function( stationToAssociate ) {
       }
     }, function( error ) {
       if ( error ) {
-        throw error;
+        throw new Error( error );
       } else {
         deferred.resolve();
       }
@@ -46,3 +46,31 @@ exports.associateStationWithAppSponsors = function( stationToAssociate ) {
 
   return deferred.promise;
 };
+
+exports.removeAssociationBetweenStationAndAppSponsors = function( stationToRemove ) {
+  var deferred = Q.defer();
+
+  stationToRemove.getAppSponsors()
+  .then(function( appSponsors ) {
+    async.each(appSponsors, function( appSponsor, cb ) {
+      appSponsor.removeStation( stationToRemove )
+      .then(function( success ) {
+        cb( null );
+      })
+      .catch(function( error ) {
+        cb( error );
+      });
+    }, function( error ) {
+      if ( error ) {
+        throw new Error( error );
+      } else {
+        deferred.resolve( stationToRemove );
+      }
+    });
+  })
+  .catch(function( error ) {
+    deferred.reject( error );
+  });
+
+  return deferred.promise;
+}

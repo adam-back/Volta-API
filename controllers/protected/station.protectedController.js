@@ -76,6 +76,7 @@ module.exports = exports = {
         // don't quite care
         station.destroy( { where: { id: id } } );
       }
+
       res.status( 500 ).send( error );
     });
   },
@@ -129,7 +130,7 @@ module.exports = exports = {
         .then(function( plugs ) {
           if( plugs ) {
             // destroy each plug
-            return async.each( plugs, function( plug, cb ) {
+            async.each( plugs, function( plug, cb ) {
               plug.destroy()
               .then(function( removedPlug ) {
                 cb( null );
@@ -140,23 +141,27 @@ module.exports = exports = {
             }, function( error ) {
               // if error destroying plug
               if( error ) {
-                throw error;
+                throw new Error( error );
               } else {
                 return void( 0 );
               }
             });
+            return;
           }
         })
         .then(function() {
-          station.destroy()
-          .then(function() {
-            res.status( 204 ).send();
-          });
+          return appSponsorFactory.removeAssociationBetweenStationAndAppSponsors( station );
         });
       // a station with that kin could not be found
       } else {
         res.status( 404 ).send( 'Station with that KIN not found in database. Could not be deleted.' );
       }
+    })
+    .then(function( station ) {
+      return station.destroy();
+    })
+    .then(function() {
+      res.status( 204 ).send();
     })
     .catch(function( error ) {
       res.status( 500 ).send( 'Error deleting station: ' + error );
