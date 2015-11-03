@@ -1,7 +1,9 @@
 var request = require( 'request' );
 var station = require( '../../models').station;
+var app_sponsor = require( '../../models' ).app_sponsor;
 var express = require( 'express' );
 var async     = require( 'async' );
+var appSponsorFactory = require( '../../factories/appSponsorFactory' );
 
 module.exports = exports = {
   countStations: function ( req, res ) {
@@ -49,11 +51,33 @@ module.exports = exports = {
     station.update( req.body, { where: { kin: req.params.kin } } );
   },
   addStation: function( req, res ) {
+    var successfullyAddedStation = false;
+    var id;
     // Validate that a station with same KIN doesn't exist, create it
     station.findOrCreate( { where: { kin: req.body.kin }, defaults: req.body } )
-    .spread(function( station, created ) {
-      // send boolean
-      res.json( { successfullyAddedStation: created } );
+    .spread(function( foundStation, created ) {
+      successfullyAddedStation = created;
+
+      // if the station is newly created
+      if ( created ) {
+        id = foundStation.id;
+        // associate if needed
+        return appSponsorFactory.associateStationWithAppSponsors( foundStation )
+        .then(function() {
+          res.json( { successfullyAddedStation: true } );
+        });
+      } else {
+        res.json( { successfullyAddedStation: false } );
+      }
+    })
+    .catch(function( error ) {
+      if ( successfullyAddedStation ) {
+        // while this is async,
+        // don't quite care
+        station.destroy( { where: { id: id } } );
+      }
+
+      res.status( 500 ).send( error );
     });
   },
   editStation: function( req, res ) {
@@ -106,7 +130,7 @@ module.exports = exports = {
         .then(function( plugs ) {
           if( plugs ) {
             // destroy each plug
-            return async.each( plugs, function( plug, cb ) {
+            async.each( plugs, function( plug, cb ) {
               plug.destroy()
               .then(function( removedPlug ) {
                 cb( null );
@@ -117,23 +141,27 @@ module.exports = exports = {
             }, function( error ) {
               // if error destroying plug
               if( error ) {
-                throw error;
+                throw new Error( error );
               } else {
                 return void( 0 );
               }
             });
+            return;
           }
         })
         .then(function() {
-          station.destroy()
-          .then(function() {
-            res.status( 204 ).send();
-          });
+          return appSponsorFactory.removeAssociationBetweenStationAndAppSponsors( station );
         });
       // a station with that kin could not be found
       } else {
         res.status( 404 ).send( 'Station with that KIN not found in database. Could not be deleted.' );
       }
+    })
+    .then(function( station ) {
+      return station.destroy();
+    })
+    .then(function() {
+      res.status( 204 ).send();
     })
     .catch(function( error ) {
       res.status( 500 ).send( 'Error deleting station: ' + error );
