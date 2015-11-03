@@ -351,13 +351,19 @@ module.exports = exports = {
     // Create associations
     // app_sponsor.findAll( { where: { company: 'Chevrolet' } } )
     // .then(function( sponsor ) {
-    //   return station.findAll( sponsor[ 0 ].dataValues.station_query )
+    //   // remove previous associations
+    //   return sponsor[ 0 ].setStations( [] )
+    //   .then(function() {
+    //     // get all the stations per the query
+    //     return station.findAll( sponsor[ 0 ].dataValues.station_query );
+    //   })
     //   .then(function( stations ) {
+    //     // readd
     //     return sponsor[ 0 ].addStations( stations );
     //   });
     // })
     // .then(function( done ) {
-    //  console.log( 'done', done );
+    //   res.send( done );
     // })
 
     app_sponsor.findAll( { where: { current: true }, order: [ 'order' ] } )
