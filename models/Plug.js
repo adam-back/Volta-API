@@ -19,6 +19,7 @@ module.exports = function( sequelize, DataTypes ) {
       unique: true
     },
     meter_status: DataTypes.STRING,
+    meter_status_message: DataTypes.STRING,
     in_use: DataTypes.BOOLEAN,
     cumulative_kwh: DataTypes.DECIMAL
   }, { paranoid: true, underscored: true } );
