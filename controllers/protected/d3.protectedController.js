@@ -62,7 +62,35 @@ module.exports = exports = {
         nodes.push( { name: kin, parent: unique.kin[ kin ][ 0 ], size: parseFloat( unique.kin[ kin ][ 1 ] ) } );
       }
 
-      res.send( nodes );
+      // credit: http://bl.ocks.org/d3noob/8329404
+      // *********** Convert flat data into a nice tree ***************
+      // create a { name: node } map
+      var dataMap = nodes.reduce(function( map, node ) {
+        map[ node.name ] = node;
+        return map;
+      }, {} );
+
+      // create the tree array
+      var treeData = [];
+      nodes.forEach(function( node ) {
+        // add to parent
+        var parent = dataMap[ node.parent ];
+        if ( parent ) {
+          // create child array if it doesn't exist
+          if ( !parent.children ) {
+            parent.children = [];
+          }
+
+          // add node to child array
+          parent.children.push( node );
+
+        } else {
+          // parent is null or missing
+          treeData.push( node );
+        }
+      });
+
+      res.send( treeData[ 0 ] );
     });
   }
 };
