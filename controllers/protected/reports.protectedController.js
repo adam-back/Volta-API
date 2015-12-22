@@ -254,7 +254,27 @@ module.exports = exports = {
     .catch(function( error ) {
       res.status( 500 ).send( error );
     });
-  }
+  },
+  generateListOfWallmounts: function( req, res ) {
+    var type = req.params.output;
+    var fields = [ 'kin', 'location', 'location_address', 'network' ];
+    var fieldNames = [ 'KIN', 'Location', 'Address', 'Network' ];
+
+    station.findAll( { where: { kin: { $like: '%-W' } } } )
+    .then(function( wallMounts ) {
+      if ( type === 'Web' ) {
+        return Q.when( wallMounts );
+      } else {
+        return generateCSV( wallMounts, fields, fieldNames );
+      }
+    })
+    .then(function( formattedResponse ) {
+      res.send( formattedResponse );
+    })
+    .catch(function( error ) {
+      res.status( 500 ).send( error );
+    });
+  },
 
   // not complete
   getOneStationAnalytics: function (req, res) {
