@@ -154,6 +154,7 @@ module.exports = exports = {
         data: []
       },
       cumulative: {
+        numberOfStations: 0,
         total: 0,
         calcs: {}
       },
@@ -179,6 +180,7 @@ module.exports = exports = {
       });
     })
     .then(function( totalStations ) {
+      data.cumulative.numberOfStations = totalStations;
       return station.count( { where: { in_use: null } } )
       .then(function( numberOfUnmeteredStations ) {
         saveData( 'needMeter', totalStations, numberOfUnmeteredStations );
