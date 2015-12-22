@@ -239,8 +239,22 @@ module.exports = exports = {
     .catch(function( error ) {
       res.status( 500 ).send( error );
     });
-
   },
+  exportStationDataAsCsv: function( req, res ) {
+    var fields = [ 'kin', 'location', 'location_address', 'network', 'ekm_push_mac', 'sim_card', 'cumulative_kwh' ];
+    var fieldNames = [ 'KIN', 'Location', 'Address', 'Network', 'Push MAC', 'SIM card', 'Meter Reading (kWh)' ];
+
+    station.findAll()
+    .then(function( stations ) {
+      return generateCSV( stations, fields, fieldNames );
+    })
+    .then(function( csv ) {
+      res.send( csv );
+    })
+    .catch(function( error ) {
+      res.status( 500 ).send( error );
+    });
+  }
 
   // not complete
   getOneStationAnalytics: function (req, res) {
