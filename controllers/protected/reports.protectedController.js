@@ -244,7 +244,7 @@ module.exports = exports = {
     var fields = [ 'kin', 'location', 'location_address', 'network', 'ekm_push_mac', 'sim_card', 'cumulative_kwh' ];
     var fieldNames = [ 'KIN', 'Location', 'Address', 'Network', 'Push MAC', 'SIM card', 'Meter Reading (kWh)' ];
 
-    station.findAll()
+    station.findAll( { order: [ 'kin' ] } )
     .then(function( stations ) {
       return generateCSV( stations, fields, fieldNames );
     })
@@ -260,7 +260,7 @@ module.exports = exports = {
     var fields = [ 'kin', 'location', 'location_address', 'network' ];
     var fieldNames = [ 'KIN', 'Location', 'Address', 'Network' ];
 
-    station.findAll( { where: { kin: { $like: '%-W' } }, raw: true } )
+    station.findAll( { where: { kin: { $like: '%-W' } }, raw: true, order: [ 'kin' ] } )
     .then(function( wallMounts ) {
       if ( type === 'Web' ) {
         return Q.when( wallMounts );
@@ -284,10 +284,10 @@ module.exports = exports = {
     .then(function( plugs ) {
       var associatedStationIds = [];
       for ( var i = 0; i < plugs.length; i++ ) {
-        plugIds.push( plugs[ i ].station_id );
+        associatedStationIds.push( plugs[ i ].station_id );
       }
 
-      return station.findAll( { where: { id: { $notIn: associatedStationIds } }, raw: true } );
+      return station.findAll( { where: { id: { $notIn: associatedStationIds } }, raw: true, order: [ 'kin' ] } );
     })
     .then(function( unmeteredStations ) {
       if ( type === 'Web' ) {
