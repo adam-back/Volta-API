@@ -18,8 +18,20 @@ router.route( '/one/:kin' )
 router.route( '/withoutCoordinates/:output' )
   .get( controller.getStationsWithoutCoordinates );
 
+// for http://www.baseurl.com/protected/reports/withoutMeters/csv
+router.route( '/withoutMeters/:output' )
+  .get( controller.listStationsWhichNeedMeters );
+
+// for http://www.baseurl.com/protected/reports/wallmounts/csv
+router.route( '/wallmounts/:output' )
+  .get( controller.generateListOfWallmounts );
+
 // for http://www.baseurl.com/protected/reports/wrongCoordinates/web
 router.route( '/wrongCoordinates/:output' )
   .get( controller.getMismatchedStationCoordinates );
+
+// for http://www.baseurl.com/protected/reports/wallmounts/csv
+router.route( '/downloadStations/CSV' )
+  .get( controller.exportStationDataAsCsv );
 
 module.exports = router;

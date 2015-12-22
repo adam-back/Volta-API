@@ -5,6 +5,7 @@ var logger       = require( 'morgan' );
 var cookieParser = require( 'cookie-parser' );
 var bodyParser   = require( 'body-parser' );
 var expressSanitizer = require( 'express-sanitizer' );
+var unless           = require( 'express-unless' );
 var http             = require( 'http' );
 var env              = process.env.NODE_ENV || 'development';
 var jwt              = require( 'express-jwt' );
@@ -68,6 +69,7 @@ var protectedMediaScheduleRoutes = require( './routes/protected/protectedMediaSc
 var protectedMediaPresentationRoutes = require( './routes/protected/protectedMediaPresentationRoutes' );
 var protectedMediaSlideRoutes = require( './routes/protected/protectedMediaSlideRoutes' );
 var protectedReportRoutes = require( './routes/protected/protectedReportRoutes' );
+var protectedD3Routes = require( './routes/protected/protectedD3Routes' );
 
 // Routes
 app.use( '/protected/station', protectedStationRoutes );
@@ -82,6 +84,7 @@ app.use( '/protected/mediaSchedule', protectedMediaScheduleRoutes );
 app.use( '/protected/mediaPresentation', protectedMediaPresentationRoutes );
 app.use( '/protected/mediaSlide', protectedMediaSlideRoutes );
 app.use( '/protected/reports', protectedReportRoutes );
+app.use( '/protected/D3', protectedD3Routes );
 
 app.get('*', function( req, res ){
   res.status( 404 ).send( 'I\'m afraid I can\'t do that, Hal.' );
