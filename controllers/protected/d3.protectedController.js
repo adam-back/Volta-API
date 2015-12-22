@@ -38,14 +38,22 @@ module.exports = exports = {
 
       // Level 1: Networks
       for ( var network in unique.network ) {
-        nodes.push( { name: network, parent: 'Meter kWh' } );
+        var nameOfNetwork = network;
+        if ( nameOfNetwork === 'Chicago' ) {
+          nameOfNetwork = 'Chicagoland';
+        }
+        nodes.push( { name: nameOfNetwork, parent: 'Meter kWh' } );
       }
 
       // Level 2: Cities
       for ( var city in unique.city ) {
+        var parent = unique.city[ city ];
+        if ( parent === 'Chicago' ) {
+          parent = 'Chicagoland';
+        }
         // { name: city, parent: network }
         // { name: San Francisco, parent: NoCal }
-        nodes.push( { name: city, parent: unique.city[ city ] } );
+        nodes.push( { name: city, parent: parent } );
       }
 
       // Level 3: Locations
