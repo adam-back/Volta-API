@@ -260,12 +260,40 @@ module.exports = exports = {
     var fields = [ 'kin', 'location', 'location_address', 'network' ];
     var fieldNames = [ 'KIN', 'Location', 'Address', 'Network' ];
 
-    station.findAll( { where: { kin: { $like: '%-W' } } } )
+    station.findAll( { where: { kin: { $like: '%-W' } }, raw: true } )
     .then(function( wallMounts ) {
       if ( type === 'Web' ) {
         return Q.when( wallMounts );
       } else {
         return generateCSV( wallMounts, fields, fieldNames );
+      }
+    })
+    .then(function( formattedResponse ) {
+      res.send( formattedResponse );
+    })
+    .catch(function( error ) {
+      res.status( 500 ).send( error );
+    });
+  },
+  listStationsWhichNeedMeters: function( req, res ) {
+    var type = req.params.output;
+    var fields = [ 'kin', 'location', 'location_address', 'network' ];
+    var fieldNames = [ 'KIN', 'Location', 'Address', 'Network' ];
+
+    plug.findAll( { raw: true } )
+    .then(function( plugs ) {
+      var associatedStationIds = [];
+      for ( var i = 0; i < plugs.length; i++ ) {
+        plugIds.push( plugs[ i ].station_id );
+      }
+
+      return station.findAll( { where: { id: { $notIn: associatedStationIds } }, raw: true } );
+    })
+    .then(function( unmeteredStations ) {
+      if ( type === 'Web' ) {
+        return Q.when( unmeteredStations );
+      } else {
+        return generateCSV( unmeteredStations, fields, fieldNames );
       }
     })
     .then(function( formattedResponse ) {
