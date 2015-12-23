@@ -30,8 +30,15 @@ router.route( '/wallmounts/:output' )
 router.route( '/wrongCoordinates/:output' )
   .get( controller.getMismatchedStationCoordinates );
 
-// for http://www.baseurl.com/protected/reports/wallmounts/csv
+// CSV ONLY BELOW //
+////////////////////
+
+// for http://www.baseurl.com/protected/reports/downloadStations/CSV
 router.route( '/downloadStations/CSV' )
   .get( controller.exportStationDataAsCsv );
+
+// for http://www.baseurl.com/protected/reports/downloadStations/CSV
+router.route( '/chargeDataOverTime/CSV' )
+  .get( controller.getChargeDataOverTime );
 
 module.exports = router;

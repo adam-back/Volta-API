@@ -303,6 +303,20 @@ module.exports = exports = {
       res.status( 500 ).send( error );
     });
   },
+  getChargeDataOverTime: function( req, res ) {
+    helper.chargeEventsOverTime()
+    .then(function( collection ) {
+      var fields = [ 'time', 'events', 'kwh' ];
+      var fieldNames [ 'End Of Period', 'Number of Sessions', 'Cumulative kWh' ];
+      return generateCSV( collection, fields, fieldNames );
+    })
+    .then(function( csv ) {
+      res.send( csv );
+    })
+    .catch(function( error ) {
+      res.status( 500 ).send( error );
+    });
+  },
 
   // not complete
   getOneStationAnalytics: function (req, res) {
