@@ -307,7 +307,7 @@ module.exports = exports = {
     helper.chargeEventsOverTime()
     .then(function( collection ) {
       var fields = [ 'time', 'events', 'kwh' ];
-      var fieldNames [ 'End Of Period', 'Number of Sessions', 'Cumulative kWh' ];
+      var fieldNames = [ 'End Of Period', 'Number of Sessions', 'Cumulative kWh' ];
       return generateCSV( collection, fields, fieldNames );
     })
     .then(function( csv ) {
