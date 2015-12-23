@@ -38,7 +38,7 @@ router.route( '/downloadStations/CSV' )
   .get( controller.exportStationDataAsCsv );
 
 // for http://www.baseurl.com/protected/reports/downloadStations/CSV
-router.route( '/chargeDataOverTime/CSV' )
+router.route( '/chargeEventsOverTime/CSV' )
   .get( controller.getChargeDataOverTime );
 
 module.exports = router;
