@@ -146,25 +146,22 @@ exports.getBrokenPlugs = function () {
   return deferred.promise;
 };
 
-exports.setThirtyMinsInTheFuture = function( time ) {
-  return moment( time ).add( 30, 'minutes' );
-};
-
 exports.chargeEventsOverTime = function( where ) {
   var query = where || { where: {}, order: 'id', raw: true };
   query.order = 'id';
   query.raw = true;
   query.where.time_stop = { $ne: null };
 
+  var collector = {
+    totalEvents: 0,
+    kwh: 0
+  };
+  var periods = [];
+
   return charge_event.findAll( query )
   .then(function( chargeEvents ) {
-    var collector = {
-      totalEvents: 0,
-      kwh: 0
-    };
-    var periods = [];
     // set the first 30-min period
-    var currentPeriod = exports.setThirtyMinsInTheFuture( chargeEvents[ 0 ].time_start );
+    var currentPeriod = moment( chargeEvents[ 0 ].time_start ).add( 30, 'minutes' );
 
     for ( var i = 0; i < chargeEvents.length; i++ ) {
       var chargeEvent = chargeEvents[ i ];
@@ -176,10 +173,11 @@ exports.chargeEventsOverTime = function( where ) {
         // toFixed returns string
         collector.kwh = Number( collector.kwh.toFixed( 1 ) );
         // save
+
         periods.push( { time: currentPeriod, events: collector.totalEvents, kwh: collector.kwh } );
 
         // set new period
-        currentPeriod = exports.setThirtyMinsInTheFuture( chargeEvent.time_start );
+        currentPeriod = moment( currentPeriod.add( 30, 'minutes' ) );
       }
 
       // always add
@@ -188,6 +186,7 @@ exports.chargeEventsOverTime = function( where ) {
     }
 
     // don't forget the last period
+    currentPeriod = moment( currentPeriod.add( 30, 'minutes' ) );
     periods.push( { time: currentPeriod, events: collector.totalEvents, kwh: collector.kwh.toFixed( 1 ) } );
     return periods;
   });
