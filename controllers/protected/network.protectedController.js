@@ -32,6 +32,7 @@ module.exports = exports = {
           // add total kWh
           stationsAndPlugs.events[ order ].cumulative_kwh = station.cumulative_kwh;
           var sevenDaysAgo = moment().subtract( 7, 'days' );
+          sevenDaysAgo.startOf( 'day' );
           return charge_event.findAll( { where: { station_id: station.id, time_stop: { $ne: null }, time_start: { $gt: sevenDaysAgo.toDate() } }, order: 'time_start' } );
         })
         .then(function( charges ) {
@@ -107,7 +108,8 @@ module.exports = exports = {
     .then(function( totalKWH ) {
       data.kwhGiven = totalKWH;
       var sevenDaysAgo = moment().subtract( 7, 'days' );
-
+      // set to start of day seven days ago
+      sevenDaysAgo.startOf( 'day' );
       // get the charge events from the last seven days
       return charge_event.findAll( { where: { time_stop: { $ne: null }, time_start: { $gt: sevenDaysAgo.toDate() } }, order: 'time_start', raw: true } );
     })
