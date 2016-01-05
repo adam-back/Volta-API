@@ -108,16 +108,21 @@ module.exports = exports = {
     });
   },
   deletePlug: function(req,res) {
+
     // find the plug
-    plug.find( { where: { id: req.url.substring(1) } } )
+    plug.find( { where: { id: req.url.substring( 1 ) } } )
     .then(function( plug ) {
       // if the plug exists
       if( plug ) {
-        // delete it
+        // delete i
         return station.find( { where: { id: plug.station_id } } )
-        .then(function( station ) {
-          if( station ) {
-            return station.removePlug( plug );
+        .then(function( foundStation ) {
+          if( foundStation ) {
+            return foundStation.removePlug( plug )
+            .then(function() {
+              foundStation.in_use.splice( plug.number_on_station - 1, 1 );
+              return foundStation.save();
+            });
           } else {
             throw 'There is no station association for plug';
           }
@@ -126,16 +131,28 @@ module.exports = exports = {
           return plug.destroy();
         });
       } else {
-      // else it doesn't exist
-        return 404;
+        // else it doesn't exist
+        res.status( 404 ).send( 'A plug with that id could not be found' );
       }
     })
-    .then(function( result ) {
-      if( result === 404 ) {
-        res.status( 404 ).send( 'A plug with that id could not be found' );
+    .then(function( updatedStation ) {
+      return updatedStation.getPlugs();
+    })
+    .then(function( plugs ) {
+      if ( plugs ) {
+        var toUpdate = [];
+        for ( var i = 0; i < plugs.length; i++ ) {
+          var onePlug = plugs[ i ];
+          toUpdate.push( onePlug.decrement( 'number_on_station' ) );
+        }
+
+        return Q.all( toUpdate );
       } else {
-        res.status( 204 ).send();
+        return Q.when( null );
       }
+    })
+    .then(function() {
+      res.status( 204 ).send();
     })
     .catch(function( error ) {
       res.status( 500 ).send( error );
