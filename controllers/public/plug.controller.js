@@ -93,10 +93,18 @@ module.exports = exports = {
     })
     .catch(function( error ) {
       var text = {};
-      text.title = 'Duplicate Error';
-      text.message = 'There was already plug with the same omnimeter serial number.';
-      text.duplicateId = error.id;
-      res.status( 409 ).send( text );
+      station.find( { where: { id: error.station_id }, attributes: [ 'kin' ], raw: true } )
+      .then(function( foundStation ) {
+        text.title = 'Duplicate Error';
+        text.message = 'There was already plug with the same omnimeter serial number.';
+        text.duplicateId = error.id;
+        text.stationKin = foundStation.kin;
+        text.numberOnStation = error.number_on_station;
+        res.status( 409 ).send( text );
+      })
+      .catch(function( error ) {
+        res.status( 500 ).send( error );
+      });
     });
   },
   deletePlug: function(req,res) {
