@@ -241,11 +241,25 @@ module.exports = exports = {
     });
   },
   exportStationDataAsCsv: function( req, res ) {
-    var fields = [ 'kin', 'location', 'location_address', 'network', 'ekm_push_mac', 'sim_card', 'cumulative_kwh' ];
-    var fieldNames = [ 'KIN', 'Location', 'Address', 'Network', 'Push MAC', 'SIM card', 'Meter Reading (kWh)' ];
+    var fields = [ 'kin', 'location', 'location_address', 'location_gps', 'network', 'install_date', 'ekm_push_mac', 'sim_card', 'cumulative_kwh' ];
+    var fieldNames = [ 'KIN', 'Location', 'Address', 'GPS', 'Network', 'Install Date', 'Push MAC', 'SIM card', 'Meter Reading (kWh)' ];
 
-    station.findAll( { order: [ 'kin' ] } )
+    station.findAll( { order: [ 'kin' ], raw: true } )
     .then(function( stations ) {
+      for ( var i = 0; i < stations.length; i++ ) {
+        var oneStation = stations[ i ];
+        if ( oneStation.location_gps ) {
+          // make gps a string
+          stations[ i ].location_gps = oneStation.location_gps.toString();
+          oneStation = stations[ i ];
+        }
+
+        for ( var key in oneStation ) {
+          if ( oneStation[ key ] === null ) {
+            oneStation[ key ] = '';
+          }
+        }
+      }
       return generateCSV( stations, fields, fieldNames );
     })
     .then(function( csv ) {
