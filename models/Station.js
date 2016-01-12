@@ -26,7 +26,10 @@ module.exports = function( sequelize, DataTypes ) {
     location: DataTypes.STRING,
     location_address: DataTypes.STRING,
     location_description: DataTypes.TEXT,
-    location_gps: DataTypes.ARRAY( DataTypes.DECIMAL ),
+    location_gps: {
+      type: DataTypes.ARRAY( DataTypes.DECIMAL ),
+      defaultValue: null
+    },
     cost_to_access: DataTypes.BOOLEAN,
     cumulative_kwh: DataTypes.DECIMAL,
     station_status: DataTypes.STRING,
