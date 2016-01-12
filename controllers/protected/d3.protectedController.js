@@ -10,7 +10,7 @@ var config    = require( '../../config/config' )[ env ];
 module.exports = exports = {
   getSunburstData: function ( req, res ) {
     // get all the stations which we have data on
-    station.findAll( { attributes: [ 'kin', 'cumulative_kwh', 'location_address', 'location', 'network' ] }, { where: { cumulative_kwh: { $ne: null }  } } )
+    station.findAll( { where: { cumulative_kwh: { $ne: null } }, attributes: [ 'kin', 'cumulative_kwh', 'location_address', 'location', 'network' ] } )
     .then(function( stations ) {
       var unique = {
         network: {},
