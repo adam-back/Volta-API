@@ -28,6 +28,8 @@ var updateMediaScheduleHelper = function( req, res, where ) {
 
       mediaScheduleToUpdate.save()
       .then(function( successMediaSchedule ) {
+        console.log( 'presentation var', presentation );
+        console.log( 'presentation direct', mediaScheduleToUpdate.schedule.presentation );
         successMediaSchedule.setMediaPresentations([ presentation.id ])
         .then( function( presentation ) {
           res.json( successMediaSchedule );
