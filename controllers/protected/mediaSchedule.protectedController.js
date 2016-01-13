@@ -8,55 +8,54 @@ var q = require( 'q');
 // var chainer = new Sequelize.Utils.QueryChainer;
 
 var updateMediaScheduleHelper = function( req, res, where ) {
-  mediaSchedule.find( where )
-    .then(function( mediaScheduleToUpdate ) {
+  var foundMediaSchedule = function( mediaScheduleToUpdate ) {
 
-      for( var key in req.body ) {
-        mediaScheduleToUpdate[ key ] = req.body[ key ];
-      }
+    if( Array.isArray( mediaScheduleToUpdate ) ) {
+      mediaScheduleToUpdate = mediaScheduleToUpdate[ 0 ];
+    }
 
-      // remove presentations
-      var presentation = mediaScheduleToUpdate.schedule.presentation;
-      delete mediaScheduleToUpdate.schedule.presentation;
+    for( var key in req.body ) {
+      mediaScheduleToUpdate[ key ] = req.body[ key ];
+    }
 
-      mediaScheduleToUpdate.schedule = JSON.stringify( mediaScheduleToUpdate.schedule );
-      // for ( var i = 0; i < req.body.changes.length; i++ ) {
-      //   var field = req.body.changes[ i ][ 0 ];
-      //   var newData = req.body.changes[ i ][ 2 ];
-      //   mediaScheduleToUpdate[ field ] = newData;
-      // }
+    // remove presentations
+    var presentation = mediaScheduleToUpdate.schedule.presentation;
+    delete mediaScheduleToUpdate.schedule.presentation;
 
-      mediaScheduleToUpdate.save()
-      .then(function( successMediaSchedule ) {
-        successMediaSchedule.setMediaPresentations([ presentation.id ])
-        .then( function( presentation ) {
-          res.json( successMediaSchedule );
-        })
-        .catch( function( error ) {
-          throw error;
-        })
+    mediaScheduleToUpdate.schedule = JSON.stringify( mediaScheduleToUpdate.schedule );
+
+    mediaScheduleToUpdate.save()
+    .then(function( successMediaSchedule ) {
+      successMediaSchedule.setMediaPresentations([ presentation.id ])
+      .then( function( presentation ) {
+        res.json( successMediaSchedule );
       })
-      .catch(function( error ) {
-        console.log( 'error', error );
-        // var query = {};
-        // // get the title that of the colum that errored
-        // var errorColumn = Object.keys( error.fields );
-        // // get the value that errored
-        // var duplicateValue = error.fields[ errorColumn ];
-        // query[ errorColumn ] = duplicateValue;
-
-        // // where conflicting key, value
-        // mediaSchedule.find( { where: query } )
-        // .then(function( duplicatemediaSchedule ) {
-        //   error.duplicatemediaSchedule = duplicatemediaSchedule;
-        // 409 = conflict
-        res.status( 409 ).send( error );
+      .catch( function( error ) {
+        throw error;
       })
     })
+    .catch(function( error ) {
+      console.log( 'error', error );
+      // 409 = conflict
+      res.status( 409 ).send( error );
+    })
+  };
+
+  if( where ) {
+    mediaSchedule.findOrCreate( where )
+    .then( foundMediaSchedule )
     .catch(function( error ) {
       console.log( 'promise error', error );
       res.status( 500 ).send( error );
     });
+  } else {
+    mediaSchedule.findOrCreate()
+    .then( foundMediaSchedule )
+    .catch(function( error ) {
+      console.log( 'promise error', error );
+      res.status( 500 ).send( error );
+    });
+  }
 }
 
 // NOTE: uses query instead of params
