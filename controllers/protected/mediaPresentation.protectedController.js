@@ -7,6 +7,8 @@ var async = require( 'async' );
 
 //DO NOT ALTER, MEDIA PLAYERS IN FIELD RELY ON THIS!
 var getMediaPresentations = function( req, res, whereObject, keyToGet ) {
+  console.log( 'findAll where', whereObject );
+  
   mediaPresentation.findAll( whereObject )
   .then( function( presentations ) {
     if( !presentations ) {
