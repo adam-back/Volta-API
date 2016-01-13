@@ -67,7 +67,7 @@ var updateMediaScheduleHelper = function( req, res, where ) {
 
   if( where ) {
     console.log( 'mediaSchedule with where', where )
-    mediaSchedule.find( where )
+    mediaSchedule.findOrCreate( where )
     .then( foundMediaSchedule )
     .catch(function( error ) {
       console.log( 'promise error', error );
@@ -75,7 +75,7 @@ var updateMediaScheduleHelper = function( req, res, where ) {
     });
   } else {
     console.log( 'mediaSchedule without where' );
-    mediaSchedule.find()
+    mediaSchedule.findOrCreate()
     .then( foundMediaSchedule )
     .catch(function( error ) {
       console.log( 'promise error', error );
