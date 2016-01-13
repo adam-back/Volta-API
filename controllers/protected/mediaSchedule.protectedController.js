@@ -9,53 +9,59 @@ var q = require( 'q');
 
 var updateMediaScheduleHelper = function( req, res, where ) {
   var foundMediaSchedule = function( mediaScheduleToUpdate ) {
+    console.log( 'mediaScheduleToUpdate ', mediaScheduleToUpdate );
 
-      for( var key in req.body ) {
-        mediaScheduleToUpdate[ key ] = req.body[ key ];
-      }
+    for( var key in req.body ) {
+      console.log( key, ' in ', req.body );
+      mediaScheduleToUpdate[ key ] = req.body[ key ];
+    }
 
-      // remove presentations
-      var presentation = mediaScheduleToUpdate.schedule.presentation;
-      delete mediaScheduleToUpdate.schedule.presentation;
+    // remove presentations
+    console.log( 'removing presentations' );
+    var presentation = mediaScheduleToUpdate.schedule.presentation;
+    delete mediaScheduleToUpdate.schedule.presentation;
 
-      mediaScheduleToUpdate.schedule = JSON.stringify( mediaScheduleToUpdate.schedule );
-      // for ( var i = 0; i < req.body.changes.length; i++ ) {
-      //   var field = req.body.changes[ i ][ 0 ];
-      //   var newData = req.body.changes[ i ][ 2 ];
-      //   mediaScheduleToUpdate[ field ] = newData;
-      // }
+    console.log( 'stringify mediaScheduleToUpdate.schedule' );
+    mediaScheduleToUpdate.schedule = JSON.stringify( mediaScheduleToUpdate.schedule );
+    // for ( var i = 0; i < req.body.changes.length; i++ ) {
+    //   var field = req.body.changes[ i ][ 0 ];
+    //   var newData = req.body.changes[ i ][ 2 ];
+    //   mediaScheduleToUpdate[ field ] = newData;
+    // }
 
-      mediaScheduleToUpdate.save()
-      .then(function( successMediaSchedule ) {
-        console.log( 'presentation var', presentation );
-        console.log( 'presentation direct', mediaScheduleToUpdate.schedule.presentation );
-        successMediaSchedule.setMediaPresentations([ presentation.id ])
-        .then( function( presentation ) {
-          res.json( successMediaSchedule );
-        })
-        .catch( function( error ) {
-          throw error;
-        })
+    console.log( 'save mediaScheduleToUpdate' );
+    mediaScheduleToUpdate.save()
+    .then(function( successMediaSchedule ) {
+      console.log( 'presentation var', presentation );
+      console.log( 'presentation direct', mediaScheduleToUpdate.schedule.presentation );
+      successMediaSchedule.setMediaPresentations([ presentation.id ])
+      .then( function( presentation ) {
+        res.json( successMediaSchedule );
       })
-      .catch(function( error ) {
-        console.log( 'error', error );
-        // var query = {};
-        // // get the title that of the colum that errored
-        // var errorColumn = Object.keys( error.fields );
-        // // get the value that errored
-        // var duplicateValue = error.fields[ errorColumn ];
-        // query[ errorColumn ] = duplicateValue;
-
-        // // where conflicting key, value
-        // mediaSchedule.find( { where: query } )
-        // .then(function( duplicatemediaSchedule ) {
-        //   error.duplicatemediaSchedule = duplicatemediaSchedule;
-        // 409 = conflict
-        res.status( 409 ).send( error );
+      .catch( function( error ) {
+        throw error;
       })
-    };
+    })
+    .catch(function( error ) {
+      console.log( 'error', error );
+      // var query = {};
+      // // get the title that of the colum that errored
+      // var errorColumn = Object.keys( error.fields );
+      // // get the value that errored
+      // var duplicateValue = error.fields[ errorColumn ];
+      // query[ errorColumn ] = duplicateValue;
+
+      // // where conflicting key, value
+      // mediaSchedule.find( { where: query } )
+      // .then(function( duplicatemediaSchedule ) {
+      //   error.duplicatemediaSchedule = duplicatemediaSchedule;
+      // 409 = conflict
+      res.status( 409 ).send( error );
+    })
+  };
 
   if( where ) {
+    console.log( 'mediaSchedule with where', where )
     mediaSchedule.find( where )
     .then( foundMediaSchedule )
     .catch(function( error ) {
@@ -63,6 +69,7 @@ var updateMediaScheduleHelper = function( req, res, where ) {
       res.status( 500 ).send( error );
     });
   } else {
+    console.log( 'mediaSchedule without where' );
     mediaSchedule.find()
     .then( foundMediaSchedule )
     .catch(function( error ) {
@@ -148,6 +155,7 @@ module.exports = exports = {
   },
 
   updateMediaSchedule: function ( req, res ) {
+    console.log( '\n\n\\n\nUPDATE MEDIA SCHEDULE (PATCH)' );
     updateMediaScheduleHelper( req, res, { where: { kin: req.body.kin } } );
   },
 
