@@ -8,9 +8,8 @@ var async = require( 'async' );
 //DO NOT ALTER, MEDIA PLAYERS IN FIELD RELY ON THIS!
 var getMediaPresentations = function( req, res, whereObject, keyToGet ) {
   console.log( 'findAll where', whereObject );
-  
-  mediaPresentation.findAll( whereObject )
-  .then( function( presentations ) {
+
+  var receivedPresentations = function( presentations ) {
     if( !presentations ) {
       throw new Error( 'No presentations found' );
     }
@@ -74,11 +73,25 @@ var getMediaPresentations = function( req, res, whereObject, keyToGet ) {
         res.json( presentations );
       }
     });
-  })
-  .catch( function( error ) {
-    console.log( 'YOU BROKE YOUR PROMISE!', error );
-    res.status( 500 ).send( error );
-  });
+  };
+
+  if( whereObject ) {
+    console.log( 'get mediaPresentation where ', whereObject );
+    mediaPresentation.findAll( whereObject )
+    .then( receivedPresentations )
+    .catch( function( error ) {
+      console.log( 'YOU BROKE YOUR PROMISE!', error );
+      res.status( 500 ).send( error );
+    });
+  } else {
+    console.log( 'get mediaPresentation' );
+    mediaPresentation.findAll()
+    .then( receivedPresentations )
+    .catch( function( error ) {
+      console.log( 'YOU BROKE YOUR PROMISE!', error );
+      res.status( 500 ).send( error );
+    });
+  }
 };
 
 // NOTE: uses query instead of params
