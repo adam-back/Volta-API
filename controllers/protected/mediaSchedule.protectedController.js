@@ -8,8 +8,7 @@ var q = require( 'q');
 // var chainer = new Sequelize.Utils.QueryChainer;
 
 var updateMediaScheduleHelper = function( req, res, where ) {
-  mediaSchedule.find( where )
-    .then(function( mediaScheduleToUpdate ) {
+  var foundMediaSchedule = function( mediaScheduleToUpdate ) {
 
       for( var key in req.body ) {
         mediaScheduleToUpdate[ key ] = req.body[ key ];
@@ -54,11 +53,23 @@ var updateMediaScheduleHelper = function( req, res, where ) {
         // 409 = conflict
         res.status( 409 ).send( error );
       })
-    })
+    };
+
+  if( where ) {
+    mediaSchedule.find( where )
+    .then( foundMediaSchedule )
     .catch(function( error ) {
       console.log( 'promise error', error );
       res.status( 500 ).send( error );
     });
+  } else {
+    mediaSchedule.find()
+    .then( foundMediaSchedule )
+    .catch(function( error ) {
+      console.log( 'promise error', error );
+      res.status( 500 ).send( error );
+    });
+  }
 }
 
 // NOTE: uses query instead of params
