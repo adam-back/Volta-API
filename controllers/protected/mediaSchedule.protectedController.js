@@ -11,10 +11,14 @@ var updateMediaScheduleHelper = function( req, res, where ) {
   var foundMediaSchedule = function( mediaScheduleToUpdate ) {
     console.log( 'mediaScheduleToUpdate ', mediaScheduleToUpdate );
 
-    // Catch All
-    if( !mediaScheduleToUpdate ) {
-      mediaScheduleToUpdate = {};
+    if( Array.isArray( mediaScheduleToUpdate ) ) {
+      mediaScheduleToUpdate = mediaScheduleToUpdate[ 0 ];
     }
+
+    // Catch All [ DEPRECATED - replaced by findOrCreate before this function is called ]
+    // if( !mediaScheduleToUpdate ) {
+    //   mediaScheduleToUpdate = {};
+    // }
 
     for( var key in req.body ) {
       console.log( key, ' in ', req.body );
