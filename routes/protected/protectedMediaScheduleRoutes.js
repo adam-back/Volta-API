@@ -5,7 +5,8 @@ var controller = require( '../../controllers/protected/mediaSchedule.protectedCo
 // for http://www.baseurl.com/mediaSchedule
 router.route( '/' )
   // .get( controller.getMediaScheduleWithPresentationSlideURLsForKin )
-  .get( controller.getAllMediaSchedules )
+  // .get( controller.getAllMediaSchedules )
+  .get( controller.getAllMediaSchedulesWithPresentations )
   .post( controller.addMediaSchedule )
   .patch( controller.updateMediaSchedule )
 
