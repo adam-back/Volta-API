@@ -10,7 +10,6 @@ var q = require( 'q');
 var updateMediaScheduleHelper = function( req, res, where ) {
   mediaSchedule.find( where )
     .then(function( mediaScheduleToUpdate ) {
-      console.log( 'found media schedule', mediaScheduleToUpdate );
 
       for( var key in req.body ) {
         mediaScheduleToUpdate[ key ] = req.body[ key ];
@@ -27,13 +26,10 @@ var updateMediaScheduleHelper = function( req, res, where ) {
       //   mediaScheduleToUpdate[ field ] = newData;
       // }
 
-      console.log( '\n\n about to save mediaSchedule', mediaScheduleToUpdate );
       mediaScheduleToUpdate.save()
       .then(function( successMediaSchedule ) {
-        console.log( 'successMediaSchedule', successMediaSchedule );
         successMediaSchedule.setMediaPresentations([ presentation.id ])
         .then( function( presentation ) {
-          console.log( 'saved media presentation', presentation, 'to schedule' );
           res.json( successMediaSchedule );
         })
         .catch( function( error ) {
@@ -79,7 +75,6 @@ module.exports = exports = {
   getAllMediaSchedulesWithPresentations: function( req, res ) {
     mediaSchedule.findAll()
     .then( function( schedules ) {
-      console.log( '\n\n Media Schedules: ', schedules, '\n\n' );
       var presentationPromises = [];
 
       for( var i=0; i<schedules.length; i++ ) {
@@ -94,13 +89,13 @@ module.exports = exports = {
         res.json( schedules );
       })
       .catch( function( error ) {
-        console.log( '\n\n ', error, '\n\n' );
+        console.log( '\n\n getAllMediaSchedulesWithPresentations - error', error, '\n\n' );
         throw error;
       });
 
     })
     .catch( function( error ) {
-      console.log( 'failed to getAllMediaSchedulesWithPresentations', error );
+      console.log( 'getAllMediaSchedulesWithPresentations - failed to getAllMediaSchedulesWithPresentations', error );
       res.status( 500 ).send( error );
     })
   },
@@ -140,9 +135,6 @@ module.exports = exports = {
   },
 
   updateMediaSchedule: function ( req, res ) {
-    console.log( '\n\n UPDATE MEDIA SCHEDULE \n\n' );
-    console.log( req.body );
-    
     updateMediaScheduleHelper( req, res, { where: { kin: req.body.kin } } );
   },
 
@@ -193,7 +185,6 @@ module.exports = exports = {
       }
     })
     .then( function( schedules ) {
-      console.log( 'found', schedules );
       if( !schedules ) {
         throw new Error( 'no schedules for serialNumber', serialNumber );
       }
@@ -228,7 +219,6 @@ module.exports = exports = {
       //   presentations: [ 24 ]
       // };
       //end test
-      console.log( 'schedules returned', schedule );
       res.json( schedule );
     })
     .catch(function( error ) {
