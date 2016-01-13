@@ -7,7 +7,6 @@ var async = require( 'async' );
 
 //DO NOT ALTER, MEDIA PLAYERS IN FIELD RELY ON THIS!
 var getMediaPresentations = function( req, res, whereObject, keyToGet ) {
-  console.log( 'findAll where', whereObject );
 
   var receivedPresentations = function( presentations ) {
     if( !presentations ) {
@@ -30,20 +29,20 @@ var getMediaPresentations = function( req, res, whereObject, keyToGet ) {
     async.each( makeObjectIntoArray( presentations ), function( presentation, callback ) {
       presentation.contents.getMediaSlides()
       .then( function( slideData ) {
-        console.log( 'slideData', slideData );
+        // console.log( 'slideData', slideData );
 
         var slidesById = {};
         // var slideIds = [];
 
         for( var i=0; i<slideData.length; i++ ) {
-          console.log('slideId: ', slideData[ i ].dataValues[ keyToGet ] );
+          // console.log('slideId: ', slideData[ i ].dataValues[ keyToGet ] );
           var slideId = slideData[ i ].dataValues.id;
           var slideValue = slideData[ i ].dataValues[ keyToGet ];
           // slideIds.push( slideData[ i ].dataValues[ keyToGet ] );
           slidesById[ slideId ] = slideValue;
         }
 
-        console.log( 'slidesById', slidesById );
+        // console.log( 'slidesById', slidesById );
 
         //order the urls
         var orderedURLs = [];
@@ -76,7 +75,6 @@ var getMediaPresentations = function( req, res, whereObject, keyToGet ) {
   };
 
   if( whereObject ) {
-    console.log( 'get mediaPresentation where ', whereObject );
     mediaPresentation.findAll( whereObject )
     .then( receivedPresentations )
     .catch( function( error ) {
@@ -84,7 +82,6 @@ var getMediaPresentations = function( req, res, whereObject, keyToGet ) {
       res.status( 500 ).send( error );
     });
   } else {
-    console.log( 'get mediaPresentation' );
     mediaPresentation.findAll()
     .then( receivedPresentations )
     .catch( function( error ) {
