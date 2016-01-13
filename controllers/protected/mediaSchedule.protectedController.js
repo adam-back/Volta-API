@@ -11,6 +11,11 @@ var updateMediaScheduleHelper = function( req, res, where ) {
   var foundMediaSchedule = function( mediaScheduleToUpdate ) {
     console.log( 'mediaScheduleToUpdate ', mediaScheduleToUpdate );
 
+    // Catch All
+    if( !mediaScheduleToUpdate ) {
+      mediaScheduleToUpdate = {};
+    }
+
     for( var key in req.body ) {
       console.log( key, ' in ', req.body );
       mediaScheduleToUpdate[ key ] = req.body[ key ];
