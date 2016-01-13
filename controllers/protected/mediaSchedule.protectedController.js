@@ -4,6 +4,7 @@ var mediaSchedule = require( '../../models' ).media_schedule;
 var station = require( '../../models').station;
 var express = require( 'express' );
 var async     = require( 'async' );
+var q = require( 'q');
 // var chainer = new Sequelize.Utils.QueryChainer;
 
 var updateMediaScheduleHelper = function( req, res, where ) {
@@ -14,15 +15,30 @@ var updateMediaScheduleHelper = function( req, res, where ) {
       for( var key in req.body ) {
         mediaScheduleToUpdate[ key ] = req.body[ key ];
       }
+
+      // remove presentations
+      var presentation = mediaScheduleToUpdate.schedule.presentation;
+      delete mediaScheduleToUpdate.schedule.presentation;
+
+      mediaScheduleToUpdate.schedule = JSON.stringify( mediaScheduleToUpdate.schedule );
       // for ( var i = 0; i < req.body.changes.length; i++ ) {
       //   var field = req.body.changes[ i ][ 0 ];
       //   var newData = req.body.changes[ i ][ 2 ];
       //   mediaScheduleToUpdate[ field ] = newData;
       // }
 
+      console.log( '\n\n about to save mediaSchedule', mediaScheduleToUpdate );
       mediaScheduleToUpdate.save()
       .then(function( successMediaSchedule ) {
-        res.json( successMediaSchedule );
+        console.log( 'successMediaSchedule', successMediaSchedule );
+        successMediaSchedule.setMediaPresentations([ presentation.id ])
+        .then( function( presentation ) {
+          console.log( 'saved media presentation', presentation, 'to schedule' );
+          res.json( successMediaSchedule );
+        })
+        .catch( function( error ) {
+          throw error;
+        })
       })
       .catch(function( error ) {
         console.log( 'error', error );
@@ -60,6 +76,35 @@ module.exports = exports = {
     });
   },
 
+  getAllMediaSchedulesWithPresentations: function( req, res ) {
+    mediaSchedule.findAll()
+    .then( function( schedules ) {
+      console.log( '\n\n Media Schedules: ', schedules, '\n\n' );
+      var presentationPromises = [];
+
+      for( var i=0; i<schedules.length; i++ ) {
+        presentationPromises.push( schedules[ i ].getMediaPresentations() );
+      }
+
+      q.all( presentationPromises )
+      .then( function( presentations ) {
+        for( var i=0; i<presentations.length; i++ ) {
+          schedules[ i ].dataValues.presentations = presentations[ i ];
+        }
+        res.json( schedules );
+      })
+      .catch( function( error ) {
+        console.log( '\n\n ', error, '\n\n' );
+        throw error;
+      });
+
+    })
+    .catch( function( error ) {
+      console.log( 'failed to getAllMediaSchedulesWithPresentations', error );
+      res.status( 500 ).send( error );
+    })
+  },
+
   deleteMediaSchedule: function( req, res ) {
     var id = req.params.id;
 
@@ -83,6 +128,7 @@ module.exports = exports = {
     .spread(function( schedule, created ) {
       // send boolean
       if( created ) {
+        schedule.setMediaPresentations([ schedule.dataValues.schedule.presentation ])
         res.json( { successfullyAddedMediaSchedule: created } );
       } else {
         throw new Error ( 'Schedule already exits for kin ' + req.body.kin );
