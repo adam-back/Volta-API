@@ -79,7 +79,7 @@ module.exports = exports = {
   getAllMediaSchedulesWithPresentations: function( req, res ) {
     mediaSchedule.findAll()
     .then( function( schedules ) {
-      console.log( '\n\n Media Schedules: ', schedules, '\n\n' );
+      console.log( '\n\n getAllMediaSchedulesWithPresentations - Media Schedules: ', schedules, '\n\n' );
       var presentationPromises = [];
 
       for( var i=0; i<schedules.length; i++ ) {
@@ -94,13 +94,13 @@ module.exports = exports = {
         res.json( schedules );
       })
       .catch( function( error ) {
-        console.log( '\n\n ', error, '\n\n' );
+        console.log( '\n\n getAllMediaSchedulesWithPresentations - error', error, '\n\n' );
         throw error;
       });
 
     })
     .catch( function( error ) {
-      console.log( 'failed to getAllMediaSchedulesWithPresentations', error );
+      console.log( 'getAllMediaSchedulesWithPresentations - failed to getAllMediaSchedulesWithPresentations', error );
       res.status( 500 ).send( error );
     })
   },
