@@ -334,7 +334,7 @@ module.exports = exports = {
     });
   },
   getLastThirtyDays: function( req, res ) {
-    station.findAll()
+    station.findAll( { raw: true } )
     .then(function( allStations ) {
       var promises = allStations.map( helper.chargesOverLastThirtyDaysForOneStation );
       return Q.all( promises );
