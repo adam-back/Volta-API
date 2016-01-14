@@ -44,11 +44,11 @@ exports.convertKwhToConsumerEquivalents = function( kwh ) {
   var data = {};
   // based off of calculations from the EPA
   // http://www.epa.gov/cleanenergy/energy-resources/calculator.html
-  data.offset = Math.round( 10 * ( kwh * 1.52 ) ) / 10;
-  data.gallons = Math.round( 10 * ( kwh * 0.0766666 ) ) / 10;
-  data.trees = Math.round( kwh * 0.01766666 );
+  data.offset = Number( ( kwh * 1.52 ).toFixed( 1 ) );
+  data.gallons = Number( ( kwh * 0.0766666 ).toFixed( 1 ) );
+  data.trees = Number( ( kwh * 0.01766666 ).toFixed( 1 ) );
   // Avg. Nissan Leaf from http://insideevs.com/long-term-nissan-leaf-mileageusage-review-once-around-the-sun/
-  data.miles = Math.round( 10 * ( kwh * 5.44 ) ) / 10;
+  data.miles = Number( ( kwh * 0.28 ).toFixed( 1 ) );
   return data;
 };
 
@@ -107,20 +107,20 @@ exports.countChargesAndDuration = function( chargeEvents ) {
   }
   // save total days
   data.totalChargeEventDays = numberOfDays;
-  data.cumulativeKwh = Number( totalkWh.toFixed( 1 ) );
+  data.cumulativeKwh = Number( totalKwh.toFixed( 1 ) );
 
   // average number of events per day
   data.averageChargeEventsPerDay = Math.round( data.totalChargeEvents / data.totalChargeEventDays );
   // median number of events per day
-  data.medianChargeEventsPerDay = exports.findMedian( chargeEventsByDay );
+  data.medianChargeEventsPerDay = Math.round( exports.findMedian( chargeEventsByDay ) );
   // average duration of charge event
   data.averageDurationOfEvent = Math.round( totalChargeDuration / chargeDurations.length );
   // median duration of charge event
-  data.medianDurationOfEvent = exports.findMedian( chargeDurations );
+  data.medianDurationOfEvent = Math.round( exports.findMedian( chargeDurations ) );
   // average kWh of charge event
   data.averageKwhOfEvent = Math.round( totalKwh / chargeKwh.length );
   // median kWh of charge event
-  data.medianKwhOfEvent = exports.findMedian( chargeKwh );
+  data.medianKwhOfEvent = Math.round( exports.findMedian( chargeKwh ) );
 
   return data;
 };
@@ -236,45 +236,74 @@ exports.chargesOverLastThirtyDaysForOneStation = function( oneStation ) {
       }
     },
     raw: true,
-    order: [ 'time_start', 'ASC' ]
+    order: [ [ 'time_start', 'ASC' ] ]
   };
 
   return charge_event.findAll( where )
   .then(function( eventsForStation ) {
-    var averagesAndMedians = exports.countChargesAndDuration( eventsForStation );
-    var consumerNumbers = exports.convertKwhToConsumerEquivalents( averagesAndMedians.cumulativeKwh );
-    var consumerNumbersAverage = exports.convertKwhToConsumerEquivalents( averagesAndMedians.averageKwhOfEvent );
-    var consumerNumbersMedian = exports.convertKwhToConsumerEquivalents( averagesAndMedians.medianKwhOfEvent );
-
     var dataForCSV = {
       kin: oneStation.kin,
       location: oneStation.location,
-      since: moment( eventsForStation[ 0 ].time_start ).format( 'MMM D, YYYY' ),
+      since: '',
       // cumulative kWh
-      kWh: averagesAndMedians.cumulativeKwh,
-      carbon: consumerNumbers.offset,
-      miles: consumerNumbers.miles,
-      trees: consumerNumbers.trees,
-      gallons: consumerNumbers.miles,
+      kWh: '',
+      carbon: '',
+      miles: '',
+      trees: '',
+      gallons: '',
       // charge events
-      numberOfCharges: averagesAndMedians.totalChargeEvents,
-      averageChargeEventsPerDay: averagesAndMedians.averageChargeEventsPerDay,
-      medianChargeEventsPerDay: averagesAndMedians.medianChargeEventsPerDay,
-      averageDurationOfEvent: averagesAndMedians.averageDurationOfEvent,
-      medianDurationOfEvent: averagesAndMedians.medianDurationOfEvent,
+      numberOfCharges: '',
+      averageChargeEventsPerDay: '',
+      medianChargeEventsPerDay: '',
+      averageDurationOfEvent: '',
+      medianDurationOfEvent: '',
       // Average kwh per event
-      averageKwhOfEvent: averagesAndMedians.averageKwhOfEvent,
-      averageCarbonPerEvent: consumerNumbersAverage.offset,
-      averageMilesPerEvent: consumerNumbersAverage.miles,
-      averageTreesPerEvent: consumerNumbersAverage.trees,
-      averageGallonsPerEvent: consumerNumbersAverage.miles,
+      averageKwhOfEvent: '',
+      averageCarbonPerEvent: '',
+      averageMilesPerEvent: '',
+      averageTreesPerEvent: '',
+      averageGallonsPerEvent: '',
       // Median kwh per event
-      medianKwhOfEvent: averagesAndMedians.medianKwhOfEvent,
-      medianCarbonPerEvent: consumerNumbersMedian.offset,
-      medianMilesPerEvent: consumerNumbersMedian.miles,
-      medianTreesPerEvent: consumerNumbersMedian.trees,
-      medianGallonsPerEvent: consumerNumbersMedian.miles
+      medianKwhOfEvent: '',
+      medianCarbonPerEvent: '',
+      medianMilesPerEvent: '',
+      medianTreesPerEvent: '',
+      medianGallonsPerEvent: ''
     };
+
+    if ( eventsForStation.length > 0 ) {
+      var averagesAndMedians = exports.countChargesAndDuration( eventsForStation );
+      var consumerNumbers = exports.convertKwhToConsumerEquivalents( averagesAndMedians.cumulativeKwh );
+      var consumerNumbersAverage = exports.convertKwhToConsumerEquivalents( averagesAndMedians.averageKwhOfEvent );
+      var consumerNumbersMedian = exports.convertKwhToConsumerEquivalents( averagesAndMedians.medianKwhOfEvent );
+
+      dataForCSV.since = moment( eventsForStation[ 0 ].time_start ).format( 'MMM D, YYYY' );
+      // cumulative kWh
+      dataForCSV.kWh = averagesAndMedians.cumulativeKwh;
+      dataForCSV.carbon = consumerNumbers.offset;
+      dataForCSV.miles = consumerNumbers.miles;
+      dataForCSV.trees = consumerNumbers.trees;
+      dataForCSV.gallons = consumerNumbers.gallons;
+      // charge events
+      dataForCSV.numberOfCharges = averagesAndMedians.totalChargeEvents;
+      dataForCSV.averageChargeEventsPerDay = averagesAndMedians.averageChargeEventsPerDay;
+      dataForCSV.medianChargeEventsPerDay = averagesAndMedians.medianChargeEventsPerDay;
+      dataForCSV.averageDurationOfEvent = averagesAndMedians.averageDurationOfEvent;
+      dataForCSV.medianDurationOfEvent = averagesAndMedians.medianDurationOfEvent;
+      // Average kwh per event
+      dataForCSV.averageKwhOfEvent = averagesAndMedians.averageKwhOfEvent;
+      dataForCSV.averageCarbonPerEvent = consumerNumbersAverage.offset;
+      dataForCSV.averageMilesPerEvent = consumerNumbersAverage.miles;
+      dataForCSV.averageTreesPerEvent = consumerNumbersAverage.trees;
+      dataForCSV.averageGallonsPerEvent = consumerNumbersAverage.gallons;
+      // Median kwh per event
+      dataForCSV.medianKwhOfEvent = averagesAndMedians.medianKwhOfEvent;
+      dataForCSV.medianCarbonPerEvent = consumerNumbersMedian.offset;
+      dataForCSV.medianMilesPerEvent = consumerNumbersMedian.miles;
+      dataForCSV.medianTreesPerEvent = consumerNumbersMedian.trees;
+      dataForCSV.medianGallonsPerEvent = consumerNumbersMedian.gallons;
+    }
+
     return dataForCSV;
   });
 };

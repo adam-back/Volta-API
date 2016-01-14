@@ -376,7 +376,7 @@ module.exports = exports = {
         'Start of 30 Days',
         // cumulative kWh
         '30 Day kWh',
-        '30 Day Carbon Offset',
+        '30 Day Carbon Offset (lbs)',
         '30 Day Miles',
         '30 Day Trees',
         '30 Day Gallons',
