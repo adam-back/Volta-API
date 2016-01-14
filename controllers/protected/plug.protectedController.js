@@ -2,6 +2,7 @@ var request = require( 'request' );
 var plug = require( '../../models').plug;
 var station = require( '../../models').station;
 var express = require( 'express' );
+var Q = require( 'q' );
 
 module.exports = exports = {
   getAllPlugs: function ( req, res ) {
@@ -100,34 +101,75 @@ module.exports = exports = {
     });
   },
   deletePlug: function(req,res) {
+    var decrementAbove;
     // find the plug
     plug.find( { where: { id: req.url.substring( 1 ) } } )
-    .then(function( plug ) {
+    .then(function( foundPlug ) {
       // if the plug exists
-      if( plug ) {
-        // delete it
-        return station.find( { where: { id: plug.station_id } } )
-        .then(function( station ) {
-          if( station ) {
-            return station.removePlug( plug );
+      if( foundPlug ) {
+        decrementAbove = foundPlug.number_on_station;
+        // find its associated station
+        return station.find( { where: { id: foundPlug.station_id } } )
+        .then(function( foundStation ) {
+          // if you find the station
+          if( foundStation ) {
+            // disconnect association
+
+            return foundStation.removePlug( foundPlug )
+            .then(function() {
+              // remove the plug from the db
+              return foundPlug.destroy();
+            })
+            .then(function() {
+              var inUse = foundStation.in_use;
+              inUse.splice( foundPlug.number_on_station - 1, 1 );
+
+              // get rid of that plug in that station's in_use array
+              // if we've taken away the last plug
+              if ( inUse.length === 0 ) {
+                inUse = null;
+              }
+
+              return foundStation.update( { in_use: inUse } );
+            });
           } else {
             throw 'There is no station association for plug';
           }
-        })
-        .then(function() {
-          return plug.destroy();
         });
+        // station is done
       } else {
-      // else it doesn't exist
-        return 404;
+        // else it doesn't exist
+        res.status( 404 ).send( 'A plug with that id could not be found' );
       }
     })
-    .then(function( result ) {
-      if( result === 404 ) {
-        res.status( 404 ).send( 'A plug with that id could not be found' );
+    .then(function( updatedStation ) {
+      return updatedStation.getPlugs();
+    })
+    .then(function( plugs ) {
+      // all the plugs now associated with the station
+      if ( plugs ) {
+        // fill with starting promise
+        var toUpdate = [ Q.when() ];
+        // for each plug
+        for ( var i = 0; i < plugs.length; i++ ) {
+          var onePlug = plugs[ i ];
+          // if the plug is anything more than 1
+          if ( onePlug.number_on_station > decrementAbove ) {
+            // it needs to be decremented
+            toUpdate.push( onePlug.decrement( 'number_on_station' ) );
+          }
+        }
+
+        // when they're all decremented
+        return Q.all( toUpdate );
+
+      // no plugs anymore
       } else {
-        res.status( 204 ).send();
+        return Q.when( null );
       }
+    })
+    .then(function() {
+      res.status( 204 ).send();
     })
     .catch(function( error ) {
       res.status( 500 ).send( error );
