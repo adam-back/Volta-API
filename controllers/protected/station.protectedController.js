@@ -74,7 +74,7 @@ module.exports = exports = {
       if ( successfullyAddedStation ) {
         // while this is async,
         // don't quite care
-        station.destroy( { where: { id: id } } );
+        station.destroy( { where: { id: id }, force: true } );
       }
 
       res.status( 500 ).send( error );
