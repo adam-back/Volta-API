@@ -14,10 +14,7 @@ module.exports = function( sequelize, DataTypes ) {
     site_number: DataTypes.INTEGER,
     install_date: DataTypes.STRING,
     network: DataTypes.STRING,
-    ekm_push_mac: {
-      type: DataTypes.STRING,
-      unique: true
-    },
+    ekm_push_mac: DataTypes.STRING,
     sim_card: {
       type: DataTypes.STRING,
       unique: true

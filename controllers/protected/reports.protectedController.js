@@ -11,6 +11,8 @@ var geocoder = require( 'node-geocoder' )( 'google', 'https', { apiKey: config.g
 var greatCircleDistance = require( '../../factories/distanceFactory.js' ).getDistanceFromLatLonInMiles;
 var generateCSV = require( '../../factories/csvFactory' ).generateCSV;
 var helper = require( '../../factories/reportHelpers' );
+var moment = require( 'moment' );
+moment().format();
 
 module.exports = exports = {
   getBrokenPlugs: function ( req, res ) {
@@ -318,11 +320,87 @@ module.exports = exports = {
     });
   },
   getChargeDataOverTime: function( req, res ) {
-    helper.chargeEventsOverTime()
+    helper.chargeEventsOverTime( null, [ 30, 'minutes' ] )
     .then(function( collection ) {
       var fields = [ 'time', 'events', 'kwh' ];
       var fieldNames = [ 'End Of Period', 'Number of Sessions', 'Cumulative kWh' ];
       return generateCSV( collection, fields, fieldNames );
+    })
+    .then(function( csv ) {
+      res.send( csv );
+    })
+    .catch(function( error ) {
+      res.status( 500 ).send( error );
+    });
+  },
+  getLastThirtyDays: function( req, res ) {
+    station.findAll( { raw: true } )
+    .then(function( allStations ) {
+      var promises = allStations.map( helper.chargesOverLastThirtyDaysForOneStation );
+      return Q.all( promises );
+    })
+    .then(function( allData ) {
+      var orderedByKin = helper.orderByKin( allData );
+      var fields = [
+        'kin',
+        'location',
+        'since',
+        // cumulative kWh
+        'kWh',
+        'carbon',
+        'miles',
+        'trees',
+        'gallons',
+        // charge events
+        'numberOfCharges',
+        'averageChargeEventsPerDay',
+        'medianChargeEventsPerDay',
+        'averageDurationOfEvent',
+        'medianDurationOfEvent',
+        // Average kwh per event
+        'averageKwhOfEvent',
+        'averageCarbonPerEvent',
+        'averageMilesPerEvent',
+        'averageTreesPerEvent',
+        'averageGallonsPerEvent',
+        // Median kwh per event
+        'medianKwhOfEvent',
+        'medianCarbonPerEvent',
+        'medianMilesPerEvent',
+        'medianTreesPerEvent',
+        'medianGallonsPerEvent'
+      ];
+      var fieldNames = [
+        'KIN',
+        'Location',
+        'Start of 30 Days',
+        // cumulative kWh
+        '30 Day kWh',
+        '30 Day Carbon Offset (lbs)',
+        '30 Day Miles',
+        '30 Day Trees',
+        '30 Day Gallons',
+        // charge events
+        'Total Charges Events',
+        'Average Charge Events/Day',
+        'Median Charge Events/Day',
+        'Average Duration Of Event',
+        'Median Duration Of Event',
+        // Average kwh per event
+        'Average kWh Per Event',
+        'Average Carbon Offset Per Event',
+        'Average Miles Per Event',
+        'Average Trees Per Event',
+        'Average Gallons Per Event',
+        // Median kwh per event
+        'Median kWh Of Event',
+        'Median Carbon Offset Per Event',
+        'Median Miles Per Event',
+        'Median Trees Per Event',
+        'Median Gallons Per Event'
+      ];
+
+      return generateCSV( orderedByKin, fields, fieldNames );
     })
     .then(function( csv ) {
       res.send( csv );
