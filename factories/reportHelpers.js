@@ -227,7 +227,7 @@ exports.chargesOverLastThirtyDaysForOneStation = function( oneStation ) {
   var thirtyDaysAgo = moment().startOf( 'day' ).subtract( 1, 'day' ).subtract( 1, 'month' );
   var where = {
     where: {
-      id: oneStation.id,
+      station_id: oneStation.id,
       time_start: {
         $gt: thirtyDaysAgo.toDate()
       },
