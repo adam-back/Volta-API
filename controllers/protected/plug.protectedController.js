@@ -117,7 +117,6 @@ module.exports = exports = {
 
             return foundStation.removePlug( foundPlug )
             .then(function() {
-              console.log( 'before destroy' );
               // remove the plug from the db
               return foundPlug.destroy();
             })
