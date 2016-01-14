@@ -4,47 +4,58 @@ var mediaSchedule = require( '../../models' ).media_schedule;
 var station = require( '../../models').station;
 var express = require( 'express' );
 var async     = require( 'async' );
+var q = require( 'q');
 // var chainer = new Sequelize.Utils.QueryChainer;
 
 var updateMediaScheduleHelper = function( req, res, where ) {
-  mediaSchedule.find( where )
-    .then(function( mediaScheduleToUpdate ) {
-      console.log( 'found media schedule', mediaScheduleToUpdate );
+  var foundMediaSchedule = function( mediaScheduleToUpdate ) {
 
-      for( var key in req.body ) {
-        mediaScheduleToUpdate[ key ] = req.body[ key ];
-      }
-      // for ( var i = 0; i < req.body.changes.length; i++ ) {
-      //   var field = req.body.changes[ i ][ 0 ];
-      //   var newData = req.body.changes[ i ][ 2 ];
-      //   mediaScheduleToUpdate[ field ] = newData;
-      // }
+    if( Array.isArray( mediaScheduleToUpdate ) ) {
+      mediaScheduleToUpdate = mediaScheduleToUpdate[ 0 ];
+    }
 
-      mediaScheduleToUpdate.save()
-      .then(function( successMediaSchedule ) {
+    for( var key in req.body ) {
+      mediaScheduleToUpdate[ key ] = req.body[ key ];
+    }
+
+    // remove presentations
+    var presentation = mediaScheduleToUpdate.schedule.presentation;
+    delete mediaScheduleToUpdate.schedule.presentation;
+
+    mediaScheduleToUpdate.schedule = JSON.stringify( mediaScheduleToUpdate.schedule );
+
+    mediaScheduleToUpdate.save()
+    .then(function( successMediaSchedule ) {
+      successMediaSchedule.setMediaPresentations([ presentation.id ])
+      .then( function( presentation ) {
         res.json( successMediaSchedule );
       })
-      .catch(function( error ) {
-        console.log( 'error', error );
-        // var query = {};
-        // // get the title that of the colum that errored
-        // var errorColumn = Object.keys( error.fields );
-        // // get the value that errored
-        // var duplicateValue = error.fields[ errorColumn ];
-        // query[ errorColumn ] = duplicateValue;
-
-        // // where conflicting key, value
-        // mediaSchedule.find( { where: query } )
-        // .then(function( duplicatemediaSchedule ) {
-        //   error.duplicatemediaSchedule = duplicatemediaSchedule;
-        // 409 = conflict
-        res.status( 409 ).send( error );
+      .catch( function( error ) {
+        throw error;
       })
     })
+    .catch(function( error ) {
+      console.log( 'error', error );
+      // 409 = conflict
+      res.status( 409 ).send( error );
+    })
+  };
+
+  if( where ) {
+    mediaSchedule.findOrCreate( where )
+    .then( foundMediaSchedule )
     .catch(function( error ) {
       console.log( 'promise error', error );
       res.status( 500 ).send( error );
     });
+  } else {
+    mediaSchedule.findOrCreate()
+    .then( foundMediaSchedule )
+    .catch(function( error ) {
+      console.log( 'promise error', error );
+      res.status( 500 ).send( error );
+    });
+  }
 }
 
 // NOTE: uses query instead of params
@@ -58,6 +69,34 @@ module.exports = exports = {
       console.log( 'promise blew up', error );
       res.status( 500 ).send( error );
     });
+  },
+
+  getAllMediaSchedulesWithPresentations: function( req, res ) {
+    mediaSchedule.findAll()
+    .then( function( schedules ) {
+      var presentationPromises = [];
+
+      for( var i=0; i<schedules.length; i++ ) {
+        presentationPromises.push( schedules[ i ].getMediaPresentations() );
+      }
+
+      q.all( presentationPromises )
+      .then( function( presentations ) {
+        for( var i=0; i<presentations.length; i++ ) {
+          schedules[ i ].dataValues.presentations = presentations[ i ];
+        }
+        res.json( schedules );
+      })
+      .catch( function( error ) {
+        console.log( '\n\n getAllMediaSchedulesWithPresentations - error', error, '\n\n' );
+        throw error;
+      });
+
+    })
+    .catch( function( error ) {
+      console.log( 'getAllMediaSchedulesWithPresentations - failed to getAllMediaSchedulesWithPresentations', error );
+      res.status( 500 ).send( error );
+    })
   },
 
   deleteMediaSchedule: function( req, res ) {
@@ -83,6 +122,7 @@ module.exports = exports = {
     .spread(function( schedule, created ) {
       // send boolean
       if( created ) {
+        schedule.setMediaPresentations([ schedule.dataValues.schedule.presentation ])
         res.json( { successfullyAddedMediaSchedule: created } );
       } else {
         throw new Error ( 'Schedule already exits for kin ' + req.body.kin );
@@ -94,9 +134,6 @@ module.exports = exports = {
   },
 
   updateMediaSchedule: function ( req, res ) {
-    console.log( '\n\n UPDATE MEDIA SCHEDULE \n\n' );
-    console.log( req.body );
-    
     updateMediaScheduleHelper( req, res, { where: { kin: req.body.kin } } );
   },
 
@@ -147,7 +184,6 @@ module.exports = exports = {
       }
     })
     .then( function( schedules ) {
-      console.log( 'found', schedules );
       if( !schedules ) {
         throw new Error( 'no schedules for serialNumber', serialNumber );
       }
@@ -182,7 +218,6 @@ module.exports = exports = {
       //   presentations: [ 24 ]
       // };
       //end test
-      console.log( 'schedules returned', schedule );
       res.json( schedule );
     })
     .catch(function( error ) {

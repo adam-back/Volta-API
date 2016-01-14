@@ -11,7 +11,7 @@ module.exports = function( sequelize, DataTypes ) {
 		startDate: DataTypes.DATE,
 		endDate: DataTypes.DATE
 
-	}, { underscored: true } );
+	}, { paranoid: true, underscored: true } );
 
 	return media_campaign;
 

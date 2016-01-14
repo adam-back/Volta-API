@@ -14,10 +14,7 @@ module.exports = function( sequelize, DataTypes ) {
     site_number: DataTypes.INTEGER,
     install_date: DataTypes.STRING,
     network: DataTypes.STRING,
-    ekm_push_mac: {
-      type: DataTypes.STRING,
-      unique: true
-    },
+    ekm_push_mac: DataTypes.STRING,
     sim_card: {
       type: DataTypes.STRING,
       unique: true
@@ -26,10 +23,14 @@ module.exports = function( sequelize, DataTypes ) {
     location: DataTypes.STRING,
     location_address: DataTypes.STRING,
     location_description: DataTypes.TEXT,
-    location_gps: DataTypes.ARRAY( DataTypes.DECIMAL ),
+    location_gps: {
+      type: DataTypes.ARRAY( DataTypes.DECIMAL ),
+      defaultValue: null
+    },
     cost_to_access: DataTypes.BOOLEAN,
     cumulative_kwh: DataTypes.DECIMAL,
     station_status: DataTypes.STRING,
+    has_digital_front_display: DataTypes.BOOLEAN,
     // [ 'true', 'false', 'error' ], 1/3 stations in use, 1 plug broken
     in_use: DataTypes.ARRAY( DataTypes.STRING )
   }, { paranoid: true, underscored: true } );

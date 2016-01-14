@@ -10,7 +10,7 @@ module.exports = function( sequelize, DataTypes ) {
 		active: DataTypes.BOOLEAN,
 		slide_order: DataTypes.ARRAY(DataTypes.INTEGER)
 
-	}, { underscored: true } );
+	}, { paranoid: true, underscored: true } );
 
 	return media_presentation;
 

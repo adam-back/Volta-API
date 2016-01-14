@@ -73,5 +73,17 @@ module.exports = exports = {
     .catch(function( error ) {
       res.status( 500 ).send( error );
     });
-  }
+  },
+
+  deleteMediaSlide: function ( req, res ) {
+    console.log( '\n\n DELETE SLIDE #', req.params.id );
+    mediaSlide.destroy({ where: { id: req.params.id } } )
+    .then( function( slide ) {
+      res.json( slide );
+    })
+    .catch( function( error ) {
+      console.log( error );
+      res.status( 500 ).send( error );
+    });
+  },
 };
