@@ -4,6 +4,8 @@ var app_sponsor = require( '../../models' ).app_sponsor;
 var express = require( 'express' );
 var async     = require( 'async' );
 var appSponsorFactory = require( '../../factories/appSponsorFactory' );
+var mediaSchedule = require( './mediaSchedule.protectedController.js' );
+var q = require( 'q' );
 
 module.exports = exports = {
   countStations: function ( req, res ) {
@@ -85,15 +87,78 @@ module.exports = exports = {
     // { kin: #, changes: [ [ field, old, new ], [ field, old, new ] ] }
     station.find( { where: { kin: req.body.kin } } )
     .then(function( stationToUpdate ) {
+      var needToUpdateMediaSchedule = false;
+
+      console.log( '\n\nreq.body.changes', req.body.changes );
+
+      // if the pc serial number has changed, create a new media schedule for this station
+      
+
       for ( var i = 0; i < req.body.changes.length; i++ ) {
         var field = req.body.changes[ i ][ 0 ];
         var newData = req.body.changes[ i ][ 2 ];
+
+        if( field === 'front_display_pc_serial_number' ) {
+          console.log( '\n\nneed to update media schedule' );
+          needToUpdateMediaSchedule = true;
+        }
+
         stationToUpdate[ field ] = newData;
       }
 
       stationToUpdate.save()
       .then(function( successStation ) {
-        res.json( successStation );
+        // default to volta filler media
+        var oldMediaSchedule = {};
+
+        if( needToUpdateMediaSchedule ) {
+          mediaSchedule.getMediaScheduleByKinLocal( req.body.kin )
+          .then( function( schedules ) {
+            if( schedules.length === 0 ) {
+              // nothing to update
+              res.json( successStation );
+              throw new Error( 'IGNORE - no media schedule to update' );
+            } else {
+              // store old media schedule
+              oldMediaSchedule = schedules[ 0 ].dataValues;
+
+              // delete media schedule (PARANOID)
+              return mediaSchedule.deleteMediaScheduleByKin( req.body.kin );
+            }
+          })
+          .then( function( deletedScheduleId ) {
+            // copy the old schedule
+            var newMediaSchedule = JSON.parse( JSON.stringify( oldMediaSchedule ) );
+            delete newMediaSchedule.deleted_at;
+            delete newMediaSchedule.id;
+
+            // update front_display_pc_serial_number
+            newMediaSchedule.serial_number = stationToUpdate.front_display_pc_serial_number;
+
+            // add new media schedule
+            return mediaSchedule.addMediaScheduleLocal( newMediaSchedule )
+          })
+          .spread(function( schedule, created ) {
+            if( !created ) {
+              throw new Error ( 'Schedule already exits for kin ' + req.body.kin );
+            } else if( !schedule.dataValues || !schedule.dataValues.schedule || !schedule.dataValues.schedule.presentation ) {
+              // throw new Error ( '[IGNORE] - Presentation does not exist for schedule' );
+              return q();
+            } else {
+              return schedule.setMediaPresentations([ schedule.dataValues.schedule.presentation ])
+            }
+          })
+          .then(function() {
+            // mediaSchedule and associated mediaPresentation have updated successfully
+            res.json( successStation );
+          })
+          .catch( function( error ) {
+            // if adding new media schedule fails, do something
+            console.log( 'error updating station with changed pc serial number', error );
+          });
+        } else {
+          res.json( successStation );
+        }
       })
       .catch(function( error ) {
         var query = {};

@@ -115,6 +115,31 @@ module.exports = exports = {
     });
   },
 
+  // local use only
+  deleteMediaScheduleByKin: function( kin ) {
+
+    return mediaSchedule.destroy({
+      where: {
+        kin: kin
+      }
+    });
+  },
+
+  // local use only
+  addMediaScheduleLocal: function ( schedule ) {
+    return mediaSchedule.findOrCreate( { where: { kin: schedule.kin }, defaults: schedule } )
+  },
+
+  // local use only
+  getMediaScheduleByKinLocal: function ( kin ) {
+
+    return mediaSchedule.findAll( {
+      where: {
+        kin: kin
+      }
+    })
+  },
+
   addMediaSchedule: function ( req, res ) {
     // Validate that a station with same KIN doesn't exist, create it
     // console.log( 'add schedule - body: ', req.body );
