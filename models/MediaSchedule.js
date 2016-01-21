@@ -9,7 +9,7 @@ module.exports = function( sequelize, DataTypes ) {
 		schedule: DataTypes.STRING,
 		kin: DataTypes.STRING,
 		serial_number: DataTypes.STRING,
-		active: DataTypes.BOOLEAN
+		active: DataTypes.BOOLEAN,
 
 	}, { paranoid: true, underscored: true } );
 

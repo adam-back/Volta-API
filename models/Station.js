@@ -31,6 +31,7 @@ module.exports = function( sequelize, DataTypes ) {
     cumulative_kwh: DataTypes.DECIMAL,
     station_status: DataTypes.STRING,
     has_digital_front_display: DataTypes.BOOLEAN,
+    front_display_pc_serial_number: DataTypes.STRING,
     // [ 'true', 'false', 'error' ], 1/3 stations in use, 1 plug broken
     in_use: DataTypes.ARRAY( DataTypes.STRING )
   }, { paranoid: true, underscored: true } );

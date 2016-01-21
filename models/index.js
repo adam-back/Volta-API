@@ -61,8 +61,9 @@ db.user.belongsToMany( db.car, { through: 'user_car' } );
 db.media_presentation.belongsToMany( db.media_slide, { as: 'MediaSlides', through: 'media_presentation_of_slides' } );
 db.media_slide.belongsToMany( db.media_presentation, { as: 'MediaPresentations', through: 'media_presentation_of_slides' } );
 
-db.media_schedule.belongsToMany( db.media_presentation, { as: 'MediaPresentations', through: 'media_schedule_of_presentations' } );
-db.media_presentation.belongsToMany( db.media_schedule, { as: 'MediaSchedules', through: 'media_schedule_of_presentations' } );
+db.media_presentation.hasMany( db.media_schedule, { as: 'MediaSchedules' } );
+// db.media_schedule.belongsToMany( db.media_presentation, { as: 'MediaPresentations', through: 'media_schedule_of_presentations' } );
+// db.media_presentation.belongsToMany( db.media_schedule, { as: 'MediaSchedules', through: 'media_schedule_of_presentations' } );
 
 db.media_campaign.belongsToMany( db.station, { as: 'Stations', through: 'media_campaign_stations' } );
 db.station.belongsToMany( db.media_campaign, { as: 'MediaCampaigns', through: 'media_campaign_stations' } );
