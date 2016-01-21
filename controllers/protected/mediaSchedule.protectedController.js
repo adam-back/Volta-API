@@ -7,56 +7,61 @@ var async     = require( 'async' );
 var q = require( 'q');
 // var chainer = new Sequelize.Utils.QueryChainer;
 
-var updateMediaScheduleHelper = function( req, res, where ) {
-  var foundMediaSchedule = function( mediaScheduleToUpdate ) {
-
-    if( Array.isArray( mediaScheduleToUpdate ) ) {
-      mediaScheduleToUpdate = mediaScheduleToUpdate[ 0 ];
+/* HELPER METHODS */
+var deleteMediaScheduleByKin = function( kin ) {
+  return mediaSchedule.destroy({
+    where: {
+      kin: kin
     }
+  });
+};
 
-    for( var key in req.body ) {
-      mediaScheduleToUpdate[ key ] = req.body[ key ];
+// spreads to ( user, created )
+var addMediaScheduleLocal = function ( schedule ) {
+  return mediaSchedule.findOrCreate( { where: { kin: schedule.kin }, defaults: schedule } )
+};
+
+var getMediaScheduleByKinLocal = function ( kin ) {
+  return mediaSchedule.findAll( {
+    where: {
+      kin: kin
     }
+  })
+};
 
-    // remove presentations
-    var presentation = mediaScheduleToUpdate.schedule.presentation;
-    delete mediaScheduleToUpdate.schedule.presentation;
+var replaceMediaScheduleLocal = function( newSchedule ) {
+  // get presentation
+  var presentation = newSchedule.schedule.presentation
+  delete newSchedule.schedule.presentation;
+  newSchedule.schedule = JSON.stringify( newSchedule.schedule );
+  newSchedule.media_presentation_id = presentation.id;
 
-    mediaScheduleToUpdate.schedule = JSON.stringify( mediaScheduleToUpdate.schedule );
-
-    mediaScheduleToUpdate.save()
-    .then(function( successMediaSchedule ) {
-      successMediaSchedule.setMediaPresentations([ presentation.id ])
-      .then( function( presentation ) {
-        res.json( successMediaSchedule );
-      })
-      .catch( function( error ) {
-        throw error;
-      })
+  // find and delete existing media schedule
+  return getMediaScheduleByKinLocal( newSchedule.kin )
+  .then( function( schedule ) {
+    if( schedule ) {
+      return deleteMediaScheduleByKin( newSchedule.kin );
+    } else {
+      return q();
+    }
+  })
+  .then( function( deletedSchedule ) {
+    return addMediaScheduleLocal( newSchedule );
+  })
+  .spread( function( addedSchedule, wasCreated ) {
+    // return the media schedule with its specified presentation
+    return mediaPresentation.findAll( { where: { id: presentation.id } } )
+    .then( function( presentations ) {
+      addedSchedule.dataValues.presentations = presentations;
+      return addedSchedule.dataValues;
     })
-    .catch(function( error ) {
-      console.log( 'error', error );
-      // 409 = conflict
-      res.status( 409 ).send( error );
-    })
-  };
-
-  if( where ) {
-    mediaSchedule.findOrCreate( where )
-    .then( foundMediaSchedule )
-    .catch(function( error ) {
-      console.log( 'promise error', error );
-      res.status( 500 ).send( error );
-    });
-  } else {
-    mediaSchedule.findOrCreate()
-    .then( foundMediaSchedule )
-    .catch(function( error ) {
-      console.log( 'promise error', error );
-      res.status( 500 ).send( error );
-    });
-  }
-}
+  })
+  .catch( function( error ) {
+    console.log( '\n\n ERROR', error );
+    throw new Error ( 'failed to replace media schedule', error );
+  })
+};
+/* END HELPER METHODS */
 
 // NOTE: uses query instead of params
 module.exports = exports = {
@@ -76,15 +81,20 @@ module.exports = exports = {
     .then( function( schedules ) {
       var presentationPromises = [];
 
-      for( var i=0; i<schedules.length; i++ ) {
-        presentationPromises.push( schedules[ i ].getMediaPresentations() );
-      }
-
-      q.all( presentationPromises )
+      mediaPresentation.findAll()
       .then( function( presentations ) {
-        for( var i=0; i<presentations.length; i++ ) {
-          schedules[ i ].dataValues.presentations = presentations[ i ];
+        // convert presentations array to hash table where id is key
+        var presentationsHash = {};
+        for( var i=0; i< presentations.length; i++ ) {
+          var presentation = presentations[ i ];
+          presentationsHash[ presentation.id ] = presentation;
         }
+
+        for( var i=0; i<schedules.length; i++ ) {
+          var presentationID = schedules[ i ].dataValues.media_presentation_id;
+          schedules[ i ].dataValues.presentations = [ presentationsHash[ presentationID ] ];
+        }
+
         res.json( schedules );
       })
       .catch( function( error ) {
@@ -116,33 +126,27 @@ module.exports = exports = {
   },
 
   // local use only
-  deleteMediaScheduleByKin: function( kin ) {
+  deleteMediaScheduleByKin: deleteMediaScheduleByKin,
+  addMediaScheduleLocal: addMediaScheduleLocal,
+  getMediaScheduleByKinLocal: getMediaScheduleByKinLocal,
+  replaceMediaScheduleLocal: replaceMediaScheduleLocal,
 
-    return mediaSchedule.destroy({
-      where: {
-        kin: kin
-      }
-    });
-  },
+  replaceMediaSchedule: function( req, res ) {
+    var schedule = req.body;
+    var kin = schedule.kin;
 
-  // local use only
-  addMediaScheduleLocal: function ( schedule ) {
-    return mediaSchedule.findOrCreate( { where: { kin: schedule.kin }, defaults: schedule } )
-  },
-
-  // local use only
-  getMediaScheduleByKinLocal: function ( kin ) {
-
-    return mediaSchedule.findAll( {
-      where: {
-        kin: kin
-      }
+    replaceMediaScheduleLocal( schedule )
+    .then( function( newSchedule ) {
+      res.json( newSchedule );
     })
+    .catch( function( error ) {
+      console.log( 'failed to replaceMediaSchedule', error );
+      res.status( 500 ).send( error );
+    });
   },
 
   addMediaSchedule: function ( req, res ) {
     // Validate that a station with same KIN doesn't exist, create it
-    // console.log( 'add schedule - body: ', req.body );
     mediaSchedule.findOrCreate( { where: { kin: req.body.kin }, defaults: req.body } )
     .spread(function( schedule, created ) {
       // send boolean
@@ -158,6 +162,7 @@ module.exports = exports = {
     });
   },
 
+  // [ DEPRECATE ME! ]
   updateMediaSchedule: function ( req, res ) {
     updateMediaScheduleHelper( req, res, { where: { kin: req.body.kin } } );
   },
@@ -263,14 +268,18 @@ module.exports = exports = {
       if( ! stations || stations.length === 0 ) {
         throw new Error( 'no stations' );
       }
-      return stations[ 0 ].getMediaSchedule();  
+      return stations[ 0 ].getMediaSchedule();
     })
     .then( function( schedules ) {
       if( !schedules ) {
         throw new Error( 'no schedules' );
       }
       var schedule = schedules[ 0 ];
-      return [ schedule, schedule.getMediaPresentations() ];
+
+      mediaPresentation.findAll( { where: { id: schedule.dataValues.media_presentation_id } } )
+      .then( function( presentations ) {
+        return [ schedule, presentations[ 0 ] ];
+      })
     })
     .spread( function( schedule, presentations ) {
       if( ! presentations ) {

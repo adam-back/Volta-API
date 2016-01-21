@@ -19,7 +19,7 @@ var getMediaPresentations = function( req, res, whereObject, keyToGet ) {
       var array = [];
       for( var key in obj ) {
         var contents = {};
-        contents.key = key; 
+        contents.key = key;
         contents.contents = obj[ key ];
         array.push( contents );
       }
@@ -96,7 +96,7 @@ module.exports = exports = {
   getAllMediaPresentations: function ( req, res ) {
     getMediaPresentations( req, res, null, 'id' );
   },
-  
+
   addMediaPresentation: function ( req, res ) {
     // Validate that a station with same KIN doesn't exist, create it
     // need to save the order of the slides here
@@ -108,32 +108,25 @@ module.exports = exports = {
       slide_order: req.body.slideOrder
     };
 
-    console.log( '\n\n ADD PRESENTATION \n\n' );
-    // console.log( '\n\n', req.body, '\n\n' );
-
     mediaPresentation.findOrCreate( { where: { name: newPresentation.name }, defaults: newPresentation } )
     .spread(function( presentation, created ) {
       //add slides
       if( created ) {
         //get media_slide_id from media slides
         var mediaSlideIds = [];
-        console.log( 'given slides: ', req.body.mediaSlides );
         for( var i=0; i<req.body.mediaSlides.length; i++ ) {
           // mediaSlideIds.push( req.body.mediaSlides[ i ].id );
           mediaSlideIds.push( req.body.mediaSlides[ i ].id );
         }
-        console.log( 'ids:', mediaSlideIds );
 
         presentation.addMediaSlides( mediaSlideIds );
       }
-
-      console.log( '\n\nNew Presentation: ', presentation, '\n\n' );
 
       // send boolean
       res.json( { successfullyAddedmediaPresentation: created } );
     });
   },
-  
+
   updateMediaPresentation: function ( req, res ) {
     mediaPresentation.find( { where: { name: req.body.name } } )
     .then(function( mediaPresentationToUpdate ) {
@@ -181,7 +174,7 @@ module.exports = exports = {
       }
     })
     .then( function( stations ) {
-      return stations[ 0 ].getMediaSchedules();  
+      return stations[ 0 ].getMediaSchedules();
     })
     .then( function( schedules ) {
       return schedules[ 0 ].getMediaPresentations();
@@ -216,7 +209,6 @@ module.exports = exports = {
 
   deleteMediaPresentation: function( req, res ) {
     var id = req.params.id;
-    console.log( 'in deleteMediaPresentation' );
     mediaPresentation.destroy({
       where: {
         id: id

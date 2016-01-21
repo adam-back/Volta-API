@@ -8,7 +8,7 @@ router.route( '/' )
   // .get( controller.getAllMediaSchedules )
   .get( controller.getAllMediaSchedulesWithPresentations )
   .post( controller.addMediaSchedule )
-  .patch( controller.updateMediaSchedule )
+  .patch( controller.replaceMediaSchedule )
 
 router.route( '/kin/:kin')
   .get( controller.getMediaScheduleByKin )
