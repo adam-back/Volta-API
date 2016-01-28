@@ -1,7 +1,7 @@
 module.exports = function( sequelize, DataTypes ) {
-	
+
 	var media_slide = sequelize.define('media_slide', {
-		id: { 
+		id: {
 			type: DataTypes.INTEGER,
 			autoIncrement: true,
 			primaryKey: true
@@ -13,7 +13,7 @@ module.exports = function( sequelize, DataTypes ) {
 	}, { paranoid: true, underscored: true } );
 
 	return media_slide;
-	
+
 	//has the following methods:
 
 	//media_slide.getMediaPresentations();

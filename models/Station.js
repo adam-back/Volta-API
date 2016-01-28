@@ -15,10 +15,7 @@ module.exports = function( sequelize, DataTypes ) {
     install_date: DataTypes.STRING,
     network: DataTypes.STRING,
     ekm_push_mac: DataTypes.STRING,
-    sim_card: {
-      type: DataTypes.STRING,
-      unique: true
-    },
+    sim_card: DataTypes.BOOLEAN,
     has_kill_switch: DataTypes.BOOLEAN,
     location: DataTypes.STRING,
     location_address: DataTypes.STRING,
