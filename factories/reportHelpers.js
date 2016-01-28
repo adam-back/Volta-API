@@ -47,8 +47,9 @@ exports.convertKwhToConsumerEquivalents = function( kwh ) {
   data.offset = Number( ( kwh * 1.52 ).toFixed( 1 ) );
   data.gallons = Number( ( kwh * 0.0766666 ).toFixed( 1 ) );
   data.trees = Number( ( kwh * 0.01766666 ).toFixed( 1 ) );
-  // Avg. Nissan Leaf from http://insideevs.com/long-term-nissan-leaf-mileageusage-review-once-around-the-sun/
-  data.miles = Number( ( kwh * 0.28 ).toFixed( 1 ) );
+  // Leaf 23 kWh battery = 80 miles
+  // 1 kWh = 3.5 miles
+  data.miles = Number( ( kwh * 3.5 ).toFixed( 1 ) );
   return data;
 };
 
