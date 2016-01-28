@@ -28,7 +28,7 @@ module.exports = function( sequelize, DataTypes ) {
     stored_locations: DataTypes.JSON,
 
     //An array of station IDs
-    favorite_stations: DataTypes.ARRAY(DataTypes.INTEGER),
+    favorite_stations: DataTypes.ARRAY( DataTypes.INTEGER ),
 
     phone_number: DataTypes.STRING,
     number_of_checkins: DataTypes.INTEGER,

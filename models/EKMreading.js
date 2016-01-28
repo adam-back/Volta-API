@@ -70,7 +70,7 @@ module.exports = function( sequelize, DataTypes ) {
     rev_kwh_ln_3: DataTypes.STRING,
     cf_ratio: DataTypes.STRING
   }, { underscored: true } );
-    
+
     return ekm_reading;
 
     // plug_id, station_id, charge_event_id added as foreign keys

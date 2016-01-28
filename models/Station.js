@@ -15,10 +15,7 @@ module.exports = function( sequelize, DataTypes ) {
     install_date: DataTypes.STRING,
     network: DataTypes.STRING,
     ekm_push_mac: DataTypes.STRING,
-    sim_card: {
-      type: DataTypes.STRING,
-      unique: true
-    },
+    sim_card: DataTypes.BOOLEAN,
     has_kill_switch: DataTypes.BOOLEAN,
     location: DataTypes.STRING,
     location_address: DataTypes.STRING,
@@ -31,6 +28,7 @@ module.exports = function( sequelize, DataTypes ) {
     cumulative_kwh: DataTypes.DECIMAL,
     station_status: DataTypes.STRING,
     has_digital_front_display: DataTypes.BOOLEAN,
+    front_display_pc_serial_number: DataTypes.STRING,
     // [ 'true', 'false', 'error' ], 1/3 stations in use, 1 plug broken
     in_use: DataTypes.ARRAY( DataTypes.STRING )
   }, { paranoid: true, underscored: true } );

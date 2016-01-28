@@ -4,6 +4,8 @@ var app_sponsor = require( '../../models' ).app_sponsor;
 var express = require( 'express' );
 var async     = require( 'async' );
 var appSponsorFactory = require( '../../factories/appSponsorFactory' );
+var mediaSchedule = require( './mediaSchedule.protectedController.js' );
+var q = require( 'q' );
 
 module.exports = exports = {
   countStations: function ( req, res ) {
@@ -85,15 +87,52 @@ module.exports = exports = {
     // { kin: #, changes: [ [ field, old, new ], [ field, old, new ] ] }
     station.find( { where: { kin: req.body.kin } } )
     .then(function( stationToUpdate ) {
+      var needToUpdateMediaSchedule = false;
+
       for ( var i = 0; i < req.body.changes.length; i++ ) {
         var field = req.body.changes[ i ][ 0 ];
         var newData = req.body.changes[ i ][ 2 ];
+
+        if( field === 'front_display_pc_serial_number' ) {
+          needToUpdateMediaSchedule = true;
+        }
+
         stationToUpdate[ field ] = newData;
       }
 
       stationToUpdate.save()
       .then(function( successStation ) {
-        res.json( successStation );
+        // default to volta filler media
+        var oldMediaSchedule = {};
+
+        // new
+        if( needToUpdateMediaSchedule ) {
+          mediaSchedule.getMediaScheduleByKinLocal( req.body.kin )
+          .then( function( schedules ) {
+            if( schedules.length === 0 ) {
+              return q();
+            } else {
+              var oldMediaSchedule = schedules[ 0 ];
+
+              var newMediaSchedule = JSON.parse( JSON.stringify( oldMediaSchedule ) );
+              delete newMediaSchedule.deleted_at;
+              delete newMediaSchedule.id;
+
+              // update front_display_pc_serial_number
+              newMediaSchedule.serial_number = stationToUpdate.front_display_pc_serial_number;
+
+              return mediaSchedule.replaceMediaScheduleLocal( newMediaSchedule );
+            }
+          })
+          .then( function() {
+            res.json( successStation );
+          })
+          .catch( function( error ) {
+            console.log( new Error( 'failed to replace media schedule on station pc serial number change', error ) );
+          })
+        } else {
+          res.json( successStation );
+        }
       })
       .catch(function( error ) {
         var query = {};

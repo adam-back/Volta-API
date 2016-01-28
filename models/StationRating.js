@@ -1,6 +1,6 @@
 module.exports = function( sequelize, DataTypes ) {
 	var station_rating = sequelize.define('station_rating', {
-		id: { 
+		id: {
 			type:DataTypes.INTEGER,
 			autoIncrement: true,
 			primaryKey: true
