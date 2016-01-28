@@ -1,8 +1,8 @@
 module.exports = function( sequelize, DataTypes ) {
-	
+
 	//create another row each time a schedule is changed
 	var media_campaign = sequelize.define('media_campaign', {
-		id: { 
+		id: {
 			type: DataTypes.INTEGER,
 			autoIncrement: true,
 			primaryKey: true
@@ -18,7 +18,7 @@ module.exports = function( sequelize, DataTypes ) {
 	//has media_company as a forign key
 
 	//has the following methods:
-	
+
 	//media_campaign.getStations();
 	//media_campaign.setStations();
 
