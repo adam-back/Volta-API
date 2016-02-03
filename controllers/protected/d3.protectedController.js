@@ -1,3 +1,6 @@
+// fs only for development
+var fs = require( 'fs' );
+
 var express = require( 'express' );
 var Sequelize = require( 'sequelize' );
 var station = require( '../../models').station;
@@ -99,6 +102,24 @@ module.exports = exports = {
       });
 
       res.send( treeData[ 0 ] );
+    });
+  },
+  getKinNetworkAbbreviations: function( req, res ) {
+    fs.readFile( '../../../Report-Generators/networkLineChart/kin-networks.csv', function( error, data ) {
+      if ( error ) {
+        res.status( 500 ).send( 'Could not find file' );
+      } else {
+        res.send( data );
+      }
+    });
+  },
+  getKinGrowthOverTime: function( req, res ) {
+    fs.readFile( '../../../Report-Generators/networkLineChart/station-use-growth.csv', function( error, data ) {
+      if ( error ) {
+        res.status( 500 ).send( 'Could not find file' );
+      } else {
+        res.send( data );
+      }
     });
   }
 };
