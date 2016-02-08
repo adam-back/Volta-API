@@ -113,7 +113,6 @@ module.exports = exports = {
       res.send( csv );
     })
     .catch(function( error ) {
-      console.log( 'error', error );
       res.status( 500 ).send( error );
     });
   },
