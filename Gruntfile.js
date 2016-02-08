@@ -21,7 +21,7 @@ module.exports = function(grunt) {
             consolidate: true
           }
         },
-        src: [ '*.js', 'factories/*.js' ]
+        src: [ '*.js', 'factories/*.js', 'factories/**/*.js']
       }
     },
     watch: {
