@@ -32,8 +32,7 @@ describe('CSV Helpers', function() {
 
       generateCSV( data, fields, fieldNames )
       .catch(function( error ) {
-        console.log( 'error', error );
-        expect( error ).not.toBe( -1 );
+        expect( error.message ).toBe( 'fieldNames and fields should be of the same length, if fieldNames is provided.' );
         done();
       });
     });
