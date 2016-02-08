@@ -3,12 +3,15 @@ var fs = require( 'fs' );
 
 var express = require( 'express' );
 var Sequelize = require( 'sequelize' );
+// factor these out for db.station
 var station = require( '../../models').station;
 var plug = require( '../../models').plug;
+var db = require( '../../models' );
 var async     = require( 'async' );
 var Q = require( 'q' );
 var env = process.env.NODE_ENV || 'development';
 var config    = require( '../../config/config' )[ env ];
+var reportHelpers = require( '../../factories/reportHelpers' );
 
 module.exports = exports = {
   getSunburstData: function ( req, res ) {
@@ -105,12 +108,13 @@ module.exports = exports = {
     });
   },
   getKinNetworkAbbreviations: function( req, res ) {
-    fs.readFile( '../Report-Generators/networkLineChart/kin-networks.csv', function( error, data ) {
-      if ( error ) {
-        res.status( 500 ).send( 'Could not find file' );
-      } else {
-        res.send( data );
-      }
+    reportHelpers.formatKinsWithNetworks()
+    .then(function( csv ) {
+      res.send( csv );
+    })
+    .catch(function( error ) {
+      console.log( 'error', error );
+      res.status( 500 ).send( error );
     });
   },
   getKinGrowthOverTime: function( req, res ) {
