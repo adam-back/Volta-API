@@ -12,6 +12,7 @@ var Q = require( 'q' );
 var env = process.env.NODE_ENV || 'development';
 var config    = require( '../../config/config' )[ env ];
 var reportHelpers = require( '../../factories/reportHelpers' );
+var growth = require( '../../factories/reports/kwhGrowthOverTime.js' );
 
 module.exports = exports = {
   getSunburstData: function ( req, res ) {
@@ -117,12 +118,12 @@ module.exports = exports = {
     });
   },
   getKinGrowthOverTime: function( req, res ) {
-    fs.readFile( '../Report-Generators/networkLineChart/station-use-growth.csv', function( error, data ) {
-      if ( error ) {
-        res.status( 500 ).send( 'Could not find file' );
-      } else {
-        res.send( data );
-      }
+    growth.kwhGrowthOverTime()
+    .then(function( csv ) {
+      res.send( csv );
+    })
+    .catch(function( error ) {
+      res.status( 500 ).send( error );
     });
   }
 };
