@@ -1,11 +1,37 @@
 var express = require( 'express' );
+var moment = require( 'moment' );
+moment().format();
 var Sequelize = require( 'sequelize' );
+// factor these out for db.station
 var station = require( '../../models').station;
 var plug = require( '../../models').plug;
+var db = require( '../../models' );
 var async     = require( 'async' );
 var Q = require( 'q' );
 var env = process.env.NODE_ENV || 'development';
 var config    = require( '../../config/config' )[ env ];
+var reportHelpers = require( '../../factories/reportHelpers' );
+var growth = require( '../../factories/reports/kwhGrowthOverTime.js' );
+
+var memoizedData = {
+  kinNetworks: {
+    data: null,
+    lastFetch: null
+  },
+  kwhGrown: {
+    data: null,
+    lastFetch: null
+  }
+};
+
+var isOld = function( dataName ) {
+  var midnightLastNight = moment().startOf( 'day' );
+  if ( memoizedData[ dataName ].lastFetch === null || memoizedData[ dataName ].lastFetch.isBefore( midnightLastNight ) ) {
+    return true;
+  } else {
+    return false;
+  }
+};
 
 module.exports = exports = {
   getSunburstData: function ( req, res ) {
@@ -100,5 +126,35 @@ module.exports = exports = {
 
       res.send( treeData[ 0 ] );
     });
+  },
+  getKinNetworkAbbreviations: function( req, res ) {
+    if ( memoizedData.kinNetworks.data === null || isOld( 'kinNetworks' ) ) {
+      reportHelpers.formatKinsWithNetworks()
+      .then(function( csv ) {
+        memoizedData.kinNetworks.data = csv;
+        memoizedData.kinNetworks.lastFetch = moment();
+        res.send( csv );
+      })
+      .catch(function( error ) {
+        res.status( 500 ).send( error );
+      });
+    } else {
+      res.send( memoizedData.kinNetworks.data );
+    }
+  },
+  getKinGrowthOverTime: function( req, res ) {
+    if ( memoizedData.kwhGrown.data === null || isOld( 'kwhGrown' ) ) {
+      growth.kwhGrowthOverTime()
+      .then(function( csv ) {
+        memoizedData.kwhGrown.data = csv;
+        memoizedData.kwhGrown.lastFetch = moment();
+        res.send( csv );
+      })
+      .catch(function( error ) {
+        res.status( 500 ).send( error );
+      });
+    } else {
+      res.send( memoizedData.kwhGrown.data );
+    }
   }
 };
