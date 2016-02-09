@@ -33,6 +33,10 @@ var replaceMediaScheduleLocal = function( newSchedule ) {
   // get presentation
   var presentation = newSchedule.schedule.presentation
   delete newSchedule.schedule.presentation;
+
+  // add presentation to schedule
+  newSchedule.schedule.presentation = presentation.id;
+
   newSchedule.schedule = JSON.stringify( newSchedule.schedule );
   newSchedule.media_presentation_id = presentation.id;
 
