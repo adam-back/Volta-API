@@ -319,7 +319,8 @@ exports.standardizeNetworkInfo = function( stations ) {
     NoCal: 'NORCAL',
     // grouped LA
     LA: 'LA',
-    OC: 'LA'
+    OC: 'LA',
+    SB: 'LA'
   };
 
   var prettyNetworkName = {
