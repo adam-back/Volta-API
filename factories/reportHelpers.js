@@ -6,6 +6,7 @@ var plug = require( '../models').plug;
 var charge_event = require( '../models').charge_event;
 var async     = require( 'async' );
 var ekm = require( './ekmFactory.js' );
+var csv = require( './csvFactory')
 
 exports.orderByKin = function( collection ) {
   collection.sort(function( a, b ) {
@@ -306,5 +307,58 @@ exports.chargesOverLastThirtyDaysForOneStation = function( oneStation ) {
     }
 
     return dataForCSV;
+  });
+};
+
+exports.standardizeNetworkInfo = function( stations ) {
+  var standardizedNetworkCode = {
+    SD: 'SD',
+    Chicago: 'CHI',
+    Arizona: 'AZ',
+    Hawaii: 'HI',
+    NoCal: 'NORCAL',
+    // grouped LA
+    LA: 'LA',
+    OC: 'LA',
+    SB: 'LA'
+  };
+
+  var prettyNetworkName = {
+    SD: 'San Diego',
+    Chicago: 'Chicagoland',
+    Arizona: 'Arizona',
+    Hawaii: 'Hawaii',
+    NoCal: 'Northern California',
+    LA: 'Los Angeles',
+    OC: 'Los Angeles'
+  };
+
+  for ( var i = 0; i < stations.length; i++ ) {
+    var network = stations[ i ].network;
+    // check if we account for this network
+    if ( standardizedNetworkCode.hasOwnProperty( network ) ) {
+      // apply a network code and network name
+      stations[ i ].networkCode = standardizedNetworkCode[ network ];
+      stations[ i ].networkName = prettyNetworkName[ network ];
+      // remove ugly network
+      delete stations[ i ].network;
+
+    // weird network
+    } else {
+      throw new Error ( 'Did not account for network ' + network );
+    }
+  }
+
+  return stations;
+};
+
+exports.formatKinsWithNetworks = function() {
+  // get all the kins and their networks ordered by kin
+  return station.findAll( { attributes: [ 'kin', 'network' ], order: 'kin', raw: true } )
+  .then(function( stations ) {
+    var formattedForCSV = exports.standardizeNetworkInfo( stations );
+    var fields = [ 'kin', 'networkCode', 'networkName' ];
+    // export as CSV
+    return csv.generateCSV( formattedForCSV, fields, fields );
   });
 };
