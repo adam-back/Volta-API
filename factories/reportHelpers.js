@@ -330,7 +330,8 @@ exports.standardizeNetworkInfo = function( stations ) {
     Hawaii: 'Hawaii',
     NoCal: 'Northern California',
     LA: 'Los Angeles',
-    OC: 'Los Angeles'
+    OC: 'Los Angeles',
+    SB: 'Los Angeles'
   };
 
   for ( var i = 0; i < stations.length; i++ ) {
