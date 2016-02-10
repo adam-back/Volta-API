@@ -3,7 +3,7 @@ var Q = require( 'q' );
 var db = require( '../../models/index.js' );
 var csv = require( '../../factories/csvFactory.js' );
 
-describe('reportHelpers (KIN and Network CSV)', function() {
+describe('reportHelpers', function() {
   describe('standardizeNetworkInfo', function() {
     var standardizeNetworkInfo = reportHelpers.standardizeNetworkInfo;
     var stations;
@@ -38,8 +38,8 @@ describe('reportHelpers (KIN and Network CSV)', function() {
     });
 
     it('should throw an error if it sees a network it doesn\'t recognize', function() {
-      stations[ 1 ].network = 'SB';
-      expect( function() { standardizeNetworkInfo( stations ); } ).toThrow( new Error ( 'Did not account for network SB' ) );
+      stations[ 1 ].network = 'NSA';
+      expect( function() { standardizeNetworkInfo( stations ); } ).toThrow( new Error ( 'Did not account for network NSA' ) );
     });
 
     describe('network names', function() {
@@ -91,6 +91,13 @@ describe('reportHelpers (KIN and Network CSV)', function() {
 
       it('should change OC into LA and Los Angeles', function() {
         stations[ 0 ].network = 'OC';
+        var result = standardizeNetworkInfo( stations );
+        expect( stations[ 0 ].networkCode ).toBe( 'LA' );
+        expect( stations[ 0 ].networkName ).toBe( 'Los Angeles' );
+      });
+
+      it('should change SB into LA and Los Angeles', function() {
+        stations[ 0 ].network = 'SB';
         var result = standardizeNetworkInfo( stations );
         expect( stations[ 0 ].networkCode ).toBe( 'LA' );
         expect( stations[ 0 ].networkName ).toBe( 'Los Angeles' );

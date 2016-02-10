@@ -37,7 +37,6 @@
     "rewire": "^2.5.1"
   },
   "scripts": {
-    "test": "mocha test",
     "start": "node server.js"
   },
   "repository": {
