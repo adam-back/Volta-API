@@ -11,7 +11,8 @@ deploy:
     region: us-west-2
     app: EKM-API
     env: API-dev
-    bucket_name: codeship-volta/Database/dev
+    bucket_name: codeship-volta
+    local_dir: Database/dev
     on:
       branch: dev
   - provider: elasticbeanstalk
@@ -21,6 +22,7 @@ deploy:
     region: us-west-2
     app: EKM-API
     env: volta-api
-    bucket_name: codeship-volta/Database/master
+    bucket_name: codeship-volta
+    local_dir: Database/master
     on:
       branch: master
