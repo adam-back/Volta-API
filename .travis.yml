@@ -4,10 +4,24 @@ node_js:
 before_script:
   - npm install grunt-cli -g
   - gem install dpl
-after_success:
-  - if [ "$TRAVIS_BRANCH" == "dev" ]; then
-      dpl --provider=elasticbeanstalk --access-key-id=$AWS_ACCESS_ID --secret-access-key=$AWS_ACCESS_KEY --app="EKM-API" --env="API-dev" --region="us-west-2";
-    fi
-  - if [ "$TRAVIS_BRANCH" == "master" ]; then
-      dpl --provider=elasticbeanstalk --access-key-id=$AWS_ACCESS_ID --secret-access-key=$AWS_ACCESS_KEY --app="EKM-API" --env="volta-api" --region="us-west-2";
-    fi
+deploy:
+  - provider: elasticbeanstalk
+    access_key_id: $AWS_ACCESS_ID
+    secret_access_key:
+      secure: $AWS_ACCESS_KEY
+    region: us-west-2
+    app: EKM-API
+    env: API-dev
+    bucket_name: codeship-volta/Database/dev
+    on:
+      branch: dev
+  - provider: elasticbeanstalk
+    access_key_id: $AWS_ACCESS_ID
+    secret_access_key:
+      secure: $AWS_ACCESS_KEY
+    region: us-west-2
+    app: EKM-API
+    env: volta-api
+    bucket_name: codeship-volta/Database/master
+    on:
+      branch: master
