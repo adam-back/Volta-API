@@ -1,3 +1,4 @@
+[![Build Status](https://travis-ci.com/Volta-Charging/Database.svg?token=1diC3xzfftT1ypNJZKLa&branch=master)](https://travis-ci.com/Volta-Charging/Database)
 # [The Volta Database](http://volta-api.elasticbeanstalk.com)
 <img src="https://s3-us-west-2.amazonaws.com/repo-assets/Database+Arch.png" alt="Architecture Diagram" width="400" height="300"/>
 
@@ -329,4 +330,3 @@ These should match the authentication API's values.
 - JWT_ISSUER = JWT `iss` field to match
 
 - APP_JWT_SECRET = JWT web token secret string for requests from App-Server
-
