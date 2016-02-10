@@ -6,8 +6,8 @@ before_script:
   - npm install dpl -g
 deploy:
   - if [ "$TRAVIS_BRANCH" == "dev" ]; then
-    dpl --provider=elasticbeanstalk --access-key-id=$AWS_ACCESS_ID --secret-access-key=$AWS_ACCESS_KEY --app="EKM-API" --env="API-dev" --region="us-west-2";
-  fi
+      dpl --provider=elasticbeanstalk --access-key-id=$AWS_ACCESS_ID --secret-access-key=$AWS_ACCESS_KEY --app="EKM-API" --env="API-dev" --region="us-west-2";
+    fi
   - if [ "$TRAVIS_BRANCH" == "master" ]; then
-    dpl --provider=elasticbeanstalk --access-key-id=$AWS_ACCESS_ID --secret-access-key=$AWS_ACCESS_KEY --app="EKM-API" --env="volta-api" --region="us-west-2";
-  fi
+      dpl --provider=elasticbeanstalk --access-key-id=$AWS_ACCESS_ID --secret-access-key=$AWS_ACCESS_KEY --app="EKM-API" --env="volta-api" --region="us-west-2";
+    fi
