@@ -3,7 +3,7 @@ node_js:
   - "0.11"
 before_script:
   - npm install grunt-cli -g
-  - npm install dpl -g
+  - gem install dpl
 deploy:
   - if [ "$TRAVIS_BRANCH" == "dev" ]; then
       dpl --provider=elasticbeanstalk --access-key-id=$AWS_ACCESS_ID --secret-access-key=$AWS_ACCESS_KEY --app="EKM-API" --env="API-dev" --region="us-west-2";
