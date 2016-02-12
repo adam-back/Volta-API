@@ -55,29 +55,21 @@ exports.associateStationWithAppSponsors = function( stationToAssociate ) {
 };
 
 exports.removeAssociationBetweenStationAndAppSponsors = function( stationToRemove ) {
-  var deferred = Q.defer();
-
-  stationToRemove.getAppSponsors()
+  return stationToRemove.getAppSponsors()
   .then(function( appSponsors ) {
-    async.each(appSponsors, function( appSponsor, cb ) {
-      appSponsor.removeStation( stationToRemove )
-      .then(function( success ) {
-        cb( null );
-      })
-      .catch(function( error ) {
-        cb( error );
-      });
-    }, function( error ) {
-      if ( error ) {
-        throw new Error( error );
-      } else {
-        deferred.resolve( stationToRemove );
-      }
-    });
-  })
-  .catch(function( error ) {
-    deferred.reject( error );
-  });
+    var numberOfAppSponsors = appSponsors.length;
 
-  return deferred.promise;
-}
+    if ( numberOfAppSponsors > 0 ) {
+      var removeAssociations = [];
+      for ( var i = 0; i < numberOfAppSponsors; i++ ) {
+        removeAssociations.push( appSponsors[ i ].removeStation( stationToRemove ) );
+      }
+      return Q.all( removeAssociations )
+      .then(function() {
+        return stationToRemove;
+      });
+    } else {
+      return stationToRemove;
+    }
+  });
+};
