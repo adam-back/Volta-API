@@ -80,7 +80,6 @@ app.use( '/protected/app/user', protectedAppUserRoutes );
 app.use( '/protected/app/favorites', protectedAppFavoriteRoutes );
 
 app.use( '/protected/mediaSchedule', protectedMediaScheduleRoutes );
-// app.use( '/mediaSchedule', protectedMediaScheduleRoutes );
 app.use( '/protected/mediaPresentation', protectedMediaPresentationRoutes );
 app.use( '/protected/mediaSlide', protectedMediaSlideRoutes );
 app.use( '/protected/reports', protectedReportRoutes );
