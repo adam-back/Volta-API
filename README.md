@@ -249,6 +249,65 @@ Returns the stations without GPS coordinates for web display or as CSV.
 *protected/reports/wrongCoordinates/:output*
 Gets the stations with GPS coordinates, then runs the stations' addresses through the Google geocode API. It then compares the save coordinates with what Google thinks they should be, throwing a flag on anything that has more than one mile difference. Returns for web display or csv.
 
+#### Media Schedules
+**protected/mediaSchedule/**
+
+*GET*
+Returns all media schedules with their associated presentation
+
+*POST*
+Adds a media schedule
+
+*PATCH*
+Replaces an existing media schedule with a new one
+- Carries over the PC Serial Number from the old schedule to the new one
+
+**protected/mediaSchedule/serial/:serialNumber**
+
+*GET*
+Returns the media schedule for the given PC Serial Number. Used by Media Players to access their media schedule.
+
+*POST*
+Sets the PC Serial Number attached to a schedule. Useful if a PC is swapped in a station, as it allows the media history for that station to be preserved.
+
+**protected/mediaSchedule/:id**
+
+*DELETE*
+Sets the deleted_at field for a schedule. Schedule is kept in database for historical purposes.
+
+#### Media Presentations
+**protected/mediaPresentation/**
+
+*GET*
+Returns all media presentations.
+
+*POST*
+Creates a new media presentation.
+
+**protected/mediaPresentation/:id**
+
+*GET*
+Returns the media presentation that corresponds to the given id.
+
+*DELETE*
+Sets the deleted_at field for the presentation. Presentation is kept in database for historical purposes.
+
+#### Media Slides
+
+**protected/mediaSlide/**
+
+*GET*
+Returns all media slides.
+
+*POST*
+Creates a new media slide.
+
+**protected/mediaSlide/:id**
+
+*DELETE*
+Sets the deleted_at field for the slide. Slide is kept in database for historical purposes.
+
+
 ## Stack
 
 - Express
