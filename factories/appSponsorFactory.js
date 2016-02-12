@@ -8,37 +8,44 @@ exports.associateStationWithAppSponsors = function( stationToAssociate ) {
 
   app_sponsor.findAll()
   .then(function( sponsors ) {
-    async.each(sponsors, function( sponsor, cb ) {
-      if ( sponsor.station_query ) {
-        var query = sponsor.station_query;
-        // see if that individual station matches the query for sponsorship
-        query.where.id = stationToAssociate.id;
+    if ( sponsors.length > 0 ) {
+      async.each(sponsors, function( sponsor, cb ) {
+        // if the sponsor has a query
+        if ( sponsor.station_query ) {
+          var query = sponsor.station_query;
+          // do a safety check. Make sure we're supposed to associate
+          query.where.id = stationToAssociate.id;
 
-        station.count( query )
-        .then(function( number ) {
-          // if it matches
-          if ( number === 1 ) {
-            // associate
-            return sponsor.addStation( stationToAssociate );
-          }
-        })
-        .then(function() {
-          // successfully associated or done
+          station.count( query )
+          .then(function( number ) {
+            // if it matches
+            if ( number === 1 ) {
+              // associate
+              return sponsor.addStation( stationToAssociate );
+            } else {
+              return Q.when( null );
+            }
+          })
+          .then(function() {
+            // successfully associated or done
+            cb( null );
+          })
+          .catch(function( error ) {
+            cb( error );
+          });
+        } else {
           cb( null );
-        })
-        .catch(function( error ) {
-          cb( error );
-        });
-      } else {
-        cb( null );
-      }
-    }, function( error ) {
-      if ( error ) {
-        throw new Error( error );
-      } else {
-        deferred.resolve();
-      }
-    });
+        }
+      }, function( error ) {
+        if ( error ) {
+          throw new Error( error );
+        } else {
+          deferred.resolve();
+        }
+      });
+    } else {
+      throw new Error( 'No sponsors found.' );
+    }
   })
   .catch(function( error ) {
     deferred.reject( error );
