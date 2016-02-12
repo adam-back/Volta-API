@@ -7,8 +7,8 @@ var factory = require( '../../factories/appSponsorFactory' );
 describe('appSponsorFactory.js', function() {
   describe('associateStationWithAppSponsors', function() {
     var associateStationWithAppSponsors = factory.associateStationWithAppSponsors;
-    var findSponsors, countStations, associateStationWithSponsor;
-    var stationToAssociate = { id: 42 };
+    var sponsor1, sponsor2, stationToAssociate;
+    var findSponsors, countStations, sponsor2promise;
     var sponsors = [];
 
     beforeEach(function() {
