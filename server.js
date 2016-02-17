@@ -130,3 +130,5 @@ server.on('listening', function() {
 server.listen( port );
 server.listen( 443 );
  
+exports.app = app;
+exports.server = server;

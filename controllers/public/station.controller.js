@@ -1,10 +1,8 @@
 var station = require( '../../models' ).station;
-var express = require( 'express' );
 var io = require( '../../server' ).io;
 
 module.exports = exports = {
   getAllStations: function ( req, res ) {
-
     // query database for all rows of stations
     station.findAll()
     .then(function( stations ) {
