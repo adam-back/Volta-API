@@ -61,7 +61,6 @@ describe('appSponsorFactory.js', function() {
 
     it('should not check to associate if sponsor has no query', function( done ) {
       sponsors.shift();
-      console.log( 'sponsors', sponsors.length );
       findSponsors.resolve( sponsors );
       associateStationWithAppSponsors( stationToAssociate )
       .then(function() {
