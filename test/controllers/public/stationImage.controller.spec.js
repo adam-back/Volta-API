@@ -4,33 +4,19 @@ supertest = supertest( app );
 var Q = require( 'q' );
 
 module.exports = function() {
-  describe('/stations', function() {
+  describe('/stationImages', function() {
     describe('GET', function() {
-      var findStations;
-
-      beforeEach(function() {
-        findStations = Q.defer();
-        spyOn( station, 'findAll' ).andReturn( findStations.promise );
-      });
-
-      it('should return JSON of all stations', function( done ) {
-        var allStations = [ { id: 1, kin: 12 } ];
-        findStations.resolve( allStations );
-        supertest.get( '/stations' )
-        .expect( 200 )
-        .expect( 'Content-Type', /json/ )
-        .expect( JSON.stringify( allStations ) )
+      it('should 404', function( done ) {
+        supertest.get( '/stationImages' )
+        .expect( 404 )
         .end( done );
-      });
 
-      it('should return 500 error for failure', function( done ) {
-        findStations.reject( 'Couldn\'t find all stations.' );
-        supertest.get( '/stations' )
-        .expect( 500 )
-        .expect( 'Couldn\'t find all stations.' )
-        .end( done );
+        // this unprotected route creates station_image rows
+        // based on the contents of an S3 bucket.
+        // Before use, the routes have to be uncommented
+        // and the station_images in the db need to be wiped.
+        // This test will need to be altered to allow merging.
       });
     });
-
   });
 };
