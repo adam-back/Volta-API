@@ -1,5 +1,3 @@
-var station = require( '../../models' ).station;
-var express = require( 'express' );
 var aws = require( '../../factories/awsFactory' );
 
 module.exports = exports = {

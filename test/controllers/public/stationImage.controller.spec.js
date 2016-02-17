@@ -1,7 +1,6 @@
 var supertest = require( 'supertest' );
 var app = require( '../../../server.js' ).app;
 supertest = supertest( app );
-var station = require( '../../../models' ).station;
 var Q = require( 'q' );
 
 module.exports = function() {
