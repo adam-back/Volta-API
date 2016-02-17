@@ -15,7 +15,6 @@ exports.associateStationWithAppSponsors = function( stationToAssociate ) {
           var query = sponsor.station_query;
           // do a safety check. Make sure we're supposed to associate
           query.where.id = stationToAssociate.id;
-
           station.count( query )
           .then(function( number ) {
             // if it matches
@@ -38,7 +37,7 @@ exports.associateStationWithAppSponsors = function( stationToAssociate ) {
         }
       }, function( error ) {
         if ( error ) {
-          throw new Error( error );
+          deferred.reject( error );
         } else {
           deferred.resolve();
         }

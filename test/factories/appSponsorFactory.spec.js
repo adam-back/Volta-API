@@ -12,16 +12,23 @@ describe('appSponsorFactory.js', function() {
     var sponsors = [];
 
     beforeEach(function() {
-      // todo: create sponsors with sequelize so that they have addStation methods to spy on, 
-      // but which do not actually save in a db
-      // sponsors.push( app_sponsor.create( { station_query: { where: { station_id: 42 } } } ) );
+      // build creates instances but does not persist without .save
+      sponsor1 = app_sponsor.build( { company: 'Chevy', station_query: { where: { station_id: 42 } } } );
+      sponsor2 = app_sponsor.build( { company: 'Volta' } );
+      sponsors.push( sponsor1 );
+      sponsors.push( sponsor2 );
+      stationToAssociate = station.build( { id: 42 } );
       findSponsors = Q.defer();
       countStations = Q.defer();
       associateStationWithSponsor = Q.defer();
       spyOn( app_sponsor, 'findAll' ).andReturn( findSponsors.promise );
       spyOn( async, 'each' ).andCallThrough();
       spyOn( station, 'count' ).andReturn( countStations.promise );
-      // spyOn( sponsor, 'addStation' ).andReturn( associateStationWithSponsor.promise );
+      spyOn( sponsor1, 'addStation' ).andReturn( associateStationWithSponsor.promise );
+    });
+
+    afterEach(function() {
+      sponsors = [];
     });
 
     it('should be defined as a function', function() {
@@ -39,13 +46,81 @@ describe('appSponsorFactory.js', function() {
       });
     });
 
-    xit('should find all the app sponsors and loop through them', function( done ) {
+    it('should find all app sponsors and loop through them', function( done ) {
       findSponsors.resolve( sponsors );
+      countStations.reject();
       associateStationWithAppSponsors()
       .catch(function( error ) {
         expect( app_sponsor.findAll ).toHaveBeenCalled();
         expect( app_sponsor.findAll ).toHaveBeenCalledWith();
-        expect( error.message ).toBe( 'No sponsors found.' );
+        expect( async.each ).toHaveBeenCalled();
+        expect( async.each.calls[ 0 ].args[ 0 ] ).toEqual( sponsors );
+        done();
+      });
+    });
+
+    it('should not check to associate if sponsor has no query', function( done ) {
+      sponsors.shift();
+      console.log( 'sponsors', sponsors.length );
+      findSponsors.resolve( sponsors );
+      associateStationWithAppSponsors( stationToAssociate )
+      .then(function() {
+        expect( station.count ).not.toHaveBeenCalled();
+        done();
+      })
+      .catch(function( error ) {
+        expect( error ).toBe( 1 );
+        done();
+      });
+    });
+
+    it('should check if station should associate with sponsor', function( done ) {
+      sponsors.pop();
+      findSponsors.resolve( sponsors );
+      countStations.reject( 'Fake reject' );
+      associateStationWithAppSponsors( stationToAssociate )
+      .catch(function( error ) {
+        expect( station.count ).toHaveBeenCalled();
+        expect( station.count ).toHaveBeenCalledWith( sponsors[ 0 ].station_query );
+        done();
+      });
+    });
+
+    it('should associate if sponsor matches station', function( done ) {
+      sponsors.pop();
+      findSponsors.resolve( sponsors );
+      countStations.resolve( 1 );
+      associateStationWithSponsor.resolve();
+      associateStationWithAppSponsors( stationToAssociate )
+      .then(function( result ) {
+        expect( station.count ).toHaveBeenCalled();
+        expect( station.count.calls.length ).toBe( 1 );
+        expect( result ).toBeUndefined();
+        expect( sponsor1.addStation ).toHaveBeenCalled();
+        expect( sponsor1.addStation ).toHaveBeenCalledWith( stationToAssociate );
+        done();
+      })
+      .catch(function( error ) {
+        expect( error ).toBe( 1 );
+        done();
+      });
+    });
+
+    it('should not associate if sponsor doens\'t matche station', function( done ) {
+      sponsors.pop();
+      findSponsors.resolve( sponsors );
+      countStations.resolve( 0 );
+      associateStationWithSponsor.resolve();
+      associateStationWithAppSponsors( stationToAssociate )
+      .then(function( result ) {
+        expect( station.count ).toHaveBeenCalled();
+        expect( station.count.calls.length ).toBe( 1 );
+        expect( result ).toBeUndefined();
+        expect( sponsor1.addStation ).not.toHaveBeenCalled();
+        done();
+      })
+      .catch(function( error ) {
+        expect( error ).toBe( 1 );
         done();
       });
     });
