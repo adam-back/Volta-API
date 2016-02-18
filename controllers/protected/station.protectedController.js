@@ -100,17 +100,17 @@ module.exports = exports = {
         stationToUpdate[ field ] = newData;
       }
 
-      stationToUpdate.save()
+      return stationToUpdate.save()
       .then(function( successStation ) {
         // default to volta filler media
         var oldMediaSchedule = {};
 
         // new
         if( needToUpdateMediaSchedule ) {
-          mediaSchedule.getMediaScheduleByKinLocal( req.body.kin )
+          return mediaSchedule.getMediaScheduleByKinLocal( req.body.kin )
           .then( function( schedules ) {
             if( schedules.length === 0 ) {
-              return q();
+              return Q.when();
             } else {
               var oldMediaSchedule = schedules[ 0 ];
 
@@ -125,16 +125,21 @@ module.exports = exports = {
             }
           })
           .then( function() {
-            res.json( successStation );
+            return Q.when( successStation );
           })
           .catch( function( error ) {
-            console.log( new Error( 'failed to replace media schedule on station pc serial number change', error ) );
-          })
+            throw new Error( 'Failed to replace media schedule on station pc serial number change:', error );
+          });
         } else {
-          res.json( successStation );
+          return Q.when( successStation );
         }
-      })
-      .catch(function( error ) {
+      });
+    })
+    .then(function( finalResult ) {
+      res.json( finalResult );
+    })
+    .catch(function( error ) {
+      if ( error.hasOwnProperty( 'fields' ) && error.hasOwnProperty( 'fields' ).length > 0 ) {
         var query = {};
         // get the title that of the colum that errored
         var errorColumn = Object.keys( error.fields );
@@ -152,10 +157,9 @@ module.exports = exports = {
         .catch(function( error ) {
           res.status( 500 ).send( error );
         });
-      });
-    })
-    .catch(function( error ) {
-      res.status( 404 ).send( error );
+      } else {
+        res.status( 500 ).send( error );
+      }
     });
   },
   deleteStation: function( req, res ) {
