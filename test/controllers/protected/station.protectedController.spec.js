@@ -12,6 +12,13 @@ module.exports = function() {
     var route = '/protected/station';
 
     describe('GET', function() {
+      var stationFind;
+
+      beforeEach(function() {
+        stationFind = Q.defer();
+        spyOn( station, 'findAll' ).andReturn( stationFind.promise );
+      });
+
       it('should be defined as a route', function( done ) {
         supertest.get( route )
         .expect(function( res ) {
@@ -23,6 +30,33 @@ module.exports = function() {
       it('should be protected', function( done ) {
         supertest.get( route )
         .expect( 401 )
+        .end( done );
+      });
+
+      it('should return JSON of all stations', function( done ) {
+        var stations = [ { id: 1 }, { id: 2 } ];
+        stationFind.resolve( stations );
+        supertest.get( route )
+        .set( 'Authorization', 'Bearer ' + token )
+        .expect( 200 )
+        .expect( JSON.stringify( stations ) )
+        .expect( 'Content-Type', /json/ )
+        .expect(function( res ) {
+          expect( station.findAll ).toHaveBeenCalled();
+          expect( station.findAll ).toHaveBeenCalledWith();
+        })
+        .end( done );
+      });
+
+      it('should return 500 failure for error', function( done ) {
+        stationFind.reject( 'Test' );
+        supertest.get( route )
+        .set( 'Authorization', 'Bearer ' + token )
+        .expect( 500 )
+        .expect( 'Test' )
+        .expect(function( res ) {
+          expect( station.findAll ).toHaveBeenCalled();
+        })
         .end( done );
       });
     });
