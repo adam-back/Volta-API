@@ -5,6 +5,7 @@ app = app.app;
 supertest = supertest( app );
 var Q = require( 'q' );
 var station = require( '../../../models' ).station;
+var plug = require( '../../../models' ).plug;
 var schedule = require( '../../../models' ).media_schedule;
 var appSponsorFactory = require( '../../../factories/appSponsorFactory' );
 var mediaSchedule = require( '../../../controllers/protected/mediaSchedule.protectedController.js' );
@@ -437,6 +438,30 @@ module.exports = function() {
     });
 
     describe('DELETE', function() {
+      var foundStation, plug1, plug2;
+      var findOneStation, getStationsPlugs, plug1Destroy, plug2Destroy, removeStationSponsor, stationDestroy;
+
+      beforeEach(function(  ) {
+        foundStation = station.build( { id: 1, kin: '001-0001-001-01-K' } );
+        plug1 = plug.build( { id: 1, number_on_station: 1 } );
+        plug2 = plug.build( { id: 2, number_on_station: 2 } );
+        foundStation.addPlugs( [ plug1, plug2 ] );
+
+        findOneStation = Q.defer();
+        getStationsPlugs = Q.defer();
+        plug1Destroy = Q.defer();
+        plug2Destroy = Q.defer();
+        removeStationSponsor = Q.defer();
+        stationDestroy = Q.defer();
+
+        spyOn( station, 'findOne' ).andReturn( findOneStation.promise );
+        spyOn( foundStation, 'getPlugs' ).andReturn( getStationsPlugs.promise );
+        spyOn( plug1, 'destroy' ).andReturn( plug1Destroy.promise );
+        spyOn( plug2, 'destroy' ).andReturn( plug2Destroy.promise );
+        spyOn( appSponsorFactory, 'removeAssociationBetweenStationAndAppSponsors' ).andReturn( removeStationSponsor.promise );
+        spyOn( foundStation, 'destroy' ).andReturn( stationDestroy.promise );
+      });
+
       it('should be defined as a route', function( done ) {
         supertest.delete( route )
         .expect(function( res ) {
@@ -448,6 +473,106 @@ module.exports = function() {
       it('should be protected', function( done ) {
         supertest.delete( route )
         .expect( 401 )
+        .end( done );
+      });
+
+      it('should find one station by kin', function( done ) {
+        findOneStation.reject( 'Fake reject.' );
+        supertest.delete( route )
+        .set( 'Authorization', 'Bearer ' + token )
+        .expect(function( res ) {
+          expect( station.findOne ).toHaveBeenCalled();
+          expect( station.findOne ).toHaveBeenCalledWith( { where: { kin: '001-0001-001-01-K' } } );
+        })
+        .end( done );
+      });
+
+      it('should get all plugs for station', function( done ) {
+        findOneStation.resolve( foundStation );
+        getStationsPlugs.reject( 'Fake test.' );
+        supertest.delete( route )
+        .set( 'Authorization', 'Bearer ' + token )
+        .expect(function( res ) {
+          expect( foundStation.getPlugs ).toHaveBeenCalled();
+          expect( foundStation.getPlugs ).toHaveBeenCalledWith();
+        })
+        .end( done );
+      });
+
+      it('should destroy associated plugs', function( done ) {
+        findOneStation.resolve( foundStation );
+        getStationsPlugs.resolve( [ plug1, plug2 ] );
+        plug1Destroy.resolve();
+        plug2Destroy.resolve();
+        removeStationSponsor.reject( 'Fake reject.' );
+        supertest.delete( route )
+        .set( 'Authorization', 'Bearer ' + token )
+        .expect(function( res ) {
+          expect( plug1.destroy ).toHaveBeenCalled();
+          expect( plug1.destroy ).toHaveBeenCalledWith();
+          expect( plug2.destroy ).toHaveBeenCalled();
+          expect( plug2.destroy ).toHaveBeenCalledWith();
+        })
+        .end( done );
+      });
+
+      it('should skip destroying plugs if there aren\'t any', function( done ) {
+        findOneStation.resolve( foundStation );
+        getStationsPlugs.resolve( [] );
+        removeStationSponsor.reject( 'Fake reject.' );
+        supertest.delete( route )
+        .set( 'Authorization', 'Bearer ' + token )
+        .expect(function( res ) {
+          expect( plug1.destroy ).not.toHaveBeenCalled();
+          expect( plug2.destroy ).not.toHaveBeenCalled();
+        })
+        .end( done );
+      });
+
+      it('should remove association between station and app sponsors', function( done ) {
+        findOneStation.resolve( foundStation );
+        getStationsPlugs.resolve( [] );
+        removeStationSponsor.resolve( foundStation );
+        stationDestroy.reject( 'Fake reject.' );
+        supertest.delete( route )
+        .set( 'Authorization', 'Bearer ' + token )
+        .expect(function( res ) {
+          expect( appSponsorFactory.removeAssociationBetweenStationAndAppSponsors ).toHaveBeenCalled();
+          expect( appSponsorFactory.removeAssociationBetweenStationAndAppSponsors ).toHaveBeenCalledWith( foundStation );
+        })
+        .end( done );
+      });
+
+      it('should destroy station, then return 204', function( done ) {
+        findOneStation.resolve( foundStation );
+        getStationsPlugs.resolve( [] );
+        removeStationSponsor.resolve( foundStation );
+        stationDestroy.resolve();
+        supertest.delete( route )
+        .set( 'Authorization', 'Bearer ' + token )
+        .expect( 204 )
+        .expect(function( res ) {
+          expect( foundStation.destroy ).toHaveBeenCalled();
+          expect( foundStation.destroy ).toHaveBeenCalledWith();
+        })
+        .end( done );
+      });
+
+      it('should return 404 if no station found', function( done ) {
+        findOneStation.resolve( [] );
+        supertest.delete( route )
+        .set( 'Authorization', 'Bearer ' + token )
+        .expect( 404 )
+        .expect( 'Station with that KIN not found in database. Could not be deleted.' )
+        .end( done );
+      });
+
+      it('should return 500 failure for error', function( done ) {
+        findOneStation.reject( 'Fake reject.' );
+        supertest.delete( route )
+        .set( 'Authorization', 'Bearer ' + token )
+        .expect( 500 )
+        .expect( 'Error deleting station: Fake reject.' )
         .end( done );
       });
     });
