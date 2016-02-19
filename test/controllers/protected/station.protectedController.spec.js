@@ -374,6 +374,13 @@ module.exports = function() {
     var route = '/protected/station/001-0001-001-01-K';
 
     describe('GET', function() {
+      var findStation;
+
+      beforeEach(function() {
+        findStation = Q.defer();
+        spyOn( station, 'findOne' ).andReturn( findStation.promise );
+      });
+
       it('should be defined as a route', function( done ) {
         supertest.get( route )
         .expect(function( res ) {
@@ -385,6 +392,46 @@ module.exports = function() {
       it('should be protected', function( done ) {
         supertest.get( route )
         .expect( 401 )
+        .end( done );
+      });
+
+      it('should find one station by kin', function( done ) {
+        findStation.reject( 'Fake reject.' );
+        supertest.get( route )
+        .set( 'Authorization', 'Bearer ' + token )
+        .expect(function( res ) {
+          expect( station.findOne ).toHaveBeenCalled();
+          expect( station.findOne ).toHaveBeenCalledWith( { where: { kin: '001-0001-001-01-K' } } );
+        })
+        .end( done );
+      });
+
+      it('should return 404 if no station found', function( done ) {
+        findStation.resolve( [] );
+        supertest.get( route )
+        .set( 'Authorization', 'Bearer ' + token )
+        .expect( 404 )
+        .expect( '<p>A station with that KIN was not found.</p>' )
+        .end( done );
+      });
+
+      it('should return JSON of station', function( done ) {
+        var thatOneStation = [ { id: 1} ];
+        findStation.resolve( thatOneStation );
+        supertest.get( route )
+        .set( 'Authorization', 'Bearer ' + token )
+        .expect( 200 )
+        .expect( JSON.stringify( thatOneStation ) )
+        .expect( 'Content-Type', /json/ )
+        .end( done );
+      });
+
+      it('should return 500 failure for error', function( done ) {
+        findStation.reject( 'Fake reject.' );
+        supertest.get( route )
+        .set( 'Authorization', 'Bearer ' + token )
+        .expect( 500 )
+        .expect( 'Fake reject.' )
         .end( done );
       });
     });
