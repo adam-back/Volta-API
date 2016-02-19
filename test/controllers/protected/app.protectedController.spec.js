@@ -44,6 +44,7 @@ module.exports = function() {
 
       describe('POST', function() {
         var createReport;
+        var body = { report: true };
 
         beforeEach(function() {
           createReport = Q.defer();
@@ -56,6 +57,35 @@ module.exports = function() {
           .set( 'Authorization', 'Bearer ' + token )
           .expect(function( res ) {
             expect( res.statusCode ).not.toBe( 404 );
+          })
+          .end( done );
+        });
+
+        it('should return 204 on success', function( done ) {
+          createReport.resolve();
+          supertest.post( route )
+          .set( 'Authorization', 'Bearer ' + token )
+          .send( body )
+          .expect( 204 )
+          .expect( '' )
+          .expect(function( res ) {
+            expect( models.station_report.create ).toHaveBeenCalled();
+            expect( models.station_report.create ).toHaveBeenCalledWith( body );
+          })
+          .end( done );
+        });
+
+        it('should return 500 failure for error', function( done ) {
+          createReport.reject( 'Test' );
+          supertest.post( route )
+          .set( 'Authorization', 'Bearer ' + token )
+          .send( body )
+          .expect( 500 )
+          .expect( 'Test' )
+          .expect( 'Content-Type', /text/ )
+          .expect(function( res ) {
+            expect( models.station_report.create ).toHaveBeenCalled();
+            expect( models.station_report.create ).toHaveBeenCalledWith( body );
           })
           .end( done );
         });
@@ -79,6 +109,35 @@ module.exports = function() {
           .set( 'Authorization', 'Bearer ' + token )
           .expect(function( res ) {
             expect( res.statusCode ).not.toBe( 404 );
+          })
+          .end( done );
+        });
+
+        it('should return current sponsors', function( done ) {
+          var sponsors = [ 'I am a sponsor.' ];
+          findAllSponsors.resolve( sponsors );
+          supertest.get( route )
+          .set( 'Authorization', 'Bearer ' + token )
+          .expect( 200 )
+          .expect( sponsors )
+          .expect( 'Content-Type', /json/ )
+          .expect(function( res ) {
+            expect( models.app_sponsor.findAll ).toHaveBeenCalled();
+            expect( models.app_sponsor.findAll ).toHaveBeenCalledWith( { where: { current: true }, order: [ 'order' ] } );
+          })
+          .end( done );
+        });
+
+        it('should return 500 failure for error', function( done ) {
+          findAllSponsors.reject( 'Test' );
+          supertest.get( route )
+          .set( 'Authorization', 'Bearer ' + token )
+          .expect( 500 )
+          .expect( 'Test' )
+          .expect( 'Content-Type', /text/ )
+          .expect(function( res ) {
+            expect( models.app_sponsor.findAll ).toHaveBeenCalled();
+            expect( models.app_sponsor.findAll ).toHaveBeenCalledWith( { where: { current: true }, order: [ 'order' ] } );
           })
           .end( done );
         });
