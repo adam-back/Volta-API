@@ -25,15 +25,7 @@ module.exports = function() {
           spyOn( station, 'findAll' ).andReturn( stationFind.promise );
         });
 
-        it('should be defined as a route', function( done ) {
-          supertest.get( route )
-          .expect(function( res ) {
-            expect( res.statusCode ).not.toBe( 404 );
-          })
-          .end( done );
-        });
-
-        it('should be protected', function( done ) {
+        it('should be defined as a protected route', function( done ) {
           supertest.get( route )
           .expect( 401 )
           .end( done );
@@ -82,15 +74,7 @@ module.exports = function() {
           spyOn( station, 'destroy' );
         });
 
-        it('should be defined as a route', function( done ) {
-          supertest.post( route )
-          .expect(function( res ) {
-            expect( res.statusCode ).not.toBe( 404 );
-          })
-          .end( done );
-        });
-
-        it('should be protected', function( done ) {
+        it('should be defined as a protected route', function( done ) {
           supertest.post( route )
           .expect( 401 )
           .end( done );
@@ -181,15 +165,7 @@ module.exports = function() {
           spyOn( mediaSchedule, 'replaceMediaScheduleLocal' ).andReturn( replaceMediaSchedule.promise );
         });
 
-        it('should be defined as a route', function( done ) {
-          supertest.patch( route )
-          .expect(function( res ) {
-            expect( res.statusCode ).not.toBe( 404 );
-          })
-          .end( done );
-        });
-
-        it('should be protected', function( done ) {
+        it('should be defined as a protected route', function( done ) {
           supertest.patch( route )
           .expect( 401 )
           .end( done );
@@ -328,15 +304,7 @@ module.exports = function() {
           spyOn( station, 'count' ).andReturn( countStations.promise );
         });
 
-        it('should be defined as a route', function( done ) {
-          supertest.get( route )
-          .expect(function( res ) {
-            expect( res.statusCode ).not.toBe( 404 );
-          })
-          .end( done );
-        });
-
-        it('should be protected', function( done ) {
+        it('should be defined as a protected route', function( done ) {
           supertest.get( route )
           .expect( 401 )
           .end( done );
@@ -383,15 +351,7 @@ module.exports = function() {
           spyOn( station, 'findOne' ).andReturn( findStation.promise );
         });
 
-        it('should be defined as a route', function( done ) {
-          supertest.get( route )
-          .expect(function( res ) {
-            expect( res.statusCode ).not.toBe( 404 );
-          })
-          .end( done );
-        });
-
-        it('should be protected', function( done ) {
+        it('should be defined as a protected route', function( done ) {
           supertest.get( route )
           .expect( 401 )
           .end( done );
@@ -463,15 +423,7 @@ module.exports = function() {
           spyOn( foundStation, 'destroy' ).andReturn( stationDestroy.promise );
         });
 
-        it('should be defined as a route', function( done ) {
-          supertest.delete( route )
-          .expect(function( res ) {
-            expect( res.statusCode ).not.toBe( 404 );
-          })
-          .end( done );
-        });
-
-        it('should be protected', function( done ) {
+        it('should be defined as a protected route', function( done ) {
           supertest.delete( route )
           .expect( 401 )
           .end( done );

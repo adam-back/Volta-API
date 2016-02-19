@@ -16,11 +16,39 @@ var geocoder = require( 'node-geocoder' )( 'google', 'https', { apiKey: config.g
 
 module.exports = function() {
   describe('APP ROUTES', function() {
-    describe('app/', function() {
-      var route = '/protected/app';
+    describe('app/stations', function() {
+      var route = '/protected/app/stations';
 
-      it('should be true', function() {
-        expect( true ).toBe( true );
+      describe('GET', function() {
+        it('should be defined as a protected route', function( done ) {
+          supertest.get( route )
+          .expect( 401 )
+          .end( done );
+        });
+      });
+    });
+
+    describe('app/stationReport', function() {
+      var route = '/protected/app/stationReport';
+
+      describe('POST', function() {
+        it('should be defined as a protected route', function( done ) {
+          supertest.post( route )
+          .expect( 401 )
+          .end( done );
+        });
+      });
+    });
+
+    describe('app/sponsors', function() {
+      var route = '/protected/app/sponsors';
+
+      describe('GET', function() {
+        it('should be defined as a protected route', function( done ) {
+          supertest.get( route )
+          .expect( 401 )
+          .end( done );
+        });
       });
     });
   });
