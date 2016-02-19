@@ -3,7 +3,9 @@ var app = require( '../../../server.js' ).app;
 supertest = supertest( app );
 var Q = require( 'q' );
 var station = require( '../../../models' ).station;
+var schedule = require( '../../../models' ).media_schedule;
 var appSponsorFactory = require( '../../../factories/appSponsorFactory' );
+var mediaSchedule = require( '../../../controllers/protected/mediaSchedule.protectedController.js' );
 var createToken = require( '../../jwtHelper' ).createToken;
 var token = createToken( 5 );
 
@@ -157,6 +159,24 @@ module.exports = function() {
     });
 
     describe('PATCH', function() {
+      var body, findStation, stationToUpdate, stationSave, getMediaSchedule, replaceMediaSchedule;
+
+      beforeEach(function() {
+        body = {
+          kin: '001-0001-001-01-K',
+          changes: [ [ 'location', 'Volta', 'home' ] ]
+        };
+        findStation = Q.defer();
+        stationToUpdate = station.build( { id: 1, location: 'Volta', 'front_display_pc_serial_number': 1 } );
+        stationSave = Q.defer();
+        getMediaSchedule = Q.defer();
+        replaceMediaSchedule = Q.defer();
+        spyOn( station, 'find' ).andReturn( findStation.promise );
+        spyOn( stationToUpdate, 'save' ).andReturn( stationSave.promise );
+        spyOn( mediaSchedule, 'getMediaScheduleByKinLocal' ).andReturn( getMediaSchedule.promise );
+        spyOn( mediaSchedule, 'replaceMediaScheduleLocal' ).andReturn( replaceMediaSchedule.promise );
+      });
+
       it('should be defined as a route', function( done ) {
         supertest.patch( route )
         .expect(function( res ) {
@@ -168,6 +188,127 @@ module.exports = function() {
       it('should be protected', function( done ) {
         supertest.patch( route )
         .expect( 401 )
+        .end( done );
+      });
+
+      it('should find a station by kin', function( done ) {
+        findStation.reject( 'Test' );
+        supertest.patch( route )
+        .set( 'Authorization', 'Bearer ' + token )
+        .send( body )
+        .expect(function( res ) {
+          expect( station.find ).toHaveBeenCalled();
+          expect( station.find ).toHaveBeenCalledWith( { where: { kin: '001-0001-001-01-K' } } );
+        })
+        .end( done );
+      });
+
+      it('should update a station', function( done ) {
+        findStation.resolve( stationToUpdate );
+        stationSave.reject( 'Test' );
+        supertest.patch( route )
+        .set( 'Authorization', 'Bearer ' + token )
+        .send( body )
+        .expect(function( res ) {
+          expect( stationToUpdate.location ).toBe( 'home' );
+          expect( stationToUpdate.save ).toHaveBeenCalled();
+          expect( stationToUpdate.save ).toHaveBeenCalledWith();
+        })
+        .end( done );
+      });
+
+      describe('no need to update media schedule', function() {
+        it('should return JSON of updated station', function( done ) {
+          findStation.resolve( stationToUpdate );
+          stationSave.resolve( stationToUpdate );
+          supertest.patch( route )
+          .set( 'Authorization', 'Bearer ' + token )
+          .send( body )
+          .expect( 200 )
+          .expect( 'Content-Type', /json/ )
+          .expect(function( res ) {
+            stationToUpdate.location = 'home';
+            expect( res.body ).toEqual( stationToUpdate.get( { plain: true } ) );
+            expect( mediaSchedule.getMediaScheduleByKinLocal ).not.toHaveBeenCalled();
+            expect( mediaSchedule.replaceMediaScheduleLocal ).not.toHaveBeenCalled();
+          })
+          .end( done );
+        });
+      });
+
+      describe('need to update media schedule', function() {
+        beforeEach(function(  ) {
+          body.changes.push( [ 'front_display_pc_serial_number', '1', 'A' ] );
+        });
+
+        it('should get the media schedule', function( done ) {
+          findStation.resolve( stationToUpdate );
+          stationSave.resolve( stationToUpdate );
+          getMediaSchedule.reject( 'Test' );
+          supertest.patch( route )
+          .set( 'Authorization', 'Bearer ' + token )
+          .send( body )
+          .expect(function( res ) {
+            expect( mediaSchedule.getMediaScheduleByKinLocal ).toHaveBeenCalled();
+            expect( mediaSchedule.getMediaScheduleByKinLocal ).toHaveBeenCalledWith( '001-0001-001-01-K' );
+          })
+          .end( done );
+        });
+
+        it('should return JSON of updated station if no schedules', function( done ) {
+          findStation.resolve( stationToUpdate );
+          stationSave.resolve( stationToUpdate );
+          getMediaSchedule.resolve( [] );
+          supertest.patch( route )
+          .set( 'Authorization', 'Bearer ' + token )
+          .send( body )
+          .expect( 200 )
+          .expect( 'Content-Type', /json/ )
+          .expect(function( res ) {
+            stationToUpdate.location = 'home';
+            stationToUpdate.front_display_pc_serial_number = 'A';
+            expect( res.body ).toEqual( stationToUpdate.get( { plain: true } ) );
+            expect( mediaSchedule.replaceMediaScheduleLocal ).not.toHaveBeenCalled();
+          })
+          .end( done );
+        });
+
+        it('should return JSON of updated station after replacing media schedule if schedules found', function( done ) {
+          var oldMediaSchedule = schedule.build( { serial_number: 1 } );
+          findStation.resolve( stationToUpdate );
+          stationSave.resolve( stationToUpdate );
+          getMediaSchedule.resolve( [ oldMediaSchedule ] );
+          replaceMediaSchedule.resolve();
+          supertest.patch( route )
+          .set( 'Authorization', 'Bearer ' + token )
+          .send( body )
+          .expect( 200 )
+          .expect( 'Content-Type', /json/ )
+          .expect(function( res ) {
+            expect( mediaSchedule.replaceMediaScheduleLocal ).toHaveBeenCalled();
+            // instead of toHaveBeenCalledWith()
+            expect( mediaSchedule.replaceMediaScheduleLocal.calls[ 0 ].args[ 0 ].hasOwnProperty( 'id' ) ).toBe( false );
+            expect( mediaSchedule.replaceMediaScheduleLocal.calls[ 0 ].args[ 0 ].hasOwnProperty( 'deleted_at' ) ).toBe( false );
+            expect( mediaSchedule.replaceMediaScheduleLocal.calls[ 0 ].args[ 0 ].serial_number ).toBe( 'A' );
+            stationToUpdate.location = 'home';
+            stationToUpdate.front_display_pc_serial_number = 'A';
+            expect( res.body ).toEqual( stationToUpdate.get( { plain: true } ) );
+          })
+          .end( done );
+        });
+      });
+
+      it('should handle non-conflict-based errors', function( done ) {
+        findStation.reject( 'Fake reject.' );
+        supertest.patch( route )
+        .set( 'Authorization', 'Bearer ' + token )
+        .send( body )
+        .expect( 500 )
+        .expect( 'Fake reject.' )
+        .expect(function( res ) {
+          expect( station.find ).toHaveBeenCalled();
+          expect( station.find ).toHaveBeenCalledWith( { where: { kin: '001-0001-001-01-K' } } );
+        })
         .end( done );
       });
     });
