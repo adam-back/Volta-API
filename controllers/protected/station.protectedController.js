@@ -104,13 +104,12 @@ module.exports = exports = {
       .then(function( successStation ) {
         // default to volta filler media
         var oldMediaSchedule = {};
-
         // new
         if( needToUpdateMediaSchedule ) {
           return mediaSchedule.getMediaScheduleByKinLocal( req.body.kin )
           .then( function( schedules ) {
             if( schedules.length === 0 ) {
-              return Q.when();
+              return;
             } else {
               var oldMediaSchedule = schedules[ 0 ];
 
@@ -125,13 +124,13 @@ module.exports = exports = {
             }
           })
           .then( function() {
-            return Q.when( successStation );
+            return successStation;
           })
           .catch( function( error ) {
             throw new Error( 'Failed to replace media schedule on station pc serial number change:', error );
           });
         } else {
-          return Q.when( successStation );
+          return successStation;
         }
       });
     })
@@ -139,6 +138,8 @@ module.exports = exports = {
       res.json( finalResult );
     })
     .catch(function( error ) {
+      // this part is confusing
+      // need to trigger error to in order to mock error
       if ( error.hasOwnProperty( 'fields' ) && error.hasOwnProperty( 'fields' ).length > 0 ) {
         var query = {};
         // get the title that of the colum that errored
