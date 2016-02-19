@@ -20,9 +20,20 @@ module.exports = function() {
       var route = '/protected/app/stations';
 
       describe('GET', function() {
-        it('should be defined as a protected route', function( done ) {
+        var findAllStations;
+
+        beforeEach(function() {
+          findAllStations = Q.defer();
+          spyOn( models.station, 'findAll' ).andReturn( findAllStations.promise );
+        });
+
+        it('should be a defined route (not 404)', function( done ) {
+          findAllStations.reject();
           supertest.get( route )
-          .expect( 401 )
+          .set( 'Authorization', 'Bearer ' + token )
+          .expect(function( res ) {
+            expect( res.statusCode ).not.toBe( 404 );
+          })
           .end( done );
         });
       });
@@ -32,9 +43,20 @@ module.exports = function() {
       var route = '/protected/app/stationReport';
 
       describe('POST', function() {
-        it('should be defined as a protected route', function( done ) {
+        var createReport;
+
+        beforeEach(function() {
+          createReport = Q.defer();
+          spyOn( models.station_report, 'create' ).andReturn( createReport.promise );
+        });
+
+        it('should be a defined route (not 404)', function( done ) {
+          createReport.reject();
           supertest.post( route )
-          .expect( 401 )
+          .set( 'Authorization', 'Bearer ' + token )
+          .expect(function( res ) {
+            expect( res.statusCode ).not.toBe( 404 );
+          })
           .end( done );
         });
       });
@@ -44,9 +66,20 @@ module.exports = function() {
       var route = '/protected/app/sponsors';
 
       describe('GET', function() {
-        it('should be defined as a protected route', function( done ) {
+        var findAllSponsors;
+
+        beforeEach(function() {
+          findAllSponsors = Q.defer();
+          spyOn( models.app_sponsor, 'findAll' ).andReturn( findAllSponsors.promise );
+        });
+
+        it('should be a defined route (not 404)', function( done ) {
+          findAllSponsors.reject();
           supertest.get( route )
-          .expect( 401 )
+          .set( 'Authorization', 'Bearer ' + token )
+          .expect(function( res ) {
+            expect( res.statusCode ).not.toBe( 404 );
+          })
           .end( done );
         });
       });
