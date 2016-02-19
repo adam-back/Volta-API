@@ -12,7 +12,7 @@ var config    = require( '../../config/config' )[ env ];
 var geocoder = require( 'node-geocoder' )( 'google', 'https', { apiKey: config.googleApiKey, formatter: null } );
 var calculateDistance = require( '../../factories/distanceFactory.js' ).getDistanceFromLatLonInMiles;
 
-var countStationAvailability = function( usageCollection ) {
+exports.countStationAvailability = function( usageCollection ) {
   var numberOfPlugsAvailable = 0;
 
   var numberOfPlugs = usageCollection.length;
@@ -34,7 +34,7 @@ var findDistances = function( userCoords, favorites ) {
   return favorites;
 };
 
-var connectStationsWithPlugsAndSponsors = function( stations ) {
+exports.connectStationsWithPlugsAndSponsors = function( stations ) {
   var deferred = Q.defer();
   var stationsAndPlugs = [];
 
@@ -88,7 +88,7 @@ var connectStationsWithPlugsAndSponsors = function( stations ) {
   return deferred.promise;
 };
 
-var attachImages = function( groups ) {
+exports.attachImages = function( groups ) {
   var deferred = Q.defer();
 
   async.forEachOf(groups, function( group, commonKin, cb ) {
@@ -128,7 +128,7 @@ var attachImages = function( groups ) {
   return deferred.promise;
 };
 
-var groupByKin = function( stationsWithPlugs, userFaves ) {
+exports.groupByKin = function( stationsWithPlugs, userFaves ) {
   var deferred = Q.defer();
   var groupedByKin = {
       // kin: common kin,
@@ -202,7 +202,7 @@ var groupByKin = function( stationsWithPlugs, userFaves ) {
     var total = groupedByKin[ cutKin ].number_available[ 1 ];
     // if there is in-use data
     if ( Array.isArray( station.in_use ) ) {
-      available += countStationAvailability( station.in_use );
+      available += exports.countStationAvailability( station.in_use );
       total += station.in_use.length;
     } else {
       // this is a fudge
@@ -243,7 +243,7 @@ var groupByKin = function( stationsWithPlugs, userFaves ) {
   return deferred.promise;
 };
 
-var geocodeGroupsWithoutGPS = function( groupsOfStations ) {
+exports.geocodeGroupsWithoutGPS = function( groupsOfStations ) {
   var deferred = Q.defer();
   var geocodedGroups = [];
 
@@ -289,7 +289,7 @@ module.exports = exports = {
     // get all stations
     station.findAll()
     .then(function( stations ) {
-      return connectStationsWithPlugsAndSponsors( stations );
+      return exports.connectStationsWithPlugsAndSponsors( stations );
     })
     .then(function( stationsAndPlugs ) {
       // if the user is logged in
@@ -297,16 +297,16 @@ module.exports = exports = {
         // get their favorites
         return user.find( { where: { id: req.query.id } } )
         .then(function( foundUser ) {
-          return groupByKin( stationsAndPlugs, foundUser.favorite_stations );
+          return exports.groupByKin( stationsAndPlugs, foundUser.favorite_stations );
         });
       // not logged in
       } else {
         // group similar stations by kin
-        return groupByKin( stationsAndPlugs );
+        return exports.groupByKin( stationsAndPlugs );
       }
     })
     .then(function( groupedKin ) {
-      return attachImages( groupedKin );
+      return exports.attachImages( groupedKin );
     })
     .then(function( groupsWithImages ) {
       // count availability
@@ -320,7 +320,7 @@ module.exports = exports = {
         }
       }
       // send the rest to be geocoded
-      return geocodeGroupsWithoutGPS( groupsWithImages );
+      return exports.geocodeGroupsWithoutGPS( groupsWithImages );
     })
     .then(function( geocoded ) {
       readyForReturn = readyForReturn.concat( geocoded );
