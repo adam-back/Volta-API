@@ -1,5 +1,7 @@
 var supertest = require( 'supertest' );
-var app = require( '../../../server.js' ).app;
+var app = require( '../../../server.js' );
+var io = app.io;
+app = app.app;
 supertest = supertest( app );
 var Q = require( 'q' );
 var station = require( '../../../models' ).station;
@@ -382,22 +384,6 @@ module.exports = function() {
 
       it('should be protected', function( done ) {
         supertest.get( route )
-        .expect( 401 )
-        .end( done );
-      });
-    });
-
-    describe('PUT', function() {
-      it('should be defined as a route', function( done ) {
-        supertest.put( route )
-        .expect(function( res ) {
-          expect( res.statusCode ).not.toBe( 404 );
-        })
-        .end( done );
-      });
-
-      it('should be protected', function( done ) {
-        supertest.put( route )
         .expect( 401 )
         .end( done );
       });
