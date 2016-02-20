@@ -1,5 +1,5 @@
 var stationImageTests = require( './stationImage.controller.spec.js' );
 
-describe('Public Routes', function() {
+describe('Public API Routes', function() {
   stationImageTests();
 });

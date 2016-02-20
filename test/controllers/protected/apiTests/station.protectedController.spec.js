@@ -1,15 +1,15 @@
 var supertest = require( 'supertest' );
-var app = require( '../../../server.js' );
+var app = require( '../../../../server.js' );
 var io = app.io;
 app = app.app;
 supertest = supertest( app );
 var Q = require( 'q' );
-var station = require( '../../../models' ).station;
-var plug = require( '../../../models' ).plug;
-var schedule = require( '../../../models' ).media_schedule;
-var appSponsorFactory = require( '../../../factories/appSponsorFactory' );
-var mediaSchedule = require( '../../../controllers/protected/mediaSchedule.protectedController.js' );
-var createToken = require( '../../jwtHelper' ).createToken;
+var station = require( '../../../../models' ).station;
+var plug = require( '../../../../models' ).plug;
+var schedule = require( '../../../../models' ).media_schedule;
+var appSponsorFactory = require( '../../../../factories/appSponsorFactory' );
+var mediaSchedule = require( '../../../../controllers/protected/mediaSchedule.protectedController.js' );
+var createToken = require( '../../../jwtHelper' ).createToken;
 var token = createToken( 5 );
 
 module.exports = function() {

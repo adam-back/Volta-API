@@ -1,10 +1,10 @@
 var supertest = require( 'supertest' );
 var app = require( '../../../server.js' ).app;
 supertest = supertest( app );
-var stationTests = require( './station.protectedController.spec.js' );
-var appTests = require( './app.protectedController.spec.js' );
+var stationTests = require( './apiTests/station.protectedController.spec.js' );
+var appTests = require( './apiTests/app.protectedController.spec.js' );
 
-describe('Private Routes - protected/', function() {
+describe('Private API Routes - protected/', function() {
   var route = '/protected';
 
   it('all routes should be protected by a JWT', function( done ) {
