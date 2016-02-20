@@ -10,7 +10,7 @@ var Q = require( 'q' );
 var env = process.env.NODE_ENV || 'development';
 var config    = require( '../../config/config' )[ env ];
 var geocoder = require( 'node-geocoder' )( 'google', 'https', { apiKey: config.googleApiKey, formatter: null } );
-var calculateDistance = require( '../../factories/distanceFactory.js' ).getDistanceFromLatLonInMiles;
+var distance = require( '../../factories/distanceFactory.js' );
 
 module.exports = exports = {
   // methods used for data manipulation
@@ -29,7 +29,7 @@ module.exports = exports = {
   findDistances: function( userCoords, favorites ) {
     var numberOfFaves = favorites.length;
     for ( var i = 0; i < numberOfFaves; i++ ) {
-      favorites[ i ].distance = calculateDistance( userCoords, favorites[ i ].gps );
+      favorites[ i ].distance = distance.getDistanceFromLatLonInMiles( userCoords, favorites[ i ].gps );
     }
 
     return favorites;
