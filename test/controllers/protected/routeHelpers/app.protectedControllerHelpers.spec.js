@@ -66,5 +66,37 @@ module.exports = function() {
         }
       });
     });
+
+    describe('connectStationsWithPlugsAndSponsors', function() {
+      var connectStationsWithPlugsAndSponsors = controller.connectStationsWithPlugsAndSponsors;
+
+      it('should be defined as a function', function() {
+        expect( typeof connectStationsWithPlugsAndSponsors ).toBe( 'function' );
+      });
+    });
+
+    describe('attachImages', function() {
+      var attachImages = controller.attachImages;
+
+      it('should be defined as a function', function() {
+        expect( typeof attachImages ).toBe( 'function' );
+      });
+    });
+
+    describe('groupByKin', function() {
+      var groupByKin = controller.groupByKin;
+
+      it('should be defined as a function', function() {
+        expect( typeof groupByKin ).toBe( 'function' );
+      });
+    });
+
+    describe('geocodeGroupsWithoutGPS', function() {
+      var geocodeGroupsWithoutGPS = controller.geocodeGroupsWithoutGPS;
+
+      it('should be defined as a function', function() {
+        expect( typeof geocodeGroupsWithoutGPS ).toBe( 'function' );
+      });
+    });
   });
 };
