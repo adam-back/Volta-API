@@ -69,9 +69,192 @@ module.exports = function() {
 
     describe('connectStationsWithPlugsAndSponsors', function() {
       var connectStationsWithPlugsAndSponsors = controller.connectStationsWithPlugsAndSponsors;
+      var stations = [];
+      var plugs = [];
+      var station1GetPlugPromise, station2GetPlugPromise, station1GetSponsorsPromise, station2GetSponsorsPromise;
+      var mockData = {};
+
+      beforeEach(function() {
+        mockData.station1 = models.station.build( { id: 1 } );
+        mockData.station2 = models.station.build( { id: 2 } );
+        mockData.plug1 = models.plug.build( { id: 1, number_on_station: 1 } );
+        mockData.plug2 = models.plug.build( { id: 2, number_on_station: 2 } );
+        mockData.sponsor1 = models.app_sponsor.build( { id: 1 } );
+        mockData.sponsor2 = models.app_sponsor.build( { id: 2 } );
+
+        station1GetPlugPromise = Q.defer();
+        station1GetSponsorsPromise = Q.defer();
+        station2GetPlugPromise = Q.defer();
+        station2GetSponsorsPromise = Q.defer();
+
+        spyOn( mockData.station1, 'getPlugs' ).andReturn( station1GetPlugPromise.promise );
+        spyOn( mockData.station1, 'getAppSponsors' ).andReturn( station1GetSponsorsPromise.promise );
+        spyOn( mockData.station2, 'getPlugs' ).andReturn( station2GetPlugPromise.promise );
+        spyOn( mockData.station2, 'getAppSponsors' ).andReturn( station2GetSponsorsPromise.promise );
+        spyOn( mockData.plug1, 'get' ).andCallThrough();
+        spyOn( mockData.plug2, 'get' ).andCallThrough();
+        spyOn( mockData.sponsor1, 'get' ).andCallThrough();
+        spyOn( mockData.sponsor2, 'get' ).andCallThrough();
+
+        stations = [ mockData.station1, mockData.station2 ];
+        plugs = [ mockData.plug1, mockData.plug2 ];
+      });
 
       it('should be defined as a function', function() {
         expect( typeof connectStationsWithPlugsAndSponsors ).toBe( 'function' );
+      });
+
+      it('should loop through the stations', function( done ) {
+        spyOn( async, 'each' ).andCallThrough();
+
+        connectStationsWithPlugsAndSponsors( [] )
+        .then(function() {
+          expect( async.each ).toHaveBeenCalled();
+          expect( async.each.calls[ 0 ].args[ 0 ] ).toEqual( [] );
+          done();
+        })
+        .catch(function( error ) {
+          expect( error ).toBe( 1 );
+          done();
+        });
+      });
+
+      it('should create plain, non-DAO version of each station', function( done ) {
+        spyOn( mockData.station1, 'get' );
+        spyOn( mockData.station2, 'get' );
+        station1GetPlugPromise.reject( 'Test' );
+
+        connectStationsWithPlugsAndSponsors( stations )
+        .catch(function( error ) {
+          expect( mockData.station1.get ).toHaveBeenCalled();
+          expect( mockData.station1.get ).toHaveBeenCalledWith( { plain: true } );
+          expect( mockData.station2.get ).toHaveBeenCalled();
+          expect( mockData.station2.get ).toHaveBeenCalledWith( { plain: true } );
+          done();
+        });
+      });
+
+      it('should get plugs for each station', function( done ) {
+        station1GetPlugPromise.reject( 'Test' );
+
+        connectStationsWithPlugsAndSponsors( stations )
+        .catch(function( error ) {
+          expect( mockData.station1.getPlugs ).toHaveBeenCalled();
+          expect( mockData.station1.getPlugs ).toHaveBeenCalledWith();
+          expect( mockData.station2.getPlugs ).toHaveBeenCalled();
+          expect( mockData.station2.getPlugs ).toHaveBeenCalledWith();
+          done();
+        });
+      });
+
+      it('should get app sponsors for each station', function( done ) {
+        station1GetPlugPromise.resolve( plugs );
+        station2GetPlugPromise.resolve( [] );
+        station1GetSponsorsPromise.reject( 'Test' );
+
+        connectStationsWithPlugsAndSponsors( stations )
+        .catch(function( error ) {
+          expect( mockData.station1.getAppSponsors ).toHaveBeenCalled();
+          expect( mockData.station1.getAppSponsors ).toHaveBeenCalledWith();
+          expect( mockData.station2.getAppSponsors ).toHaveBeenCalled();
+          expect( mockData.station2.getAppSponsors ).toHaveBeenCalledWith();
+          done();
+        });
+      });
+
+      it('should add plain, non-DAO plugs to plain stations', function( done ) {
+        station1GetPlugPromise.resolve( [ mockData.plug1 ] );
+        mockData.plug2.number_on_station = 1;
+        station2GetPlugPromise.resolve( [ mockData.plug2 ] );
+        station1GetSponsorsPromise.resolve( [] );
+        station2GetSponsorsPromise.resolve( [] );
+
+
+        connectStationsWithPlugsAndSponsors( stations )
+        .then(function( result ) {
+          expect( result.length ).toBe( 2 );
+          expect( Array.isArray( result[ 0 ].plugs ) ).toBe( true );
+          expect( result[ 0 ].plugs.length ).toBe( 1 );
+          expect( result[ 0 ].plugs[ 0 ] ).toEqual( mockData.plug1.get( { plain: true } ) );
+          expect( Array.isArray( result[ 1 ].plugs ) ).toBe( true );
+          expect( result[ 1 ].plugs.length ).toBe( 1 );
+          expect( result[ 1 ].plugs[ 0 ] ).toBe( mockData.plug2.get( { plain: true } ) );
+          done();
+        })
+        .catch(function( error ) {
+          expect( error ).toBe( 1 );
+          done();
+        });
+      });
+
+      it('should add null to plain stations if no plugs', function( done ) {
+        station1GetPlugPromise.resolve( plugs );
+        station2GetPlugPromise.resolve( [] );
+        station1GetSponsorsPromise.resolve( [] );
+        station2GetSponsorsPromise.resolve( [] );
+
+
+        connectStationsWithPlugsAndSponsors( stations )
+        .then(function( result ) {
+          expect( result.length ).toBe( 2 );
+          expect( Array.isArray( result[ 0 ].plugs ) ).toBe( true );
+          expect( result[ 0 ].plugs.length ).toBe( 2 );
+          expect( result[ 0 ].plugs[ 0 ] ).toEqual( mockData.plug1.get( { plain: true } ) );
+          expect( result[ 0 ].plugs[ 1 ] ).toBe( mockData.plug2.get( { plain: true } ) );
+          expect( result[ 1 ].plugs ).toBe( null );
+          done();
+        })
+        .catch(function( error ) {
+          expect( error ).toBe( 1 );
+          done();
+        });
+      });
+
+      it('should add plain, non-DAO app_sponsors to plain stations', function( done ) {
+        station1GetPlugPromise.resolve( plugs );
+        station2GetPlugPromise.resolve( [] );
+        station1GetSponsorsPromise.resolve( [ mockData.sponsor1 ] );
+        station2GetSponsorsPromise.resolve( [ mockData.sponsor2 ] );
+
+
+        connectStationsWithPlugsAndSponsors( stations )
+        .then(function( result ) {
+          expect( result.length ).toBe( 2 );
+          expect( Array.isArray( result[ 0 ].app_sponsors ) ).toBe( true );
+          expect( result[ 0 ].app_sponsors.length ).toBe( 1 );
+          expect( result[ 0 ].app_sponsors[ 0 ] ).toEqual( mockData.sponsor1.get( { plain: true } ) );
+          expect( Array.isArray( result[ 1 ].app_sponsors ) ).toBe( true );
+          expect( result[ 1 ].app_sponsors.length ).toBe( 1 );
+          expect( result[ 1 ].app_sponsors[ 0 ] ).toEqual( mockData.sponsor2.get( { plain: true } ) );
+          done();
+        })
+        .catch(function( error ) {
+          expect( error ).toBe( 1 );
+          done();
+        });
+      });
+
+      it('should add [] to plain stations if no app_sponsors', function( done ) {
+        station1GetPlugPromise.resolve( plugs );
+        station2GetPlugPromise.resolve( [] );
+        station1GetSponsorsPromise.resolve( [ mockData.sponsor1, mockData.sponsor2 ] );
+        station2GetSponsorsPromise.resolve( [] );
+
+        connectStationsWithPlugsAndSponsors( stations )
+        .then(function( result ) {
+          expect( result.length ).toBe( 2 );
+          expect( Array.isArray( result[ 0 ].app_sponsors ) ).toBe( true );
+          expect( result[ 0 ].app_sponsors.length ).toBe( 2 );
+          expect( result[ 0 ].app_sponsors[ 0 ] ).toEqual( mockData.sponsor1.get( { plain: true } ) );
+          expect( result[ 0 ].app_sponsors[ 1 ] ).toEqual( mockData.sponsor2.get( { plain: true } ) );
+          expect( Array.isArray( result[ 1 ].app_sponsors ) ).toBe( true );
+          expect( result[ 1 ].app_sponsors.length ).toBe( 0 );
+          done();
+        })
+        .catch(function( error ) {
+          expect( error ).toBe( 1 );
+          done();
+        });
       });
     });
 

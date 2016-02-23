@@ -47,21 +47,13 @@ module.exports = exports = {
       .then(function( plugs ) {
         return station.getAppSponsors()
         .then(function( appSponsors ) {
-          // if there are sponsors
-          plainStation.app_sponsors = [];
-
-          if ( appSponsors && appSponsors.length > 0 ) {
-            for ( var i = 0; i < appSponsors.length; i++ ) {
-              plainStation.app_sponsors.push( appSponsors[ i ].get( { plain: true } ) );
-            }
-          }
-
           // if there are plugs, i.e. push and cloudgate installed
-          if ( plugs && plugs.length > 0 ) {
+          var numberOfPlugs = plugs.length;
+          if ( plugs && numberOfPlugs > 0 ) {
             // create a plugs field on the station
             plainStation.plugs = [];
             // for each plug on the station
-            for ( var j = 0; j < plugs.length; j++ ) {
+            for ( var j = 0; j < numberOfPlugs; j++ ) {
               // push the values of plug to the plugs array on station
               plainStation.plugs[ plugs[ j ].number_on_station - 1 ] = plugs[ j ].get( { plain: true } );
             }
@@ -69,6 +61,16 @@ module.exports = exports = {
           } else {
             plainStation.plugs = null;
           }
+
+          plainStation.app_sponsors = [];
+          // if there are sponsors
+          var numberOfAppSponsors = appSponsors.length;
+          if ( appSponsors && numberOfAppSponsors > 0 ) {
+            for ( var i = 0; i < numberOfAppSponsors; i++ ) {
+              plainStation.app_sponsors.push( appSponsors[ i ].get( { plain: true } ) );
+            }
+          }
+
 
           stationsAndPlugs.push( plainStation );
           cb( null );
