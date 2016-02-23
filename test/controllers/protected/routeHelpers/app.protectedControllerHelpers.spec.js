@@ -387,9 +387,291 @@ module.exports = function() {
 
     describe('groupByKin', function() {
       var groupByKin = controller.groupByKin;
+      var station1, station2;
+      var stationsWithPlugs, faves;
+      var stationData = {
+        "kin": "003-0043-015",
+        "location": "Macy's - The Oaks",
+        "address": "350 West Hillcrest Drive, Thousand Oaks, CA 91360",
+        "thumbnail": null,
+        "images": [],
+        "gps": [
+          34.18437256,
+          -118.88682462
+        ],
+        "url": null,
+        "ids": [
+          148,
+          149
+        ],
+        "app_sponsors": [
+          {
+            "id": 1,
+            "company": "Chevrolet",
+            "networks": [
+              "SD",
+              "OC",
+              "LA",
+              "SB",
+              "NoCal"
+            ],
+            "website_url": null,
+            "twitter_url": null,
+            "facebook_url": null,
+            "instagram_url": null,
+            "logo_url": "https:\/\/ad.doubleclick.net\/ddm\/ad\/N8334.2076903VOLTAINDUSTRIESIN\/B9247890.125572247;sz=1024x543;ord=",
+            "station_query": {
+              "where": {
+                "network": {
+                  "$in": [
+                    "SD",
+                    "OC",
+                    "LA",
+                    "SB",
+                    "NoCal"
+                  ]
+                }
+              }
+            },
+            "banner_url": "https:\/\/ad.doubleclick.net\/ddm\/ad\/N8334.2076903VOLTAINDUSTRIESIN\/B9247890.125572647;sz=640x100;ord=",
+            "order": 1,
+            "start": null,
+            "end": null,
+            "current": true,
+            "banner_click_url": "https:\/\/app-server.voltaapi.com\/Chevrolet\/BannerForwarding.html",
+            "logo_click_url": "https:\/\/app-server.voltaapi.com\/Chevrolet\/LogoForwarding.html",
+            "created_at": "2015-09-12T00:16:42.238Z",
+            "updated_at": "2015-09-12T00:16:42.238Z",
+            "station_app_sponsors": {
+              "created_at": "2015-12-31T22:15:22.123Z",
+              "updated_at": "2015-12-31T22:15:22.123Z",
+              "station_id": 148,
+              "app_sponsor_id": 1
+            }
+          }
+        ],
+        "number_available": [
+          2,
+          2
+        ],
+        "distance": null,
+        "stations": [
+          {
+            "id": 148,
+            "kin": "003-0043-015-01-K",
+            "version": "2",
+            "site_number": 1,
+            "install_date": "2015-10-01T07:00:00.000Z",
+            "network": "LA",
+            "ekm_push_mac": "4016FA01044B",
+            "sim_card": "89011704252308111266",
+            "has_kill_switch": null,
+            "location": "Macy's - The Oaks",
+            "location_address": "350 West Hillcrest Drive, Thousand Oaks, CA 91360",
+            "location_description": null,
+            "location_gps": [
+              34.18437256,
+              -118.88682462
+            ],
+            "cost_to_access": true,
+            "cumulative_kwh": 3132.7,
+            "station_status": null,
+            "has_digital_front_display": null,
+            "front_display_pc_serial_number": null,
+            "in_use": [
+              "false"
+            ],
+            "created_at": "2015-12-31T22:15:21.930Z",
+            "updated_at": "2016-02-22T19:02:53.565Z",
+            "deleted_at": null,
+            "app_sponsors": [
+              {
+                "id": 1,
+                "company": "Chevrolet",
+                "networks": [
+                  "SD",
+                  "OC",
+                  "LA",
+                  "SB",
+                  "NoCal"
+                ],
+                "website_url": null,
+                "twitter_url": null,
+                "facebook_url": null,
+                "instagram_url": null,
+                "logo_url": "https:\/\/ad.doubleclick.net\/ddm\/ad\/N8334.2076903VOLTAINDUSTRIESIN\/B9247890.125572247;sz=1024x543;ord=",
+                "station_query": {
+                  "where": {
+                    "network": {
+                      "$in": [
+                        "SD",
+                        "OC",
+                        "LA",
+                        "SB",
+                        "NoCal"
+                      ]
+                    }
+                  }
+                },
+                "banner_url": "https:\/\/ad.doubleclick.net\/ddm\/ad\/N8334.2076903VOLTAINDUSTRIESIN\/B9247890.125572647;sz=640x100;ord=",
+                "order": 1,
+                "start": null,
+                "end": null,
+                "current": true,
+                "banner_click_url": "https:\/\/app-server.voltaapi.com\/Chevrolet\/BannerForwarding.html",
+                "logo_click_url": "https:\/\/app-server.voltaapi.com\/Chevrolet\/LogoForwarding.html",
+                "created_at": "2015-09-12T00:16:42.238Z",
+                "updated_at": "2015-09-12T00:16:42.238Z",
+                "station_app_sponsors": {
+                  "created_at": "2015-12-31T22:15:22.123Z",
+                  "updated_at": "2015-12-31T22:15:22.123Z",
+                  "station_id": 148,
+                  "app_sponsor_id": 1
+                }
+              }
+            ],
+            "plugs": [
+              {
+                "id": 132,
+                "number_on_station": 1,
+                "install_date": "2015-10-01T07:00:00.000Z",
+                "connector_type": "J1772",
+                "charger_type": 2,
+                "max_amps": null,
+                "ekm_omnimeter_serial": "16439",
+                "meter_status": "on",
+                "meter_status_message": "idle",
+                "in_use": false,
+                "cumulative_kwh": 3132.7,
+                "created_at": "2016-02-09T20:28:50.931Z",
+                "updated_at": "2016-02-22T19:02:53.559Z",
+                "deleted_at": null,
+                "station_id": 148
+              }
+            ]
+          },
+          {
+            "id": 149,
+            "kin": "003-0043-015-02-K",
+            "version": "2",
+            "site_number": 2,
+            "install_date": "2015-10-01T07:00:00.000Z",
+            "network": "LA",
+            "ekm_push_mac": "4016FA010465",
+            "sim_card": "89011704252308110896",
+            "has_kill_switch": null,
+            "location": "Macy's - The Oaks",
+            "location_address": "350 West Hillcrest Drive, Thousand Oaks, CA 91360",
+            "location_description": null,
+            "location_gps": [
+              34.18442546,
+              -118.88678338
+            ],
+            "cost_to_access": true,
+            "cumulative_kwh": 2860.8,
+            "station_status": null,
+            "has_digital_front_display": null,
+            "front_display_pc_serial_number": null,
+            "in_use": [
+              "false"
+            ],
+            "created_at": "2015-12-31T22:43:23.097Z",
+            "updated_at": "2016-02-23T04:20:57.480Z",
+            "deleted_at": null,
+            "app_sponsors": [
+              {
+                "id": 1,
+                "company": "Chevrolet",
+                "networks": [
+                  "SD",
+                  "OC",
+                  "LA",
+                  "SB",
+                  "NoCal"
+                ],
+                "website_url": null,
+                "twitter_url": null,
+                "facebook_url": null,
+                "instagram_url": null,
+                "logo_url": "https:\/\/ad.doubleclick.net\/ddm\/ad\/N8334.2076903VOLTAINDUSTRIESIN\/B9247890.125572247;sz=1024x543;ord=",
+                "station_query": {
+                  "where": {
+                    "network": {
+                      "$in": [
+                        "SD",
+                        "OC",
+                        "LA",
+                        "SB",
+                        "NoCal"
+                      ]
+                    }
+                  }
+                },
+                "banner_url": "https:\/\/ad.doubleclick.net\/ddm\/ad\/N8334.2076903VOLTAINDUSTRIESIN\/B9247890.125572647;sz=640x100;ord=",
+                "order": 1,
+                "start": null,
+                "end": null,
+                "current": true,
+                "banner_click_url": "https:\/\/app-server.voltaapi.com\/Chevrolet\/BannerForwarding.html",
+                "logo_click_url": "https:\/\/app-server.voltaapi.com\/Chevrolet\/LogoForwarding.html",
+                "created_at": "2015-09-12T00:16:42.238Z",
+                "updated_at": "2015-09-12T00:16:42.238Z",
+                "station_app_sponsors": {
+                  "created_at": "2015-12-31T22:43:23.111Z",
+                  "updated_at": "2015-12-31T22:43:23.111Z",
+                  "station_id": 149,
+                  "app_sponsor_id": 1
+                }
+              }
+            ],
+            "plugs": [
+              {
+                "id": 125,
+                "number_on_station": 1,
+                "install_date": "2015-11-04T08:00:00.000Z",
+                "connector_type": "RS1772",
+                "charger_type": 2,
+                "max_amps": null,
+                "ekm_omnimeter_serial": "16459",
+                "meter_status": "on",
+                "meter_status_message": "idle",
+                "in_use": false,
+                "cumulative_kwh": 2860.8,
+                "created_at": "2016-01-14T21:31:14.082Z",
+                "updated_at": "2016-02-23T04:20:57.478Z",
+                "deleted_at": null,
+                "station_id": 149
+              }
+            ]
+          }
+        ],
+        "favorite": false,
+        "addressLine1": "350 West Hillcrest Drive",
+        "addressLine2": "Thousand Oaks, CA 91360",
+        "androidGPS": {
+          "latitude": 34.18437256,
+          "longitude": -118.88682462
+        }
+      };
+
+      beforeEach(function() {
+        station1 = stationData.stations[ 0 ];
+        station2 = stationData.stations[ 1 ];
+        stationsWithPlugs = [ station1, station2 ];
+      })
 
       it('should be defined as a function', function() {
         expect( typeof groupByKin ).toBe( 'function' );
+      });
+
+      it('should return an object', function() {
+        expect( typeof groupByKin( stationsWithPlugs ) ).toBe( 'object' );
+      });
+
+      it('should group similar KINs together', function() {
+        var result = groupByKin( stationsWithPlugs );
+        expect( Object.keys( result ).length ).toBe( 1 );
+        expect( result.hasOwnProperty( '003-0043-015' ) ).toBe( true );
       });
     });
 
@@ -399,6 +681,7 @@ module.exports = function() {
       it('should be defined as a function', function() {
         expect( typeof geocodeGroupsWithoutGPS ).toBe( 'function' );
       });
+
     });
   });
 };
