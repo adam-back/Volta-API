@@ -52,7 +52,6 @@ describe('kwhGrowthOverTime', function() {
 
     kwhGrowthOverTime()
     .catch(function( error ) {
-      console.log( 'error', error );
       expect( csv.generateCSV ).toHaveBeenCalled();
       expect( Array.isArray( csv.generateCSV.calls[ 0 ].args[ 0 ] ) ).toBe( true );
       expect( csv.generateCSV.calls[ 0 ].args[ 0 ] ).toEqual( [ kwhResults, kwhResults ] );

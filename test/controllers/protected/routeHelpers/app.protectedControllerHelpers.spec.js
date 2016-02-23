@@ -260,9 +260,128 @@ module.exports = function() {
 
     describe('attachImages', function() {
       var attachImages = controller.attachImages;
+      var foundStation, findStation, getImages;
+      var groupsOfStations;
+
+      beforeEach(function() {
+        groupsOfStations = {
+          '001-0001-001': {
+            images: [],
+            thumbnail: null,
+            stations: [{
+              kin: '001-0001-001-01-K'
+            }]
+          },
+          '002-0002-002': {
+            images: [],
+            thumbnail: null,
+            stations: [{
+              kin: '002-0002-002-01-K'
+            },
+            {
+              kin: '002-0002-002-02-K'
+            }]
+          }
+        };
+        foundStation = {
+          kin: '001-0001-001-01-K',
+          getStation_images: function() {
+            return void( 0 );
+          }
+        };
+        findStation = Q.defer();
+        getImages = Q.defer();
+        spyOn( models.station, 'find' ).andReturn( findStation.promise );
+        spyOn( foundStation, 'getStation_images' ).andReturn( getImages.promise );
+      });
 
       it('should be defined as a function', function() {
         expect( typeof attachImages ).toBe( 'function' );
+      });
+
+      it('should loop over each key in object', function( done ) {
+        spyOn( async, 'forEachOf' ).andCallThrough();
+        attachImages( {} )
+        .then(function(  ) {
+          expect( async.forEachOf ).toHaveBeenCalled();
+          expect( async.forEachOf.calls[ 0 ].args[ 0 ] ).toEqual( {} );
+          done();
+        })
+        .catch(function( error ) {
+          expect( error ).toBe( 1 );
+          done();
+        });
+      });
+
+      it('should find each station', function( done ) {
+        findStation.reject( 'Test' );
+        attachImages( groupsOfStations )
+        .catch(function( error ) {
+          expect( models.station.find ).toHaveBeenCalled();
+          expect( models.station.find ).toHaveBeenCalledWith( { where: { kin: '001-0001-001-01-K' } } );
+          done();
+        });
+      });
+
+      it('should get each station\'s images', function( done ) {
+        findStation.resolve( foundStation );
+        getImages.reject( 'Test' );
+        attachImages( groupsOfStations )
+        .catch(function( error ) {
+          expect( foundStation.getStation_images ).toHaveBeenCalled();
+          expect( foundStation.getStation_images ).toHaveBeenCalledWith();
+          done();
+        });
+      });
+
+      it('should attach a thumbnail and highres image links', function( done ) {
+        findStation.resolve( foundStation );
+        getImages.resolve( [ { link: '1'}, { link: 'thumb' }, { link: '2' } ] );
+        attachImages( groupsOfStations )
+        .then(function( groups ) {
+          expect( typeof groups ).toBe( 'object' );
+          expect( Array.isArray( groups ) ).toBe( false );
+          // group 1
+          expect( groups[ '001-0001-001' ].thumbnail ).toBe( 'thumb' );
+          expect( Array.isArray( groups[ '001-0001-001' ].images ) ).toBe( true );
+          expect( groups[ '001-0001-001' ].images.length ).toBe( 2 );
+          expect( groups[ '001-0001-001' ].images[ 0 ] ).toBe( '1' );
+          expect( groups[ '001-0001-001' ].images[ 1 ] ).toBe( '2' );
+          // group 2
+          expect( groups[ '002-0002-002' ].thumbnail ).toBe( 'thumb' );
+          expect( Array.isArray( groups[ '002-0002-002' ].images ) ).toBe( true );
+          expect( groups[ '002-0002-002' ].images.length ).toBe( 2 );
+          expect( groups[ '002-0002-002' ].images[ 0 ] ).toBe( '1' );
+          expect( groups[ '002-0002-002' ].images[ 1 ] ).toBe( '2' );
+          done();
+        })
+        .catch(function( error ) {
+          expect( error ).toBe( 1 );
+          done();
+        });
+      });
+
+      it('should not attach anything if no images', function( done ) {
+        findStation.resolve( foundStation );
+        getImages.resolve( [] );
+        attachImages( groupsOfStations )
+        .then(function( groups ) {
+          expect( typeof groups ).toBe( 'object' );
+          expect( Array.isArray( groups ) ).toBe( false );
+          // group 1
+          expect( groups[ '001-0001-001' ].thumbnail ).toBe( null );
+          expect( Array.isArray( groups[ '001-0001-001' ].images ) ).toBe( true );
+          expect( groups[ '001-0001-001' ].images.length ).toBe( 0 );
+          // group 2
+          expect( groups[ '002-0002-002' ].thumbnail ).toBe( null );
+          expect( Array.isArray( groups[ '002-0002-002' ].images ) ).toBe( true );
+          expect( groups[ '002-0002-002' ].images.length ).toBe( 0 );
+          done();
+        })
+        .catch(function( error ) {
+          expect( error ).toBe( 1 );
+          done();
+        });
       });
     });
 

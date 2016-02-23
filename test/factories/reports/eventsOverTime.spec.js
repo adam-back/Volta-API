@@ -41,7 +41,6 @@ describe('Timeline Helpers', function() {
     it('should return 3 nulls if there are three days without data', function() {
       second = moment( '2015 05 05', 'YYYY MM DD' ).endOf( 'day' );
       var result = countNumberOfDaysWithoutData( first, second, null );
-      console.log( 'result', result );
       expect( Object.keys( result ).length ).toBe( 3 );
       expect( result.hasOwnProperty( '5/2/2015' ) ).toBe( true );
       expect( result.hasOwnProperty( '5/3/2015' ) ).toBe( true );
