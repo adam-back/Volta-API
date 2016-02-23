@@ -129,7 +129,6 @@ module.exports = exports = {
     return deferred.promise;
   },
   groupByKin: function( stationsWithPlugs, userFaves ) {
-    var deferred = Q.defer();
     var groupedByKin = {
         // kin: common kin,
         // location: coloquial location, eg. Serra Shopping Center,
@@ -151,9 +150,12 @@ module.exports = exports = {
                     // etc
                 // }]
           // }]
-      };
+    };
 
-    async.each( stationsWithPlugs, function( station, cb ) {
+    var numberOfStationsWithPlugs = stationsWithPlugs.length;
+    for ( var i = 0; i < numberOfStationsWithPlugs; i++ ) {
+      var station = stationsWithPlugs[ i ];
+
       // cut off the station number and K/W
       // 001-0001-001-01-K becomes 001-0001-001
       var cutKin = station.kin.substring( 0, 12 );
@@ -230,17 +232,9 @@ module.exports = exports = {
           groupedByKin[ cutKin ].app_sponsors = station.app_sponsors;
         }
       }
+    }
 
-      cb( null );
-    }, function( error ) {
-      if ( error ) {
-        deferred.reject( error );
-      } else {
-        deferred.resolve( groupedByKin );
-      }
-    });
-
-    return deferred.promise;
+    return groupedByKin;
   },
   geocodeGroupsWithoutGPS: function( groupsOfStations ) {
     var deferred = Q.defer();
@@ -295,12 +289,12 @@ module.exports = exports = {
         // get their favorites
         return user.find( { where: { id: req.query.id } } )
         .then(function( foundUser ) {
-          return exports.groupByKin( stationsAndPlugs, foundUser.favorite_stations );
+          return Q( groupByKin( stationsAndPlugs, foundUser.favorite_stations ) );
         });
       // not logged in
       } else {
         // group similar stations by kin
-        return exports.groupByKin( stationsAndPlugs );
+        return Q( exports.groupByKin( stationsAndPlugs ) );
       }
     })
     .then(function( groupedKin ) {
