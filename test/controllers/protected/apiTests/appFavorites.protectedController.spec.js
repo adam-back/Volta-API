@@ -127,6 +127,85 @@ module.exports = function() {
           .end( done );
         });
       });
+
+      describe('PATCH', function() {
+        var body, findUser, User, updateUser;
+
+        beforeEach(function() {
+          body = {
+            userId: 5,
+            group: [ 1, 3 ]
+          };
+          findUser = Q.defer();
+          updateUser = Q.defer();
+          User = models.user.build( { favorite_stations: [ 1, 2, 3, 4 ] } );
+
+          spyOn( models.user, 'find' ).andReturn( findUser.promise );
+          spyOn( User, 'updateAttributes' ).andReturn( updateUser.promise );
+        });
+
+        it('should be a defined route (not 404)', function( done ) {
+          findUser.reject();
+          supertest.patch( route )
+          .set( 'Authorization', 'Bearer ' + token )
+          .send( body )
+          .expect(function( res ) {
+            expect( res.statusCode ).not.toBe( 404 );
+          })
+          .end( done );
+        });
+
+        it('find the user', function( done ) {
+          findUser.reject();
+          supertest.patch( route )
+          .set( 'Authorization', 'Bearer ' + token )
+          .send( body )
+          .expect(function( res ) {
+            expect( models.user.find ).toHaveBeenCalled();
+            expect( models.user.find ).toHaveBeenCalledWith( { where: { id: 5 } } );
+          })
+          .end( done );
+        });
+
+        it('should remove stations from user\'s favorites and update DB', function( done ) {
+          findUser.resolve( User );
+          updateUser.reject();
+          supertest.patch( route )
+          .set( 'Authorization', 'Bearer ' + token )
+          .send( body )
+          .expect(function( res ) {
+            expect( User.updateAttributes ).toHaveBeenCalled();
+            expect( User.updateAttributes ).toHaveBeenCalledWith( { 'favorite_stations': [ 2, 4 ] } );
+          })
+          .end( done );
+        });
+
+        it('should send blank 200 when done', function( done ) {
+          User.favorite_stations = [];
+          findUser.resolve( User );
+          updateUser.resolve();
+          supertest.patch( route )
+          .set( 'Authorization', 'Bearer ' + token )
+          .send( body )
+          .expect( 200 )
+          .expect( '' )
+          .end( done );
+        });
+
+        it('should return 500 failure for error', function( done ) {
+          findUser.reject( 'Test' );
+          supertest.patch( route )
+          .set( 'Authorization', 'Bearer ' + token )
+          .send( body )
+          .expect( 500 )
+          .expect( 'Test' )
+          .expect( 'Content-Type', /text/ )
+          .expect(function( res ) {
+            expect( models.user.find ).toHaveBeenCalled();
+          })
+          .end( done );
+        });
+      });
     });
   });
 };
