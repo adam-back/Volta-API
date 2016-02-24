@@ -388,7 +388,7 @@ module.exports = function() {
     describe('groupByKin', function() {
       var groupByKin = controller.groupByKin;
       var station1, station2;
-      var stationsWithPlugs, faves;
+      var stationsWithPlugs;
       var stationData = {
         "kin": "003-0043-015",
         "location": "Macy's - The Oaks",
@@ -672,6 +672,116 @@ module.exports = function() {
         var result = groupByKin( stationsWithPlugs );
         expect( Object.keys( result ).length ).toBe( 1 );
         expect( result.hasOwnProperty( '003-0043-015' ) ).toBe( true );
+      });
+
+      it('should have common fields', function() {
+        var result = groupByKin( stationsWithPlugs );
+        expect( result[ '003-0043-015' ].kin ).toBe( '003-0043-015' );
+        expect( result[ '003-0043-015' ].location ).toBe( 'Macy\'s - The Oaks' );
+        expect( result[ '003-0043-015' ].address ).toBe( '350 West Hillcrest Drive, Thousand Oaks, CA 91360' );
+        expect( result[ '003-0043-015' ].addressLine1 ).toBe( '350 West Hillcrest Drive' );
+        expect( result[ '003-0043-015' ].addressLine2 ).toBe( 'Thousand Oaks, CA 91360' );
+        expect( result[ '003-0043-015' ].thumbnail ).toBe( null );
+        expect( result[ '003-0043-015' ].images ).toEqual( [] );
+        expect( result[ '003-0043-015' ].gps ).toEqual( [ 34.18437256, -118.88682462 ] );
+        expect( result[ '003-0043-015' ].androidGPS ).toEqual( { latitude: 34.18437256, longitude: -118.88682462 } );
+        expect( result[ '003-0043-015' ].url ).toBe( null );
+        expect( result[ '003-0043-015' ].ids ).toEqual( [ 148, 149 ] );
+        expect( result[ '003-0043-015' ].app_sponsors ).toEqual( [
+          {
+            "id": 1,
+            "company": "Chevrolet",
+            "networks": [
+              "SD",
+              "OC",
+              "LA",
+              "SB",
+              "NoCal"
+            ],
+            "website_url": null,
+            "twitter_url": null,
+            "facebook_url": null,
+            "instagram_url": null,
+            "logo_url": "https:\/\/ad.doubleclick.net\/ddm\/ad\/N8334.2076903VOLTAINDUSTRIESIN\/B9247890.125572247;sz=1024x543;ord=",
+            "station_query": {
+              "where": {
+                "network": {
+                  "$in": [
+                    "SD",
+                    "OC",
+                    "LA",
+                    "SB",
+                    "NoCal"
+                  ]
+                }
+              }
+            },
+            "banner_url": "https:\/\/ad.doubleclick.net\/ddm\/ad\/N8334.2076903VOLTAINDUSTRIESIN\/B9247890.125572647;sz=640x100;ord=",
+            "order": 1,
+            "start": null,
+            "end": null,
+            "current": true,
+            "banner_click_url": "https:\/\/app-server.voltaapi.com\/Chevrolet\/BannerForwarding.html",
+            "logo_click_url": "https:\/\/app-server.voltaapi.com\/Chevrolet\/LogoForwarding.html",
+            "created_at": "2015-09-12T00:16:42.238Z",
+            "updated_at": "2015-09-12T00:16:42.238Z",
+            "station_app_sponsors": {
+              "created_at": "2015-12-31T22:15:22.123Z",
+              "updated_at": "2015-12-31T22:15:22.123Z",
+              "station_id": 148,
+              "app_sponsor_id": 1
+            }
+          }
+        ] );
+        expect( result[ '003-0043-015' ].number_available ).toEqual( [ 2, 2 ] );
+        expect( result[ '003-0043-015' ].distance ).toBe( null );
+        expect( result[ '003-0043-015' ].stations ).toEqual( [ station1, station2 ] );
+        expect( result[ '003-0043-015' ].favorite ).toBe( false );
+      });
+
+      it('should set a group as a favorite', function() {
+        var result = groupByKin( stationsWithPlugs, [ 148 ] );
+        expect( result[ '003-0043-015' ].favorite ).toBe( true );
+      });
+
+      it('should not set a group as a favorite', function() {
+        var result = groupByKin( stationsWithPlugs, [ 42 ] );
+        expect( result[ '003-0043-015' ].favorite ).toBe( false );
+      });
+
+      it('should correctly split address with two commas', function() {
+        var result = groupByKin( stationsWithPlugs );
+        expect( result[ '003-0043-015' ].address ).toBe( '350 West Hillcrest Drive, Thousand Oaks, CA 91360' );
+        expect( result[ '003-0043-015' ].addressLine1 ).toBe( '350 West Hillcrest Drive' );
+        expect( result[ '003-0043-015' ].addressLine2 ).toBe( 'Thousand Oaks, CA 91360' );
+      });
+
+      it('should correctly split address with three commas', function() {
+        stationsWithPlugs.pop();
+        stationsWithPlugs[ 0 ].location_address = '123 Main, Apt. A, Toledo, OH 43611';
+        var result = groupByKin( stationsWithPlugs );
+        expect( result[ '003-0043-015' ].address ).toBe( '123 Main, Apt. A, Toledo, OH 43611' );
+        expect( result[ '003-0043-015' ].addressLine1 ).toBe( '123 Main, Apt. A' );
+        expect( result[ '003-0043-015' ].addressLine2 ).toBe( 'Toledo, OH 43611' );
+      });
+
+      it('should count stations as availabile if we otherwise don\'t know', function() {
+        spyOn( controller, 'countStationAvailability' ).andCallThrough();
+        delete stationsWithPlugs[ 0 ].in_use;
+        stationsWithPlugs[ 1 ].in_use = [ 'true' ];
+        var result = groupByKin( stationsWithPlugs );
+        expect( controller.countStationAvailability.calls.length ).toBe( 1 );
+        expect( controller.countStationAvailability ).toHaveBeenCalledWith( [ 'true' ] );
+        expect( result[ '003-0043-015' ].number_available ).toEqual( [ 1, 2 ] );
+      });
+
+      it('should only add app sponsors once', function() {
+        station1.app_sponsors = [ 'obi' ];
+        station2.app_sponsors = [ 'wan' ];
+        console.log( 'stationsWithPlugs', stationsWithPlugs );
+        var result = groupByKin( stationsWithPlugs );
+        expect( result[ '003-0043-015' ].app_sponsors.length ).toBe( 1 );
+        expect( result[ '003-0043-015' ].app_sponsors ).toEqual( [ 'obi' ] );
       });
     });
 

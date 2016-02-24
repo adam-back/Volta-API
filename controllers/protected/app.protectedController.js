@@ -227,10 +227,8 @@ module.exports = exports = {
         };
       }
 
-      if ( groupedByKin[ cutKin ].app_sponsors.length === 0 ) {
-        if ( station.app_sponsors.length !== 0 ) {
-          groupedByKin[ cutKin ].app_sponsors = station.app_sponsors;
-        }
+      if ( groupedByKin[ cutKin ].app_sponsors.length === 0 && station.app_sponsors.length !== 0 ) {
+        groupedByKin[ cutKin ].app_sponsors = station.app_sponsors;
       }
     }
 
