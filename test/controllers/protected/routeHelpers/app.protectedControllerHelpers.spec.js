@@ -894,9 +894,109 @@ module.exports = function() {
 
     describe('geocodeGroupsWithoutGPS', function() {
       var geocodeGroupsWithoutGPS = controller.geocodeGroupsWithoutGPS;
+      var groupsOfStations, geocode, mockCache, revert;
+
+      beforeEach(function() {
+        mockCache = {
+          geocodeCache: {}
+        };
+        revert = controller.__set__( 'cache', mockCache );
+        groupsOfStations = {
+          '001-0001-001': {
+            address: 'home',
+            gps: []
+          },
+          '002-0002-002': {
+            address: 'not home',
+            gps: []
+          }
+        };
+        geocode = Q.defer();
+        spyOn( controller, 'geocodeOneGroup' ).andReturn( geocode.promise );
+      });
+
+      afterEach(function() {
+        if( typeof revert === 'function' ) {
+          revert();
+        }
+      });
 
       it('should be defined as a function', function() {
         expect( typeof geocodeGroupsWithoutGPS ).toBe( 'function' );
+      });
+
+      it('should geocode stations not in cache', function( done ) {
+        geocode.reject( 'Fail.' );
+        geocodeGroupsWithoutGPS( groupsOfStations )
+        .catch(function() {
+          expect( controller.geocodeOneGroup.calls.length ).toBe( 2 );
+          done();
+        });
+      });
+
+      it('should not geocode if station found in cache', function( done ) {
+        mockCache = {
+          geocodeCache: {
+            '001-0001-001': [ 3, 4 ]
+          }
+        };
+        revert = controller.__set__( 'cache', mockCache );
+        delete groupsOfStations[ '002-0002-002' ];
+        geocodeGroupsWithoutGPS( groupsOfStations )
+        .then(function( result ) {
+          expect( controller.geocodeOneGroup ).not.toHaveBeenCalled();
+          expect( Array.isArray( result ) ).toBe( true );
+          expect( result.length ).toBe( 1 );
+          groupsOfStations[ '001-0001-001' ].gps = [ 3, 4 ];
+          expect( result[ 0 ] ).toEqual( groupsOfStations[ '001-0001-001' ] );
+          done();
+        })
+        .catch(function() {
+          expect( error ).toBe( 1 );
+          done();
+        });
+      });
+
+      it('should resolve an array of updated stations', function( done ) {
+        geocode.resolve( [ '001-0001-001', [ { latitude: 1, longitude: 2 } ] ] );
+        delete groupsOfStations[ '002-0002-002' ];
+        geocodeGroupsWithoutGPS( groupsOfStations )
+        .then(function( result ) {
+          expect( Array.isArray( result ) ).toBe( true );
+          expect( result.length ).toBe( 1 );
+          groupsOfStations[ '001-0001-001' ].gps = [ 1, 2 ];
+          expect( result[ 0 ] ).toEqual( groupsOfStations[ '001-0001-001' ] );
+          done();
+        })
+        .catch(function( error ) {
+          expect( error ).toBe( 1 );
+          done();
+        });
+      });
+
+      it('should handle stations in cache and not', function( done ) {
+        mockCache = {
+                  geocodeCache: {
+                    '001-0001-001': [ 3, 4 ]
+                  }
+                };
+        revert = controller.__set__( 'cache', mockCache );
+        geocode.resolve( [ '002-0002-002', [ { latitude: 1, longitude: 2 } ] ] );
+        geocodeGroupsWithoutGPS( groupsOfStations )
+        .then(function( result ) {
+          expect( controller.geocodeOneGroup.calls.length ).toBe( 1 );
+          expect( Array.isArray( result ) ).toBe( true );
+          expect( result.length ).toBe( 2 );
+          groupsOfStations[ '001-0001-001' ].gps = [ 3, 4 ];
+          groupsOfStations[ '002-0002-002' ].gps = [ 1, 2 ];
+          expect( result[ 0 ] ).toEqual( groupsOfStations[ '001-0001-001' ] );
+          expect( result[ 1 ] ).toEqual( groupsOfStations[ '002-0002-002' ] );
+          done();
+        })
+        .catch(function() {
+          expect( error ).toBe( 1 );
+          done();
+        });
       });
     });
   });

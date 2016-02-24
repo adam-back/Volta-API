@@ -256,9 +256,9 @@ module.exports = exports = {
     for ( var kin in groupsOfStations ) {
       var group = groupsOfStations[ kin ];
       // if we already have it cached
-      if ( geocodeCache[ kin ] ) {
+      if ( cache.geocodeCache[ kin ] ) {
         // add the location
-        group.gps = [ geocodeCache[ kin ][ 0 ], geocodeCache[ kin ][ 1 ] ];
+        group.gps = [ cache.geocodeCache[ kin ][ 0 ], cache.geocodeCache[ kin ][ 1 ] ];
         geocodedGroups.push( group );
 
       // not cached yet
@@ -275,7 +275,7 @@ module.exports = exports = {
         var kin = resultsOfGeocoding[ i ][ 0 ];
         var gpx = resultsOfGeocoding[ i ][ 1 ];
         groupsOfStations[ kin ].gps = [ gpx[ 0 ].latitude, gpx[ 0 ].longitude ];
-        geocodedGroups.push( groupsOfStations );
+        geocodedGroups.push( groupsOfStations[ kin ] );
       }
 
       return geocodedGroups;
