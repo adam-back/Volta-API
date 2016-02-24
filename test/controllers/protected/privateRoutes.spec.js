@@ -3,6 +3,7 @@ var app = require( '../../../server.js' ).app;
 supertest = supertest( app );
 var stationTests = require( './apiTests/station.protectedController.spec.js' );
 var appTests = require( './apiTests/app.protectedController.spec.js' );
+var mediaSlideTests = require( './apiTests/mediaSlide.protectedController.spec.js' );
 
 describe('Private API Routes - protected/', function() {
   var route = '/protected';
@@ -15,4 +16,5 @@ describe('Private API Routes - protected/', function() {
 
   stationTests();
   appTests();
+  mediaSlideTests();
 });
