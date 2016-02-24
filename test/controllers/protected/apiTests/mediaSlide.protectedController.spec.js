@@ -56,59 +56,77 @@ module.exports = function() {
           .end( done );
         });
       });
-    });
-
-    xdescribe('mediaSlide/:id', function() {
-      var route = '/protected/mediaSlide/1';
 
       describe('POST', function() {
+        var create, slideBody;
+
+        beforeEach(function() {
+          create = Q.defer();
+          spyOn( media_slide, 'findOrCreate' ).andReturn( create.promise );
+          slideBody = { id: 1, name: 'Chevy' };
+        });
+
         it('should be a defined route (not 404)', function( done ) {
-          createReport.reject();
+          create.reject();
           supertest.post( route )
           .set( 'Authorization', 'Bearer ' + token )
+          .send( slideBody )
           .expect(function( res ) {
             expect( res.statusCode ).not.toBe( 404 );
           })
           .end( done );
         });
 
-        it('should save station_report to DB', function( done ) {
-          createReport.resolve();
+        it('should find or create media slide', function( done ) {
+          create.resolve( [ 'yes', true ] );
           supertest.post( route )
           .set( 'Authorization', 'Bearer ' + token )
-          .send( body )
+          .send( slideBody )
           .expect(function( res ) {
-            expect( models.station_report.create ).toHaveBeenCalled();
-            expect( models.station_report.create ).toHaveBeenCalledWith( body );
+            expect( media_slide.findOrCreate ).toHaveBeenCalled();
+            expect( media_slide.findOrCreate ).toHaveBeenCalledWith( { where: { name: 'Chevy' }, defaults: { id: 1, name: 'Chevy' } } );
           })
           .end( done );
         });
 
-        it('should return 204 on success', function( done ) {
-          createReport.resolve();
+        it('should resolve slide if created', function( done ) {
+          create.resolve( [ { name: 'Chevy' }, true ] );
           supertest.post( route )
           .set( 'Authorization', 'Bearer ' + token )
-          .send( body )
-          .expect( 204 )
-          .expect( '' )
+          .send( slideBody )
+          .expect( 'Content-Type', /json/ )
+          .expect( { name: 'Chevy' } )
+          .end( done );
+        });
+
+        it('should resolve slide if found', function( done ) {
+          create.resolve( [ { name: 'Chevy' }, false ] );
+          supertest.post( route )
+          .set( 'Authorization', 'Bearer ' + token )
+          .send( slideBody )
+          .expect( 'Content-Type', /json/ )
+          .expect( { name: 'Chevy' } )
           .end( done );
         });
 
         it('should return 500 failure for error', function( done ) {
-          createReport.reject( 'Test' );
+          create.reject( 'Test' );
           supertest.post( route )
           .set( 'Authorization', 'Bearer ' + token )
-          .send( body )
+          .send( slideBody )
           .expect( 500 )
           .expect( 'Test' )
           .expect( 'Content-Type', /text/ )
           .expect(function( res ) {
-            expect( models.station_report.create ).toHaveBeenCalled();
-            expect( models.station_report.create ).toHaveBeenCalledWith( body );
+            expect( media_slide.findOrCreate ).toHaveBeenCalled();
           })
           .end( done );
         });
       });
+    });
+
+    describe('mediaSlide/:id', function() {
+      var route = '/protected/mediaSlide/1';
     });
   });
 };
