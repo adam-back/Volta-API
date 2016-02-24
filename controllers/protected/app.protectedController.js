@@ -296,7 +296,7 @@ module.exports = exports = {
         // get their favorites
         return user.find( { where: { id: req.query.id } } )
         .then(function( foundUser ) {
-          return Q( groupByKin( stationsAndPlugs, foundUser.favorite_stations ) );
+          return Q( exports.groupByKin( stationsAndPlugs, foundUser.favorite_stations ) );
         });
       // not logged in
       } else {
