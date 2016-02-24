@@ -127,6 +127,63 @@ module.exports = function() {
 
     describe('mediaSlide/:id', function() {
       var route = '/protected/mediaSlide/1';
+
+      describe('DELETE', function() {
+        var destroySlide;
+
+        beforeEach(function() {
+          destroySlide = Q.defer();
+          spyOn( media_slide, 'destroy' ).andReturn( destroySlide.promise );
+        });
+
+        it('should be a defined route (not 404)', function( done ) {
+          destroySlide.reject();
+          supertest.delete( route )
+          .set( 'Authorization', 'Bearer ' + token )
+          .expect(function( res ) {
+            expect( res.statusCode ).not.toBe( 404 );
+          })
+          .end( done );
+        });
+
+        it('should destory slide by id', function( done ) {
+          var Slides = [ 1 ];
+          destroySlide.resolve( Slides );
+          supertest.delete( route )
+          .set( 'Authorization', 'Bearer ' + token )
+          .expect(function( res ) {
+            expect( media_slide.destroy ).toHaveBeenCalled();
+            expect( media_slide.destroy ).toHaveBeenCalledWith( { where: { id: '1' } } );
+          })
+          .end( done );
+        });
+
+
+        it('should resolve json of slide after destroy', function( done ) {
+          var Slides = [ 1 ];
+          destroySlide.resolve( Slides );
+          supertest.delete( route )
+          .set( 'Authorization', 'Bearer ' + token )
+          .expect( 'Content-Type', /json/ )
+          .expect( Slides )
+          .expect( 200 )
+          .end( done );
+        });
+
+        it('should return 500 failure for error', function( done ) {
+          destroySlide.reject( 'Test' );
+          supertest.delete( route )
+          .set( 'Authorization', 'Bearer ' + token )
+          .expect( 500 )
+          .expect( 'Test' )
+          .expect( 'Content-Type', /text/ )
+          .expect(function( res ) {
+            expect( media_slide.destroy ).toHaveBeenCalled();
+            expect( media_slide.destroy ).toHaveBeenCalledWith( { where: { id: '1' } } );
+          })
+          .end( done );
+        });
+      });
     });
   });
 };
