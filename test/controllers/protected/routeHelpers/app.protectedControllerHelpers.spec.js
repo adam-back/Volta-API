@@ -2,7 +2,8 @@ var config    = require( '../../../../config/config' ).development;
 var Q = require( 'q' );
 var async     = require( 'async' );
 var models = require( '../../../../models' );
-var controller = require( '../../../../controllers/protected/app.protectedController.js' );
+var rewire = require( 'rewire' );
+var controller = rewire( '../../../../controllers/protected/app.protectedController.js' );
 var geocodeCache = require( '../../../../factories/geocodeCache.js' ).geocodeCache;
 var distance = require( '../../../../factories/distanceFactory.js' );
 var geocoder = require( 'node-geocoder' )( 'google', 'https', { apiKey: config.googleApiKey, formatter: null } );
@@ -778,10 +779,100 @@ module.exports = function() {
       it('should only add app sponsors once', function() {
         station1.app_sponsors = [ 'obi' ];
         station2.app_sponsors = [ 'wan' ];
-        console.log( 'stationsWithPlugs', stationsWithPlugs );
         var result = groupByKin( stationsWithPlugs );
         expect( result[ '003-0043-015' ].app_sponsors.length ).toBe( 1 );
         expect( result[ '003-0043-015' ].app_sponsors ).toEqual( [ 'obi' ] );
+      });
+    });
+
+    describe('geocodeOneGroup', function() {
+      var geocodeOneGroup = controller.geocodeOneGroup;
+      var geocode, revert, mockGeocode;
+
+      beforeEach(function() {
+        geocodeCache = {};
+      });
+
+      afterEach(function(  ) {
+        if ( typeof revert === 'function' ) {
+          revert();
+        }
+      });
+
+      it('should be defined as a function', function() {
+        expect( typeof geocodeOneGroup ).toBe( 'function' );
+      });
+
+      it('should endcode address', function( done ) {
+        mockGeocode = {
+          geocode: function( address, cb ) {
+            expect( address ).toBe( '123 Main' );
+            cb( null, [ { latitude: 2, longitude: 3 } ] );
+          }
+        };
+        spyOn( mockGeocode, 'geocode' ).andCallThrough();
+        revert = controller.__set__( 'geocoder', mockGeocode );
+
+        geocodeOneGroup( '1', '123 Main' )
+        .then(function( gpx ) {
+          expect( mockGeocode.geocode ).toHaveBeenCalled();
+          done();
+        })
+        .catch(function( error ) {
+          expect( error ).toBe( 1 );
+          done();
+        });
+      });
+
+      it('should return array with kin and gps data', function( done ) {
+        mockGeocode = {
+          geocode: function( address, cb ) {
+            expect( address ).toBe( '123 Main' );
+            cb( null, [ { latitude: 2, longitude: 3 } ] );
+          }
+        };
+        spyOn( mockGeocode, 'geocode' ).andCallThrough();
+        revert = controller.__set__( 'geocoder', mockGeocode );
+
+        geocodeOneGroup( '1', '123 Main' )
+        .then(function( gpx ) {
+          expect( Array.isArray( gpx ) ).toBe( true );
+          expect( gpx[ 0 ] ).toBe( '1' );
+          expect( gpx[ 1 ][ 0 ].latitude ).toBe( 2 );
+          expect( gpx[ 1 ][ 0 ].longitude ).toBe( 3 );
+          done();
+        })
+        .catch(function( error ) {
+          expect( error ).toBe( 1 );
+          done();
+        });
+      });
+
+      it('should catch and reject with error', function( done ) {
+        mockGeocode = {
+          geocode: function( address, cb ) {
+            cb( 'Test', null );
+          }
+        };
+        spyOn( mockGeocode, 'geocode' ).andCallThrough();
+        revert = controller.__set__( 'geocoder', mockGeocode );
+
+        geocodeOneGroup( '1', '123 Main' )
+        .catch(function( error ) {
+          expect( mockGeocode.geocode ).toHaveBeenCalled();
+          expect( mockGeocode.geocode.calls[ 0 ].args[ 0 ] ).toBe( '123 Main' );
+          expect( error ).toBe( 'Test' );
+          done();
+        });
+      });
+
+      xit('should geocode from an address', function( done ) {
+        geocode.resolve( [ { latitude: 0, longitude: 0 } ] );
+        geocodeOneGroup( '1', '123 Main' )
+        .then(function( result ) {
+          expect( Array.isArray( result ) ).toBe( true );
+          expect( )
+        })
       });
     });
 
@@ -791,7 +882,6 @@ module.exports = function() {
       it('should be defined as a function', function() {
         expect( typeof geocodeGroupsWithoutGPS ).toBe( 'function' );
       });
-
     });
   });
 };

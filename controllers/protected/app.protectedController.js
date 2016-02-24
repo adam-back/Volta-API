@@ -234,43 +234,52 @@ module.exports = exports = {
 
     return groupedByKin;
   },
-  geocodeGroupsWithoutGPS: function( groupsOfStations ) {
+  geocodeOneGroup: function( kin, address ) {
     var deferred = Q.defer();
-    var geocodedGroups = [];
 
-    async.forEachOf( groupsOfStations, function(group, kin, cb ) {
+    // returns a weird promise
+    geocoder.geocode(address, function( error, gpx ) {
+      if ( error ) {
+        deferred.reject( error );
+      } else {
+        geocodeCache[ kin ] = [ gpx[ 0 ].latitude, gpx[ 0 ].longitude ];
+        deferred.resolve( [ kin, gpx ] );
+      }
+    });
+
+    return deferred.promise;
+  },
+  geocodeGroupsWithoutGPS: function( groupsOfStations ) {
+    var geocodedGroups = [];
+    var needGeocoding = [];
+
+    for ( var kin in groupsOfStations ) {
+      var group = groupsOfStations[ kin ];
       // if we already have it cached
       if ( geocodeCache[ kin ] ) {
         // add the location
         group.gps = [ geocodeCache[ kin ][ 0 ], geocodeCache[ kin ][ 1 ] ];
         geocodedGroups.push( group );
-        cb( null );
 
       // not cached yet
       } else {
         // use geocoder service
-        geocoder.geocode( group.address )
-        .then(function( gpx ) {
-          // add to cache
-          geocodeCache[ kin ] = [ gpx[ 0 ].latitude, gpx[ 0 ].longitude ];
-          // add the location
-          group.gps = [ gpx[ 0 ].latitude, gpx[ 0 ].longitude ];
-          geocodedGroups.push( group );
-          cb( null );
-        })
-        .catch(function( error ) {
-          cb( error );
-        });
+        needGeocoding.push( exports.geocodeOneGroup( kin, group.address ) );
       }
-    }, function( error ) {
-      // if ( error ) {
-      //   deferred.reject( error );
-      // } else {
-        deferred.resolve( geocodedGroups );
-      // }
-    });
+    }
 
-    return deferred.promise;
+    return Q.all( needGeocoding )
+    .then(function( resultsOfGeocoding ) {
+      var numberOfResults = resultsOfGeocoding.length;
+      for ( var i = 0; i < numberOfResults; i++ ) {
+        var kin = resultsOfGeocoding[ i ][ 0 ];
+        var gpx = resultsOfGeocoding[ i ][ 1 ];
+        groupsOfStations[ kin ].gps = [ gpx[ 0 ].latitude, gpx[ 0 ].longitude ];
+        geocodedGroups.push( groupsOfStations );
+      }
+
+      return geocodedGroups;
+    });
   },
   //////////////////////////
   // route controllers below
