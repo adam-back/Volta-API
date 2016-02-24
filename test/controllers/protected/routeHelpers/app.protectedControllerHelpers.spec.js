@@ -998,6 +998,30 @@ module.exports = function() {
           done();
         });
       });
+
+      it('should return an array of objects', function( done ) {
+        mockCache = {
+                  geocodeCache: {
+                    '001-0001-001': [ 3, 4 ]
+                  }
+                };
+        revert = controller.__set__( 'cache', mockCache );
+        geocode.resolve( [ '002-0002-002', [ { latitude: 1, longitude: 2 } ] ] );
+        geocodeGroupsWithoutGPS( groupsOfStations )
+        .then(function( result ) {
+          expect( Array.isArray( result ) ).toBe( true );
+          expect( result.length ).toBe( 2 );
+          for ( var i = 0; i < result.length; i++ ) {
+            expect( typeof result[ i ] ).toBe( 'object' );
+            expect( Array.isArray( result[ i ] ) ).toBe( false );
+          }
+          done();
+        })
+        .catch(function() {
+          expect( error ).toBe( 1 );
+          done();
+        });
+      });
     });
   });
 };

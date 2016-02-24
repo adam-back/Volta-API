@@ -308,8 +308,6 @@ module.exports = exports = {
       return exports.attachImages( groupedKin );
     })
     .then(function( groupsWithImages ) {
-      // count availability
-
       // add stations with GPS to ready
       for ( var kin in groupsWithImages ) {
         if ( Array.isArray( groupsWithImages[ kin ].gps ) ) {

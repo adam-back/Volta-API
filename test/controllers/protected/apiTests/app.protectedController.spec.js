@@ -34,7 +34,11 @@ module.exports = function() {
           spyOn( controller, 'groupByKin' ).andReturn( groupIntoKins.promise );
           spyOn( controller, 'attachImages' ).andReturn( addGalleryImages.promise );
           spyOn( controller, 'geocodeGroupsWithoutGPS' ).andReturn( geocodeIfNeeded.promise );
-          spyOn( controller, 'findDistances' );
+          spyOn( controller, 'findDistances' ).andReturn( [ 'done' ] );
+        });
+
+        afterEach(function() {
+          route = '/protected/app/stations';
         });
 
         it('should be a defined route (not 404)', function( done ) {
@@ -43,6 +47,154 @@ module.exports = function() {
           .set( 'Authorization', 'Bearer ' + token )
           .expect(function( res ) {
             expect( res.statusCode ).not.toBe( 404 );
+          })
+          .end( done );
+        });
+
+        it('should find all stations', function( done ) {
+          findAllStations.reject();
+          supertest.get( route )
+          .set( 'Authorization', 'Bearer ' + token )
+          .expect(function( res ) {
+            expect( models.station.findAll ).toHaveBeenCalled();
+            expect( models.station.findAll ).toHaveBeenCalledWith();
+          })
+          .end( done );
+        });
+
+        it('should connect stations with plugs and sponsors', function( done ) {
+          findAllStations.resolve( [ 1 ] );
+          connectStations.reject();
+          supertest.get( route )
+          .set( 'Authorization', 'Bearer ' + token )
+          .expect(function( res ) {
+            expect( controller.connectStationsWithPlugsAndSponsors ).toHaveBeenCalled();
+            expect( controller.connectStationsWithPlugsAndSponsors ).toHaveBeenCalledWith( [ 1 ] );
+          })
+          .end( done );
+        });
+
+        it('should find user if logged in', function( done ) {
+          findAllStations.resolve( [ 1 ] );
+          connectStations.resolve( [ 1, 2 ] );
+          findUser.reject();
+          route += '?id=1';
+          supertest.get( route )
+          .set( 'Authorization', 'Bearer ' + token )
+          .expect(function( res ) {
+            expect( models.user.find ).toHaveBeenCalled();
+            expect( models.user.find ).toHaveBeenCalledWith( { where: { id: '1' } } );
+          })
+          .end( done );
+        });
+
+        it('should group stations by kin with user\'s favorites', function( done ) {
+          findAllStations.resolve( [ 1 ] );
+          connectStations.resolve( [ 1, 2 ] );
+          findUser.resolve( { favorite_stations: 'faves' } );
+          groupIntoKins.reject();
+          route += '?id=1';
+          supertest.get( route )
+          .set( 'Authorization', 'Bearer ' + token )
+          .expect(function( res ) {
+            expect( controller.groupByKin ).toHaveBeenCalled();
+            expect( controller.groupByKin ).toHaveBeenCalledWith( [ 1, 2 ], 'faves' );
+          })
+          .end( done );
+        });
+
+        it('should group stations by kin without user\'s favorites', function( done ) {
+          findAllStations.resolve( [ 1 ] );
+          connectStations.resolve( [ 1, 2 ] );
+          groupIntoKins.reject();
+          supertest.get( route )
+          .set( 'Authorization', 'Bearer ' + token )
+          .expect(function( res ) {
+            expect( models.user.find ).not.toHaveBeenCalled();
+            expect( controller.groupByKin ).toHaveBeenCalled();
+            expect( controller.groupByKin ).toHaveBeenCalledWith( [ 1, 2 ] );
+          })
+          .end( done );
+        });
+
+        it('should attach images to station groups', function( done ) {
+          findAllStations.resolve( [ 1 ] );
+          connectStations.resolve( [ 1, 2 ] );
+          groupIntoKins.resolve( [ 1, 2, 3 ] );
+          addGalleryImages.reject();
+          supertest.get( route )
+          .set( 'Authorization', 'Bearer ' + token )
+          .expect(function( res ) {
+            expect( controller.attachImages ).toHaveBeenCalled();
+            expect( controller.attachImages ).toHaveBeenCalledWith( [ 1, 2, 3 ] );
+          })
+          .end( done );
+        });
+
+        it('should geocode groups without gps', function( done ) {
+          findAllStations.resolve( [ 1 ] );
+          connectStations.resolve( [ 1, 2 ] );
+          groupIntoKins.resolve( [ 1, 2, 3 ] );
+          addGalleryImages.resolve( { 1: { gps: null } } );
+          geocodeIfNeeded.reject();
+          supertest.get( route )
+          .set( 'Authorization', 'Bearer ' + token )
+          .expect(function( res ) {
+            expect( controller.geocodeGroupsWithoutGPS.calls.length ).toBe( 1 );
+            expect( controller.geocodeGroupsWithoutGPS ).toHaveBeenCalledWith( { 1: { gps: null } } );
+          })
+          .end( done );
+        });
+
+        it('should not geocode groups already with gps', function( done ) {
+          findAllStations.resolve( [ 1 ] );
+          connectStations.resolve( [ 1, 2 ] );
+          groupIntoKins.resolve( [ 1, 2, 3 ] );
+          addGalleryImages.resolve( { 2: { gps: [ 1, 2 ] } } );
+          geocodeIfNeeded.reject();
+          supertest.get( route )
+          .set( 'Authorization', 'Bearer ' + token )
+          .expect(function( res ) {
+            expect( controller.geocodeGroupsWithoutGPS ).toHaveBeenCalled();
+            expect( controller.geocodeGroupsWithoutGPS ).toHaveBeenCalledWith( {} );
+          })
+          .end( done );
+        });
+
+        it('should return JSON of formatted stations', function( done ) {
+          findAllStations.resolve( [ 1 ] );
+          connectStations.resolve( [ 1, 2 ] );
+          groupIntoKins.resolve( [ 1, 2, 3 ] );
+          addGalleryImages.resolve( { 1: { kin: 1, gps: null }, 2: { kin: 2, gps: [ 1, 2 ] } } );
+          geocodeIfNeeded.resolve( [ { kin: 1, gps: [ 3, 4 ] } ] );
+          supertest.get( route )
+          .set( 'Authorization', 'Bearer ' + token )
+          .expect( 'Content-Type', /json/ )
+          .expect(function( res ) {
+            expect( controller.findDistances ).not.toHaveBeenCalled();
+            expect( Array.isArray( res.body ) ).toBe( true );
+            expect( res.body.length ).toBe( 2 );
+            // kin 2 first because it didn't need geocoding
+            expect( res.body[ 0 ] ).toEqual( { kin: 2, gps: [ 1, 2 ] } );
+            expect( res.body[ 1 ] ).toEqual( { kin: 1, gps: [ 3, 4 ] } );
+          })
+          .end( done );
+        });
+
+        it('should find distances to stations if userCoords provided', function( done ) {
+          findAllStations.resolve( [ 1 ] );
+          connectStations.resolve( [ 1, 2 ] );
+          groupIntoKins.resolve( [ 1, 2, 3 ] );
+          addGalleryImages.resolve( { 1: { kin: 1, gps: null }, 2: { kin: 2, gps: [ 1, 2 ] } } );
+          geocodeIfNeeded.resolve( [ { kin: 1, gps: [ 3, 4 ] } ] );
+          route += '?userCoords[]=5&userCoords[]=6'
+          supertest.get( route )
+          .set( 'Authorization', 'Bearer ' + token )
+          .expect( 'Content-Type', /json/ )
+          .expect(function( res ) {
+            expect( controller.findDistances ).toHaveBeenCalled();
+            expect( controller.findDistances ).toHaveBeenCalledWith( [ '5', '6' ], [ { kin: 2, gps: [ 1, 2 ] }, { kin: 1, gps: [ 3, 4 ] } ] );
+            expect( res.body ).toEqual( [ 'done' ] );
           })
           .end( done );
         });
