@@ -85,6 +85,18 @@ module.exports = function() {
           .end( done );
         });
 
+        it('should save station_report to DB', function( done ) {
+          createReport.resolve();
+          supertest.post( route )
+          .set( 'Authorization', 'Bearer ' + token )
+          .send( body )
+          .expect(function( res ) {
+            expect( models.station_report.create ).toHaveBeenCalled();
+            expect( models.station_report.create ).toHaveBeenCalledWith( body );
+          })
+          .end( done );
+        });
+
         it('should return 204 on success', function( done ) {
           createReport.resolve();
           supertest.post( route )
@@ -92,10 +104,6 @@ module.exports = function() {
           .send( body )
           .expect( 204 )
           .expect( '' )
-          .expect(function( res ) {
-            expect( models.station_report.create ).toHaveBeenCalled();
-            expect( models.station_report.create ).toHaveBeenCalledWith( body );
-          })
           .end( done );
         });
 
