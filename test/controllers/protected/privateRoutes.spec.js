@@ -5,6 +5,7 @@ var stationTests = require( './apiTests/station.protectedController.spec.js' );
 var appTests = require( './apiTests/app.protectedController.spec.js' );
 var mediaSlideTests = require( './apiTests/mediaSlide.protectedController.spec.js' );
 var appFavoritesTests = require( './apiTests/appFavorites.protectedController.spec.js' );
+var appUsersTests = require( './apiTests/appUsers.protectedController.spec.js' );
 
 describe('Private API Routes - protected/', function() {
   var route = '/protected';
@@ -16,7 +17,12 @@ describe('Private API Routes - protected/', function() {
   });
 
   stationTests();
-  appTests();
+
+  describe('APP ROUTES', function() {
+    appTests();
+    appFavoritesTests();
+    appUsersTests();
+  });
+
   mediaSlideTests();
-  appFavoritesTests();
 });

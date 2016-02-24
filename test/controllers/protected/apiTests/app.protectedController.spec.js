@@ -13,7 +13,7 @@ var token = createToken( 5 );
 var geocoder = require( 'node-geocoder' )( 'google', 'https', { apiKey: config.googleApiKey, formatter: null } );
 
 module.exports = function() {
-  describe('APP ROUTES', function() {
+  describe('APP', function() {
     describe('app/stations', function() {
       var route = '/protected/app/stations';
 

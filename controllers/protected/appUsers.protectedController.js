@@ -1,5 +1,4 @@
 var user = require( '../../models' ).user;
-var express = require( 'express' );
 var Q = require( 'q' );
 var env = process.env.NODE_ENV || 'development';
 var config    = require( '../../config/config' )[ env ];
