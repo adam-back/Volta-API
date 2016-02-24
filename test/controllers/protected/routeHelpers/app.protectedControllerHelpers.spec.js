@@ -4,9 +4,7 @@ var async     = require( 'async' );
 var models = require( '../../../../models' );
 var rewire = require( 'rewire' );
 var controller = rewire( '../../../../controllers/protected/app.protectedController.js' );
-var geocodeCache = require( '../../../../factories/geocodeCache.js' ).geocodeCache;
 var distance = require( '../../../../factories/distanceFactory.js' );
-var geocoder = require( 'node-geocoder' )( 'google', 'https', { apiKey: config.googleApiKey, formatter: null } );
 
 module.exports = function() {
   describe('APP HELPERS', function() {
@@ -831,7 +829,6 @@ module.exports = function() {
             cb( null, [ { latitude: 2, longitude: 3 } ] );
           }
         };
-        spyOn( mockGeocode, 'geocode' ).andCallThrough();
         revert = controller.__set__( 'geocoder', mockGeocode );
 
         geocodeOneGroup( '1', '123 Main' )
@@ -840,6 +837,34 @@ module.exports = function() {
           expect( gpx[ 0 ] ).toBe( '1' );
           expect( gpx[ 1 ][ 0 ].latitude ).toBe( 2 );
           expect( gpx[ 1 ][ 0 ].longitude ).toBe( 3 );
+          done();
+        })
+        .catch(function( error ) {
+          expect( error ).toBe( 1 );
+          done();
+        });
+      });
+
+      it('should populate the geocodeCache', function( done ) {
+        mockGeocode = {
+          geocode: function( address, cb ) {
+            cb( null, [ { latitude: 2, longitude: 3 } ] );
+          }
+        };
+        var mockCache = {
+          geocodeCache: {}
+        };
+        revert = controller.__set__( 'geocoder', mockGeocode );
+        var revertCache = controller.__set__( 'cache', mockCache );
+
+        geocodeOneGroup( '1', '123 Main' )
+        .then(function( gpx ) {
+          var cache = controller.__get__( 'cache' );
+          expect( cache.geocodeCache.hasOwnProperty( '1' ) ).toBe( true)
+          expect( Array.isArray( cache.geocodeCache[ '1' ] ) ).toBe( true );
+          expect( cache.geocodeCache[ '1' ][ 0 ] ).toBe( 2 );
+          expect( cache.geocodeCache[ '1' ][ 1 ] ).toBe( 3 );
+          revertCache();
           done();
         })
         .catch(function( error ) {
@@ -864,15 +889,6 @@ module.exports = function() {
           expect( error ).toBe( 'Test' );
           done();
         });
-      });
-
-      xit('should geocode from an address', function( done ) {
-        geocode.resolve( [ { latitude: 0, longitude: 0 } ] );
-        geocodeOneGroup( '1', '123 Main' )
-        .then(function( result ) {
-          expect( Array.isArray( result ) ).toBe( true );
-          expect( )
-        })
       });
     });
 

@@ -3,7 +3,7 @@ var station_report = require( '../../models' ).station_report;
 var station_image = require( '../../models' ).station_image;
 var user = require( '../../models' ).user;
 var app_sponsor = require( '../../models' ).app_sponsor;
-var geocodeCache = require( '../../factories/geocodeCache.js' ).geocodeCache;
+var cache = require( '../../factories/geocodeCache.js' );
 var express = require( 'express' );
 var async     = require( 'async' );
 var Q = require( 'q' );
@@ -242,7 +242,7 @@ module.exports = exports = {
       if ( error ) {
         deferred.reject( error );
       } else {
-        geocodeCache[ kin ] = [ gpx[ 0 ].latitude, gpx[ 0 ].longitude ];
+        cache.geocodeCache[ kin ] = [ gpx[ 0 ].latitude, gpx[ 0 ].longitude ];
         deferred.resolve( [ kin, gpx ] );
       }
     });
