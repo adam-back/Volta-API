@@ -37,10 +37,14 @@ var createToken = function( user, expirationInMinutes ) {
 };
 
 module.exports = exports = {
+  saltAndHashPassword: function( password ) {
+    var saltAndHash = Q.nbind( bcrypt.hash, bcrypt );
+    return saltAndHash( password, 8 );
+  },
   createUser: function( req, res ) {
     req.body.email = req.body.email.toLowerCase();
 
-    user.find( { where: { email: req.body.email } } )
+    user.findOne( { where: { email: req.body.email } } )
     .then(function( foundUser ) {
       // if this email is already registered
       if ( foundUser ) {
@@ -49,20 +53,14 @@ module.exports = exports = {
 
       // not found, good to save
       } else {
-        bcrypt.hash( req.body.password1, 8, function( error, hashAndSalted ) {
-          if ( error ) {
-            res.status( 500 ).send( error );
-          } else {
-            user.create( { email: req.body.email, password: hashAndSalted, is_new: true, number_of_app_uses: 1 } )
-            .then(function( created ) {
-              res.status( 201 ).send( { token: createToken( created ) } );
-            })
-            .catch(function( error ) {
-              res.status( 500 ).send( error );
-            });
-          }
-        });
+        return exports.saltAndHashPassword( req.body.password1 );
       }
+    })
+    .then(function( saltAndHashPassword ) {
+      return user.create( { email: req.body.email, password: saltAndHashPassword, is_new: true, number_of_app_uses: 1 } );
+    })
+    .then(function( created ) {
+      res.status( 201 ).send( { token: createToken( created ) } );
     })
     .catch(function( error ) {
       res.status( 500 ).send( error );

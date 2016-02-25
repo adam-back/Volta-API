@@ -3,9 +3,11 @@ var app = require( '../../../../server.js' ).app;
 supertest = supertest( app );
 var config    = require( '../../../../config/config' ).development;
 var Q = require( 'q' );
+var rewire = require( 'rewire' );
 var models = require( '../../../../models' );
-var controller = require( '../../../../controllers/protected/appUsers.protectedController.js' );
+var controller = rewire( '../../../../controllers/protected/appUsers.protectedController.js' );
 
+var bcrypt = require( 'bcrypt' );
 var createToken = require( '../../../jwtHelper' ).createToken;
 var token = createToken( 5 );
 
@@ -13,28 +15,26 @@ var token = createToken( 5 );
 module.exports = function() {
   describe('USERS', function() {
     describe('app/user/create', function() {
-      var route = '/protected/app/user';
+      var route = '/protected/app/user/create';
 
-      xdescribe('POST', function() {
-        var body, findAllStations, findUser, User, updateUser;
+      describe('POST', function() {
+        var body, hashPw, findUser, createUser;
 
         beforeEach(function() {
           body = {
-            userId: 5,
-            group: [ 1, 2 ]
+            email: 'a@gmail.com',
+            password1: 'password'
           };
-          findAllStations = Q.defer();
           findUser = Q.defer();
-          updateUser = Q.defer();
-          User = models.user.build( { favorite_stations: [ 3, 4 ] } );
-
-          spyOn( models.station, 'findAll' ).andReturn( findAllStations.promise );
-          spyOn( models.user, 'find' ).andReturn( findUser.promise );
-          spyOn( User, 'updateAttributes' ).andReturn( updateUser.promise );
+          createUser = Q.defer();
+          hashPw = Q.defer();
+          spyOn( models.user, 'findOne' ).andReturn( findUser.promise );
+          spyOn( controller, 'saltAndHashPassword' ).andReturn( hashPw.promise );
+          spyOn( models.user, 'create' ).andReturn( createUser.promise );
         });
 
         it('should be a defined route (not 404)', function( done ) {
-          findAllStations.reject();
+          findUser.reject();
           supertest.post( route )
           .set( 'Authorization', 'Bearer ' + token )
           .send( body )
@@ -44,75 +44,73 @@ module.exports = function() {
           .end( done );
         });
 
-        it('should find all stations', function( done ) {
-          findAllStations.reject();
-          supertest.post( route )
-          .set( 'Authorization', 'Bearer ' + token )
-          .send( body )
-          .expect(function( res ) {
-            expect( models.station.findAll ).toHaveBeenCalled();
-            expect( models.station.findAll ).toHaveBeenCalledWith( { where: { id: { $in: [ 1, 2 ] } } } );
-          })
-          .end( done );
-        });
-
-        it('find the user', function( done ) {
-          findAllStations.resolve();
+        it('find search for user by email', function( done ) {
           findUser.reject();
           supertest.post( route )
           .set( 'Authorization', 'Bearer ' + token )
           .send( body )
           .expect(function( res ) {
-            expect( models.user.find ).toHaveBeenCalled();
-            expect( models.user.find ).toHaveBeenCalledWith( { where: { id: 5 } } );
+            expect( models.user.findOne ).toHaveBeenCalled();
+            expect( models.user.findOne ).toHaveBeenCalledWith( { where: { email: 'a@gmail.com' } } );
           })
           .end( done );
         });
 
-        it('should update user\'s favorite stations', function( done ) {
-          findAllStations.resolve( [ { id: 1 }, { id: 2 } ] );
-          findUser.resolve( User );
-          updateUser.reject();
+        it('find search for user by email', function( done ) {
+          findUser.reject();
           supertest.post( route )
           .set( 'Authorization', 'Bearer ' + token )
           .send( body )
           .expect(function( res ) {
-            expect( User.updateAttributes ).toHaveBeenCalled();
-            expect( User.updateAttributes ).toHaveBeenCalledWith( { 'favorite_stations': [ 3, 4, 1, 2 ] } );
+            expect( models.user.findOne ).toHaveBeenCalled();
+            expect( models.user.findOne ).toHaveBeenCalledWith( { where: { email: 'a@gmail.com' } } );
           })
           .end( done );
         });
 
-        it('should update user\'s favorite station if they didn\'t have faves yet', function( done ) {
-          findAllStations.resolve( [ { id: 1 }, { id: 2 } ] );
-          User.favorite_stations = null;
-          findUser.resolve( User );
-          updateUser.reject();
+        it('should reject with 409 if user is already registered', function( done ) {
+          findUser.resolve( { id: 1 } );
+          supertest.post( route )
+          .set( 'Authorization', 'Bearer ' + token )
+          .send( body )
+          .expect( 409 )
+          .expect( 'Content-Type', /text/ )
+          .expect( 'This email address is already registered with Volta' )
+          .expect(function( res ) {
+            expect( models.user.create ).not.toHaveBeenCalled();
+          })
+          .end( done );
+        });
+
+        it('should reject with 409 if user is already registered', function( done ) {
+          findUser.resolve( { id: 1 } );
+          supertest.post( route )
+          .set( 'Authorization', 'Bearer ' + token )
+          .send( body )
+          .expect( 409 )
+          .expect( 'Content-Type', /text/ )
+          .expect( 'This email address is already registered with Volta' )
+          .expect(function( res ) {
+            expect( models.user.create ).not.toHaveBeenCalled();
+          })
+          .end( done );
+        });
+
+        xit('should hash and salt password', function( done ) {
+          findUser.resolve();
+          hashPw.reject( 'Test' );
           supertest.post( route )
           .set( 'Authorization', 'Bearer ' + token )
           .send( body )
           .expect(function( res ) {
-            expect( User.updateAttributes ).toHaveBeenCalled();
-            expect( User.updateAttributes ).toHaveBeenCalledWith( { 'favorite_stations': [ 1, 2 ] } );
+            expect( controller.saltAndHashPassword ).toHaveBeenCalled();
+            expect( controller.saltAndHashPassword ).toHaveBeenCalledWith( 'password' );
           })
-          .end( done );
-        });
-
-        it('should send blank 200 when done', function( done ) {
-          findAllStations.resolve( [ { id: 1 }, { id: 2 } ] );
-          User.favorite_stations = null;
-          findUser.resolve( User );
-          updateUser.resolve();
-          supertest.post( route )
-          .set( 'Authorization', 'Bearer ' + token )
-          .send( body )
-          .expect( 200 )
-          .expect( '' )
           .end( done );
         });
 
         it('should return 500 failure for error', function( done ) {
-          findAllStations.reject( 'Test' );
+          findUser.reject( 'Test' );
           supertest.post( route )
           .set( 'Authorization', 'Bearer ' + token )
           .send( body )
@@ -120,7 +118,7 @@ module.exports = function() {
           .expect( 'Test' )
           .expect( 'Content-Type', /text/ )
           .expect(function( res ) {
-            expect( models.station.findAll ).toHaveBeenCalled();
+            expect( models.user.findOne ).toHaveBeenCalled();
           })
           .end( done );
         });
