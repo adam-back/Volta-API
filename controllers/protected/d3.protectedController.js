@@ -12,6 +12,8 @@ var env = process.env.NODE_ENV || 'development';
 var config    = require( '../../config/config' )[ env ];
 var reportHelpers = require( '../../factories/reportHelpers' );
 var growth = require( '../../factories/reports/kwhGrowthOverTime.js' );
+var time = require( '../../factories/reports/eventsOverTime.js' );
+
 
 var memoizedData = {
   kinNetworks: {
@@ -156,5 +158,50 @@ module.exports = exports = {
     } else {
       res.send( memoizedData.kwhGrown.data );
     }
+  },
+  get30DaysData: function ( req, res ) {
+    time.dataOverThirtyDays()
+      .then(function ( data ) {
+        res.send( data );
+      })
+      .catch(function ( error ) {
+        res.status( 500 ).send( error );
+      })
   }
 };
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

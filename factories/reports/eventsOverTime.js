@@ -1,4 +1,5 @@
 var charge_event = require( '../../models' ).charge_event;
+var station = require( '../../models' ).station;
 var moment = require( 'moment' );
 moment().format();
 
@@ -35,7 +36,6 @@ exports.kwhByDay = function( station ) {
   // WHERE station_id={ station.id } AND kwh<100 AND time_stop IS NOT NULL
   // ORDER BY time_start;
   var query = { where: { station_id: station.id, kwh: { $lt: 100 }, time_stop: { $ne: null } }, order: 'time_start', raw: true };
-
   var cumulativekWh = 0;
   var timeline = { location: station.location, kin: station.kin };
 
@@ -93,3 +93,94 @@ exports.kwhByDay = function( station ) {
     }
   });
 };
+
+exports.dataOverThirtyDays = function (argument) {
+  
+  var current = moment();
+  var thirtyDaysAgo = moment().subtract(30, 'days');
+  var query = { where: { time_start: { $gt: thirtyDaysAgo.toDate() } , time_stop: { $ne: null } } };
+  //Is there a way to do this without 2 seperate queries?
+  var station_location_query = { where: { location: { $ne: null } } };
+  var id = null;
+  var totalData = {};
+
+  // console.log("calling dataOverThirtyDays", charge_event.findAll(query));
+
+  station.findAll(station_location_query)
+    .then(function (stations) {
+
+      console.log("First Station Location", stations[0].network);
+
+      for (var i = 0; i < stations.length; i ++) {
+        id = stations[i].id;
+
+          totalData[id] = {
+              id: stations[i].id,
+              network: stations[i].network,
+              location: stations[i].dataValues.location,
+              kwh: 0,
+              events: 1,
+              first: null,
+              last: null,
+              time_spent_charging: 0
+          }
+      }
+
+    })
+
+  return charge_event.findAll(query)
+    .then(function (stations) {
+
+      for (var i = 0; i < stations.length; i ++) {
+        id = stations[i].dataValues.station_id;
+        if (totalData[id]) {
+          totalData[id].kwh += stations[i].dataValues.kwh;
+          totalData[id].events ++;
+          totalData[id].last = stations[i].dataValues.kwh;
+          totalData[id].time_spent_charging += (stations[i].time_stop - stations[i].time_start) / 1000 / 60 / 60;
+        }
+      }
+
+      return totalData;
+    })
+
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
