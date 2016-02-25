@@ -99,23 +99,19 @@ exports.dataOverThirtyDays = function (argument) {
   var current = moment();
   var thirtyDaysAgo = moment().subtract(30, 'days');
   var query = { where: { time_start: { $gt: thirtyDaysAgo.toDate() } , time_stop: { $ne: null } } };
-  //Is there a way to do this without 2 seperate queries?
   var station_location_query = { where: { location: { $ne: null } } };
   var id = null;
   var totalData = {};
 
-  // console.log("calling dataOverThirtyDays", charge_event.findAll(query));
-
   station.findAll(station_location_query)
     .then(function (stations) {
-
-      console.log("First Station Location", stations[0].network);
 
       for (var i = 0; i < stations.length; i ++) {
         id = stations[i].id;
 
           totalData[id] = {
               id: stations[i].id,
+              kin: stations[i].kin,
               network: stations[i].network,
               location: stations[i].dataValues.location,
               kwh: 0,
@@ -124,6 +120,7 @@ exports.dataOverThirtyDays = function (argument) {
               last: null,
               time_spent_charging: 0
           }
+
       }
 
     })
