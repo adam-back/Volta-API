@@ -23,6 +23,10 @@ var memoizedData = {
   kwhGrown: {
     data: null,
     lastFetch: null
+  },
+  thirtyDays: {
+    data: null,
+    lastFetch: null
   }
 };
 
@@ -160,13 +164,19 @@ module.exports = exports = {
     }
   },
   get30DaysData: function ( req, res ) {
-    time.dataOverThirtyDays()
-      .then(function ( data ) {
-        res.send( data );
+    if (memoizedData.thirtyDays.data === null || isOld('thirtyDays')) {
+      time.dataOverThirtyDays()
+        .then(function ( csv ) {
+          memoizedData.thirtyDays.data = csv;
+          memoizedData.thirtyDays.lastFetch = moment();
+          res.send( csv );
       })
       .catch(function ( error ) {
         res.status( 500 ).send( error );
-      })
+      });
+    } else {
+      res.send( memoizedData.thirtyDays.data );
+    }
   }
 };
 
