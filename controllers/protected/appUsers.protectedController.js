@@ -3,7 +3,7 @@ var Q = require( 'q' );
 var env = process.env.NODE_ENV || 'development';
 var config    = require( '../../config/config' )[ env ];
 var bcrypt = require( 'bcrypt' );
-var jwt = require( 'jsonwebtoken' );
+var jwtFactory = require( '../../factories/jwtFactory' );
 
 var createToken = function( user, expirationInMinutes ) {
   var payload = {
@@ -41,16 +41,15 @@ module.exports = exports = {
     var saltAndHash = Q.nbind( bcrypt.hash, bcrypt );
     return saltAndHash( password, 8 );
   },
-  createUser: function( req, res ) {
+  createUser: function( req, res, next ) {
     req.body.email = req.body.email.toLowerCase();
 
     user.findOne( { where: { email: req.body.email } } )
     .then(function( foundUser ) {
       // if this email is already registered
       if ( foundUser ) {
-        // send conflict
-        res.status( 409 ).send( 'This email address is already registered with Volta' );
-
+        // throw 409
+        throw new Error( 'This email address is already registered with Volta.' );
       // not found, good to save
       } else {
         return exports.saltAndHashPassword( req.body.password1 );
@@ -59,11 +58,18 @@ module.exports = exports = {
     .then(function( saltAndHashPassword ) {
       return user.create( { email: req.body.email, password: saltAndHashPassword, is_new: true, number_of_app_uses: 1 } );
     })
-    .then(function( created ) {
-      res.status( 201 ).send( { token: createToken( created ) } );
+    .then(function( createdUser ) {
+      return jwtFactory.createToken( createdUser );
+    })
+    .then(function( token ) {
+      res.status( 201 ).send( { token: token } );
     })
     .catch(function( error ) {
-      res.status( 500 ).send( error );
+      if ( error.message === 'This email address is already registered with Volta.' ) {
+        res.status( 409 ).send( error.message );
+      } else {
+        res.status( 500 ).send( error );
+      }
     });
   },
   authenticate: function( req, res ) {
