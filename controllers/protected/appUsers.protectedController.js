@@ -41,6 +41,10 @@ module.exports = exports = {
     var saltAndHash = Q.nbind( bcrypt.hash, bcrypt );
     return saltAndHash( password, 8 );
   },
+  comparePasswordToDatabase: function( inputPassword, dbPassword ) {
+    var compare = Q.nbind( bcrypt.compare, bcrypt );
+    return compare( inputPassword, dbPassword );
+  },
   createUser: function( req, res, next ) {
     req.body.email = req.body.email.toLowerCase();
 
@@ -80,26 +84,30 @@ module.exports = exports = {
     .then(function( foundUser ) {
       // if found
       if( foundUser ) {
-        // compare to save password
-        bcrypt.compare( req.body.password, foundUser.password, function( error, result ) {
-          if( result === true ) {
-            // create and send token back
-            res.status( 200 ).send( { token: createToken( foundUser ) } );
 
-          // password didn't match
+        return exports.comparePasswordToDatabase( req.body.password, foundUser.password )
+        .then(function( correctPassword ) {
+          if ( correctPassword === true ) {
+            return jwtFactory.createToken( foundUser );
           } else {
-            res.status( 401 ).send( 'Please check your email and password.' );
+            throw new Error( 401 );
           }
         });
 
       // no user with that email found
       } else {
-        // send not able to authenticate
-        res.status( 401 ).send( 'Please check your email and password.' );
+        throw new Error( 401 );
       }
     })
+    .then(function( token ) {
+      res.status( 200 ).send( { token: token } );
+    })
     .catch(function( error ) {
-      res.status( 500 ).send( error );
+      if ( error.message === '401' ) {
+        res.status( 401 ).send( 'Please check your email and password.' );
+      } else {
+        res.status( 500 ).send( error );
+      }
     });
   },
   resetPassword: function( req, res ) {
