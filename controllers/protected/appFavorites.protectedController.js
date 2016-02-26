@@ -1,178 +1,30 @@
 var user = require( '../../models' ).user;
 var station = require( '../../models' ).station;
-var async = require( 'async' );
-
 var Q = require( 'q' );
 var appFactory = require( '../../factories/appFactory.js' );
 var geocodeCache = require( '../../factories/geocodeCache.js' );
 
-var groupByKin = function( stations ) {
-  var groupedByKin = {
-    // kin: {
-      // kin: common kin,
-      // location: coloquial location, eg. Serra Shopping Center,
-      // adddress: full address,
-      // addressLine1: 123 Main St.
-      // addressLine2: Tucson, AZ 85720,
-      // gps: [ lat, long ],
-      // favorite:
-      // ids: []
-      // number_available: [ avail, total ],
-      // distance: crow flies in miles
-    // }
-  };
-  var JSON = [];
-
-  var numberOfStations = stations.length;
-  for ( var i = 0; i < numberOfStations; i++ ) {
-    var station = stations[ i ];
-    // cut off the station number and K/W
-    // 001-0001-001-01-K becomes 001-0001-001
-    var cutKin = station.kin.substring( 0, 12 );
-    // if there is no grouping
-    if ( !groupedByKin[ cutKin ] ) {
-      // create it
-      groupedByKin[ cutKin ] = {};
-      groupedByKin[ cutKin ].kin = cutKin;
-      groupedByKin[ cutKin ].location = station.location;
-      groupedByKin[ cutKin ].address = station.location_address;
-      groupedByKin[ cutKin ].gps = null;
-      groupedByKin[ cutKin ].ids = [];
-      groupedByKin[ cutKin ].app_sponsors = [];
-      groupedByKin[ cutKin ].number_available = [ 0, 0 ];
-      groupedByKin[ cutKin ].distance = null;
-      groupedByKin[ cutKin ].favorite = true;
-
-      var splitAddress = station.location_address.split( ', ' );
-
-      groupedByKin[ cutKin ].addressLine1 = splitAddress[ 0 ];
-      if ( splitAddress.length === 3 ) {
-        groupedByKin[ cutKin ].addressLine2 = splitAddress[ 1 ] + ', ' + splitAddress[ 2 ];
-      } else {
-        groupedByKin[ cutKin ].addressLine1 += ', ' + splitAddress[ 1 ];
-        groupedByKin[ cutKin ].addressLine2 = splitAddress[ 2 ] + ', ' + splitAddress[ 3 ];
-      }
-    }
-
-    // grouping started
-    groupedByKin[ cutKin ].ids.push( station.id );
-    // if the grouping doesn't have GPS yet and the station can provide it
-    if ( !Array.isArray( groupedByKin[ cutKin ].gps ) && Array.isArray( station.location_gps ) ) {
-      // add GPS
-      groupedByKin[ cutKin ].gps = station.location_gps;
-    }
-
-    if ( groupedByKin[ cutKin ].app_sponsors.length === 0 ) {
-      if ( station.app_sponsors.length !== 0 ) {
-        groupedByKin[ cutKin ].app_sponsors = station.app_sponsors;
-      }
-    }
-
-    var available = groupedByKin[ cutKin ].number_available[ 0 ];
-    var total = groupedByKin[ cutKin ].number_available[ 1 ];
-    // if there is in-use data
-    if ( Array.isArray( station.in_use ) ) {
-      available += appFactory.countStationAvailability( station.in_use );
-      total += station.in_use.length;
-    } else {
-      // this is a fudge
-      // assume station has at least one plug
-      // assume it's available
-      available += 1;
-      total += 1;
-    }
-
-    groupedByKin[ cutKin ].number_available[ 0 ] = available;
-    groupedByKin[ cutKin ].number_available[ 1 ] = total;
-  }
-
-  for ( var kin in groupedByKin ) {
-    JSON.push( groupedByKin[ kin ] );
-  }
-
-  return JSON;
-};
-
 module.exports = exports = {
   getFavoriteStations: function( req, res ) {
-    var deferred = Q.defer();
-    var stationsAndPlugs = [];
-
-    user.find( { where: { id: req.query.id } } )
-    .then(function( foundUser ) {
-      // if you can find the user
-      if ( foundUser ) {
-        // check for favorites
-        if ( foundUser.favorite_stations && foundUser.favorite_stations.length > 0 ) {
-          // get stations by id
-          station.findAll( { where: { id: { $in: foundUser.favorite_stations } } } )
-          .then(function( stations ) {
-
-            async.each( stations, function( station, cb ) {
-              // get only the values of the station
-              var plainStation = station.get( { plain: true } );
-              // get the associated plugs for the station
-              station.getPlugs()
-              .then(function( plugs ) {
-                return station.getAppSponsors()
-                .then(function( appSponsors ) {
-                  // if there are sponsors
-                  plainStation.app_sponsors = [];
-
-                  if ( appSponsors && appSponsors.length > 0 ) {
-                    for ( var i = 0; i < appSponsors.length; i++ ) {
-                      plainStation.app_sponsors.push( appSponsors[ i ].get( { plain: true } ) );
-                    }
-                  }
-
-                  // if there are plugs, i.e. push and cloudgate installed
-                  if ( plugs && plugs.length > 0 ) {
-                    // create a plugs field on the station
-                    plainStation.plugs = [];
-                    // for each plug on the station
-                    for ( var i = 0; i < plugs.length; i++ ) {
-                      // push the values of plug to the plugs array on station
-                      plainStation.plugs[ plugs[ i ].number_on_station - 1 ] = plugs[ i ].get( { plain: true } );
-                    }
-                  // station not metered, no plugs
-                  } else {
-                    plainStation.plugs = null;
-                  }
-
-                  stationsAndPlugs.push( plainStation );
-                  cb( null );
-                });
-              })
-              .catch(function( error ) {
-                cb( error );
-              });
-            }, function( error ) {
-              if ( error ) {
-                deferred.reject( error );
-              } else {
-                // deferred.resolve( stationsAndPlugs );
-                geocodeCache.geocodeGroupsWithoutGPS( groupByKin( stationsAndPlugs ) )
-                .then(function( geocoded ) {
-                  res.send( appFactory.findDistances( req.query.userCoords, geocoded ) );
-                })
-                .catch(function( error ) {
-                  res.status( 500 ).send( 'There was an error finding you favorites. Let\'s try again later.' );
-                });
-              }
-            });
-          });
+    if ( req.query.id ) {
+      user.findOne( { where: { id: req.query.id } } )
+      .then(function( foundUser ) {
+        console.log( 'foundUser', foundUser );
+        if ( foundUser && foundUser.favorite_stations && foundUser.favorite_stations.length > 0 ) {
+          return appFactory.formatStationsForApp( { where: { id: { $in: foundUser.favorite_stations } } }, foundUser.id, req.query.userCoords );
         } else {
-          res.send( [] );
+          return Q( [] );
         }
-
-      // no user found
-      } else {
-        res.status( 404 ).send( 'Could not find a user with that ID' );
-      }
-    })
-    .catch(function( error ) {
-      res.status( 500 ).send( error );
-    });
+      })
+      .then(function( formattedStations ) {
+        res.json( formattedStations );
+      })
+      .catch(function( error ) {
+        res.status( 500 ).send( error );
+      });
+    } else {
+      res.status( 500 ).send( 'No user id sent.' );
+    }
   },
   addFavoriteStation: function( req, res ) {
     // get stations associated with that cut kin

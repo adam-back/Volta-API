@@ -1,21 +1,129 @@
 var supertest = require( 'supertest' );
 var app = require( '../../../../server.js' ).app;
 supertest = supertest( app );
-var config    = require( '../../../../config/config' ).development;
+
 var Q = require( 'q' );
-var async     = require( 'async' );
 var models = require( '../../../../models' );
 var controller = require( '../../../../controllers/protected/appFavorites.protectedController.js' );
-var geocodeCache = require( '../../../../factories/geocodeCache.js' ).geocodeCache;
-var calculateDistance = require( '../../../../factories/distanceFactory.js' ).getDistanceFromLatLonInMiles;
+var appFactory = require( '../../../../factories/appFactory.js' );
 var createToken = require( '../../../jwtHelper' ).createToken;
 var token = createToken( 5 );
-var geocoder = require( 'node-geocoder' )( 'google', 'https', { apiKey: config.googleApiKey, formatter: null } );
 
 module.exports = function() {
   describe('FAVORITES', function() {
     describe('app/favorites', function() {
       var route = '/protected/app/favorites';
+
+      describe('GET', function() {
+        var findUser, formatStations;
+
+        beforeEach(function() {
+          findUser = Q.defer();
+          formatStations = Q.defer();
+          spyOn( models.user, 'findOne' ).andReturn( findUser.promise );
+          spyOn( appFactory, 'formatStationsForApp' ).andReturn( formatStations.promise );
+          route += '?id=1';
+        });
+
+        afterEach(function() {
+          route = '/protected/app/favorites';
+        });
+
+        it('should be a defined route (not 404)', function( done ) {
+          findUser.reject();
+          supertest.get( route )
+          .set( 'Authorization', 'Bearer ' + token )
+          .expect(function( res ) {
+            expect( res.statusCode ).not.toBe( 404 );
+          })
+          .end( done );
+        });
+
+        it('should find one user', function( done ) {
+          findUser.reject();
+          supertest.get( route )
+          .set( 'Authorization', 'Bearer ' + token )
+          .expect(function( res ) {
+            expect( models.user.findOne ).toHaveBeenCalled();
+            expect( models.user.findOne ).toHaveBeenCalledWith( { where: { id: '1' } }  );
+          })
+          .end( done );
+        });
+
+        it('should send send empty JSON if user has no favorites', function( done ) {
+          findUser.resolve( { favorite_stations: [] } );
+          supertest.get( route )
+          .set( 'Authorization', 'Bearer ' + token )
+          .expect( 200 )
+          .expect( 'Content-Type', /json/ )
+          .expect( [] )
+          .expect(function( res ) {
+            expect( appFactory.formatStationsForApp ).not.toHaveBeenCalled();
+          })
+          .end( done );
+        });
+
+        it('should format favorites for app', function( done ) {
+          findUser.resolve( { id: 42, favorite_stations: [ 1, 2 ] } );
+          formatStations.reject();
+          supertest.get( route )
+          .set( 'Authorization', 'Bearer ' + token )
+          .expect(function( res ) {
+            expect( appFactory.formatStationsForApp ).toHaveBeenCalled();
+            expect( appFactory.formatStationsForApp ).toHaveBeenCalledWith( { where: { id: { $in: [ 1, 2 ] } } }, 42, undefined );
+          })
+          .end( done );
+        });
+
+        it('should call formatStationsForApp with WHERE clause', function( done ) {
+          findUser.resolve( { id: 42, favorite_stations: [ 1, 2 ] } );
+          formatStations.reject();
+          supertest.get( route )
+          .set( 'Authorization', 'Bearer ' + token )
+          .expect(function( res ) {
+            expect( appFactory.formatStationsForApp ).toHaveBeenCalled();
+            expect( appFactory.formatStationsForApp.calls[ 0 ].args[ 0 ] ).toEqual( { where: { id: { $in: [ 1, 2 ] } } } );
+          })
+          .end( done );
+        });
+
+        it('should call formatStationsForApp with user id', function( done ) {
+          findUser.resolve( { id: 42, favorite_stations: [ 1, 2 ] } );
+          formatStations.reject();
+          supertest.get( route )
+          .set( 'Authorization', 'Bearer ' + token )
+          .expect(function( res ) {
+            expect( appFactory.formatStationsForApp ).toHaveBeenCalled();
+            expect( appFactory.formatStationsForApp.calls[ 0 ].args[ 1 ] ).toBe( 42 );
+          })
+          .end( done );
+        });
+
+        it('should call formatStationsForApp with user coords', function( done ) {
+          findUser.resolve( { id: 42, favorite_stations: [ 1, 2 ] } );
+          route += '&userCoords[]=5&userCoords[]=6';
+          formatStations.reject();
+          supertest.get( route )
+          .set( 'Authorization', 'Bearer ' + token )
+          .expect(function( res ) {
+            expect( appFactory.formatStationsForApp ).toHaveBeenCalled();
+            expect( appFactory.formatStationsForApp.calls[ 0 ].args[ 2 ] ).toEqual( [ '5', '6' ] );
+          })
+          .end( done );
+        });
+
+        it('should send 500 if no id sent as querystring', function( done ) {
+          route = '/protected/app/favorites';
+          supertest.get( route )
+          .set( 'Authorization', 'Bearer ' + token )
+          .expect( 500 )
+          .expect( 'No user id sent.' )
+          .expect(function( res ) {
+            expect( models.user.findOne ).not.toHaveBeenCalled();
+          })
+          .end( done );
+        });
+      });
 
       describe('POST', function() {
         var body, findAllStations, findUser, User, updateUser;
