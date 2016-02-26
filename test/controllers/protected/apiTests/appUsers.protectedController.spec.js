@@ -292,5 +292,94 @@ module.exports = function() {
         });
       });
     });
+
+    describe('app/user/resetPassword', function() {
+      var route = '/protected/app/user/resetPassword';
+
+      describe('POST', function() {
+        var body, findUser;
+
+        beforeEach(function() {
+          body = {
+            email: 'a@gmail.com'
+          };
+          findUser = Q.defer();
+          spyOn( models.user, 'findOne' ).andReturn( findUser.promise );
+        });
+
+        it('should be a defined route (not 404)', function( done ) {
+          findUser.reject( 'Test' );
+          supertest.post( route )
+          .set( 'Authorization', 'Bearer ' + token )
+          .send( body )
+          .expect(function( res ) {
+            expect( res.statusCode ).not.toBe( 404 );
+          })
+          .end( done );
+        });
+
+        it('search search for user by email', function( done ) {
+          findUser.reject( 'Test' );
+          supertest.post( route )
+          .set( 'Authorization', 'Bearer ' + token )
+          .send( body )
+          .expect(function( res ) {
+            expect( models.user.findOne ).toHaveBeenCalled();
+            expect( models.user.findOne ).toHaveBeenCalledWith( { where: { email: 'a@gmail.com' } } );
+          })
+          .end( done );
+        });
+
+        it('should force email to lowercase', function( done ) {
+          body.email = 'A@gmail.com';
+          findUser.reject( 'Test' );
+          supertest.post( route )
+          .set( 'Authorization', 'Bearer ' + token )
+          .send( body )
+          .expect(function( res ) {
+            expect( models.user.findOne ).toHaveBeenCalled();
+            expect( models.user.findOne ).toHaveBeenCalledWith( { where: { email: 'a@gmail.com' } } );
+          })
+          .end( done );
+        });
+
+        it('should return the user if found', function( done ) {
+          findUser.resolve( { id: 1, email: 'adam@gmail.com' } );
+          supertest.post( route )
+          .set( 'Authorization', 'Bearer ' + token )
+          .send( body )
+          .expect( 200 )
+          .expect( { user: { id: 1, email_address: 'adam@gmail.com' } } )
+          .end( done );
+        });
+
+        it('should return blank 200 if no user found', function( done ) {
+          findUser.resolve( null );
+          supertest.post( route )
+          .set( 'Authorization', 'Bearer ' + token )
+          .send( body )
+          .expect( 200 )
+          .expect( '' )
+          .end( done );
+        });
+
+        it('should return 500 failure for error', function( done ) {
+          findUser.reject( 'Test' );
+          supertest.post( route )
+          .set( 'Authorization', 'Bearer ' + token )
+          .send( body )
+          .expect( 500 )
+          .expect( 'Test' )
+          .expect( 'Content-Type', /text/ )
+          .expect(function( res ) {
+            expect( models.user.findOne ).toHaveBeenCalled();
+          })
+          .end( done );
+        });
+      });
+
+      describe('PATCH', function() {
+      });
+    });
   });
 };

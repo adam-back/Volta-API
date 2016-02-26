@@ -111,7 +111,6 @@ module.exports = exports = {
     });
   },
   resetPassword: function( req, res ) {
-    console.log( 'reset password - req body', req.body );
     var email = req.body.email.toLowerCase();
 
     // get user by email
@@ -119,7 +118,6 @@ module.exports = exports = {
     .then(function( foundUser ) {
       // if found
       if ( foundUser ) {
-        console.log( 'found user', foundUser );
         res.send( {
           user: {
             id: foundUser.id,
@@ -127,12 +125,12 @@ module.exports = exports = {
           }
         } );
       } else {
-        console.log( 'no user found' );
+        // return nothing to app server, it will not send email
+        // this way, fishers don't know if was successful or not
         res.status( 200 ).send();
       }
     })
     .catch(function( error ) {
-      console.log( 'error getting user while resetting password', error );
       res.status( 500 ).send( error );
     });
   },
