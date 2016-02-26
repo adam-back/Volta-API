@@ -45,7 +45,7 @@ module.exports = function() {
           .end( done );
         });
 
-        it('search search for user by email', function( done ) {
+        it('should search for user by email', function( done ) {
           findUser.reject( 'Test' );
           supertest.post( route )
           .set( 'Authorization', 'Bearer ' + token )
@@ -379,6 +379,111 @@ module.exports = function() {
       });
 
       describe('PATCH', function() {
+        var body, findUser, foundUser, createNewPw, saveUser;
+
+        beforeEach(function() {
+          body = {
+            user: {
+              id: 1,
+              email_address: 'a@gmail.com',
+              password: 'newpw'
+            }
+          };
+          foundUser = models.user.build( { id: 1, email_addresss: 'a@gmail.com', password: 'password' } );
+          findUser = Q.defer();
+          createNewPw = Q.defer();
+          saveUser = Q.defer();
+
+          spyOn( models.user, 'findOne' ).andReturn( findUser.promise );
+          spyOn( controller, 'saltAndHashPassword' ).andReturn( createNewPw.promise );
+          spyOn( foundUser, 'save' ).andReturn( saveUser.promise );
+        });
+
+        it('should be a defined route (not 404)', function( done ) {
+          findUser.reject( 'Test' );
+          supertest.patch( route )
+          .set( 'Authorization', 'Bearer ' + token )
+          .send( body )
+          .expect(function( res ) {
+            expect( res.statusCode ).not.toBe( 404 );
+          })
+          .end( done );
+        });
+
+        it('should search for user by email', function( done ) {
+          findUser.reject( 'Test' );
+          supertest.patch( route )
+          .set( 'Authorization', 'Bearer ' + token )
+          .send( body )
+          .expect(function( res ) {
+            expect( models.user.findOne ).toHaveBeenCalled();
+            expect( models.user.findOne ).toHaveBeenCalledWith( { where: { id: 1, email: 'a@gmail.com' } } );
+          })
+          .end( done );
+        });
+
+        it('should return 500 if no user found', function( done ) {
+          findUser.resolve( null );
+          supertest.patch( route )
+          .set( 'Authorization', 'Bearer ' + token )
+          .send( body )
+          .expect( 500 )
+          .expect( 'No user found.' )
+          .end( done );
+        });
+
+        it('should salt and hash new password', function( done ) {
+          findUser.resolve( foundUser );
+          createNewPw.reject( 'Test' );
+          supertest.patch( route )
+          .set( 'Authorization', 'Bearer ' + token )
+          .send( body )
+          .expect(function( res ) {
+            expect( controller.saltAndHashPassword ).toHaveBeenCalled();
+            expect( controller.saltAndHashPassword ).toHaveBeenCalledWith( 'newpw' );
+          })
+          .end( done );
+        });
+
+        it('should update user\'s password in DB', function( done ) {
+          findUser.resolve( foundUser );
+          createNewPw.resolve( 'hashed password' );
+          saveUser.reject( 'Test' );
+          supertest.patch( route )
+          .set( 'Authorization', 'Bearer ' + token )
+          .send( body )
+          .expect(function( res ) {
+            expect( foundUser.save ).toHaveBeenCalled();
+            expect( foundUser.save ).toHaveBeenCalledWith();
+          })
+          .end( done );
+        });
+
+        it('should return blank 200 on success', function( done ) {
+          findUser.resolve( foundUser );
+          createNewPw.resolve( 'hashed password' );
+          saveUser.resolve();
+          supertest.patch( route )
+          .set( 'Authorization', 'Bearer ' + token )
+          .send( body )
+          .expect( 200 )
+          .expect( '' )
+          .end( done );
+        });
+
+        it('should return 500 failure for error', function( done ) {
+          findUser.reject( 'Test' );
+          supertest.patch( route )
+          .set( 'Authorization', 'Bearer ' + token )
+          .send( body )
+          .expect( 500 )
+          .expect( 'Test' )
+          .expect( 'Content-Type', /text/ )
+          .expect(function( res ) {
+            expect( models.user.findOne ).toHaveBeenCalled();
+          })
+          .end( done );
+        });
       });
     });
   });

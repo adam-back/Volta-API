@@ -5,37 +5,6 @@ var config    = require( '../../config/config' )[ env ];
 var bcrypt = require( 'bcrypt' );
 var jwtFactory = require( '../../factories/jwtFactory' );
 
-var createToken = function( user, expirationInMinutes ) {
-  var payload = {
-    id: user.id,
-    first_name: user.first_name,
-    last_name: user.last_name,
-    email: user.email,
-    username: user.username,
-    facebook_id: user.facebook_id,
-    user_picture: user.user_picture,
-    car_picture: user.car_picture,
-    stored_locations: user.stored_locations,
-    favorite_stations: user.favorite_stations,
-    phone_number: user.phone_number,
-    number_of_checkins: user.number_of_checkins,
-    kwh_used: user.kwh_used,
-    freemium_level: user.freemium_level,
-    number_of_app_uses: user.number_of_app_uses,
-    is_new: user.is_new
-  };
-
-  var options = {
-    issuer: config.issuer,
-  };
-
-  if( expirationInMinutes ) {
-    options.expiresInMinutes = expirationInMinutes;
-  }
-
-  return jwt.sign( payload, config.appSecret, options );
-};
-
 module.exports = exports = {
   saltAndHashPassword: function( password ) {
     var saltAndHash = Q.nbind( bcrypt.hash, bcrypt );
@@ -135,41 +104,36 @@ module.exports = exports = {
     });
   },
   updatePassword: function( req, res ) {
-
     var givenUser = req.body.user;
 
-    user.findOne( {
-      where: { 
+    user.findOne({
+      where: {
         id: givenUser.id,
         email: givenUser.email_address,
       }
     })
     .then( function( foundUser ) {
-      console.log( 'found user', foundUser );
-      //update the user
-      bcrypt.hash( req.body.user.password, 8, function( error, hashAndSalted ) {
-        if ( error ) {
-          console.log( 'failed to hash password', error );
-          res.status( 500 ).send( error );
-        } else {
-          console.log( 'hashAndSalted', hashAndSalted );
+      if ( foundUser ) {
+        return exports.saltAndHashPassword( req.body.user.password )
+        .then(function( hashAndSalted ) {
+          //update the user
           foundUser.password = hashAndSalted;
+          return foundUser.save();
+        });
+      } else {
+        throw new Error( 'No user found.' );
+      }
 
-          foundUser.save()
-          .then( function( savedUser ) {
-            console.log( 'saved new password successfully' );
-            res.status( 200 ).send();
-          })
-          .catch(function( error ) {
-            console.log( 'on update password', error );
-            res.status( 500 ).send( error );
-          })
-        }
-      });
+    })
+    .then(function( successUpdate ) {
+      res.status( 200 ).send();
     })
     .catch( function( error ) {
-      console.log( 'Reset password - user id and email do not match' );
-      res.status( 500 ).send( error );
-    })
+      if ( error.message === 'No user found.' ) {
+        res.status( 500 ).send( error.message );
+      } else {
+        res.status( 500 ).send( error );
+      }
+    });
   }
 };
