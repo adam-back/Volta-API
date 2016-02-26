@@ -7,7 +7,7 @@ var factory = rewire( '../../factories/appFactory.js' );
 var distance = require( '../../factories/distanceFactory.js' );
 
 module.exports = function() {
-  ddescribe('appFactory.js', function() {
+  describe('appFactory.js', function() {
     describe('countStationAvailability', function() {
       var countStationAvailability = factory.countStationAvailability;
       var usageCollection = [ 'true', 'false', 'null' ];

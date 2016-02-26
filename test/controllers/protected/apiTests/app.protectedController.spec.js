@@ -6,7 +6,8 @@ var Q = require( 'q' );
 var async     = require( 'async' );
 var models = require( '../../../../models' );
 var controller = require( '../../../../controllers/protected/app.protectedController.js' );
-var geocodeCache = require( '../../../../factories/geocodeCache.js' ).geocodeCache;
+var cache = require( '../../../../factories/geocodeCache.js' );
+var appFactory = require( '../../../../factories/appFactory.js' );
 var calculateDistance = require( '../../../../factories/distanceFactory.js' ).getDistanceFromLatLonInMiles;
 var createToken = require( '../../../jwtHelper' ).createToken;
 var token = createToken( 5 );
@@ -28,12 +29,12 @@ module.exports = function() {
           geocodeIfNeeded = Q.defer();
 
           spyOn( models.station, 'findAll' ).andReturn( findAllStations.promise );
-          spyOn( controller, 'connectStationsWithPlugsAndSponsors' ).andReturn( connectStations.promise );
+          spyOn( appFactory, 'connectStationsWithPlugsAndSponsors' ).andReturn( connectStations.promise );
           spyOn( models.user, 'find' ).andReturn( findUser.promise );
-          spyOn( controller, 'groupByKin' ).andReturn( groupIntoKins.promise );
-          spyOn( controller, 'attachImages' ).andReturn( addGalleryImages.promise );
-          spyOn( controller, 'geocodeGroupsWithoutGPS' ).andReturn( geocodeIfNeeded.promise );
-          spyOn( controller, 'findDistances' ).andReturn( [ 'done' ] );
+          spyOn( appFactory, 'groupByKin' ).andReturn( groupIntoKins.promise );
+          spyOn( appFactory, 'attachImages' ).andReturn( addGalleryImages.promise );
+          spyOn( cache, 'geocodeGroupsWithoutGPS' ).andReturn( geocodeIfNeeded.promise );
+          spyOn( appFactory, 'findDistances' ).andReturn( [ 'done' ] );
         });
 
         afterEach(function() {
@@ -67,8 +68,8 @@ module.exports = function() {
           supertest.get( route )
           .set( 'Authorization', 'Bearer ' + token )
           .expect(function( res ) {
-            expect( controller.connectStationsWithPlugsAndSponsors ).toHaveBeenCalled();
-            expect( controller.connectStationsWithPlugsAndSponsors ).toHaveBeenCalledWith( [ 1 ] );
+            expect( appFactory.connectStationsWithPlugsAndSponsors ).toHaveBeenCalled();
+            expect( appFactory.connectStationsWithPlugsAndSponsors ).toHaveBeenCalledWith( [ 1 ] );
           })
           .end( done );
         });
@@ -96,8 +97,8 @@ module.exports = function() {
           supertest.get( route )
           .set( 'Authorization', 'Bearer ' + token )
           .expect(function( res ) {
-            expect( controller.groupByKin ).toHaveBeenCalled();
-            expect( controller.groupByKin ).toHaveBeenCalledWith( [ 1, 2 ], 'faves' );
+            expect( appFactory.groupByKin ).toHaveBeenCalled();
+            expect( appFactory.groupByKin ).toHaveBeenCalledWith( [ 1, 2 ], 'faves' );
           })
           .end( done );
         });
@@ -110,8 +111,8 @@ module.exports = function() {
           .set( 'Authorization', 'Bearer ' + token )
           .expect(function( res ) {
             expect( models.user.find ).not.toHaveBeenCalled();
-            expect( controller.groupByKin ).toHaveBeenCalled();
-            expect( controller.groupByKin ).toHaveBeenCalledWith( [ 1, 2 ] );
+            expect( appFactory.groupByKin ).toHaveBeenCalled();
+            expect( appFactory.groupByKin ).toHaveBeenCalledWith( [ 1, 2 ] );
           })
           .end( done );
         });
@@ -124,8 +125,8 @@ module.exports = function() {
           supertest.get( route )
           .set( 'Authorization', 'Bearer ' + token )
           .expect(function( res ) {
-            expect( controller.attachImages ).toHaveBeenCalled();
-            expect( controller.attachImages ).toHaveBeenCalledWith( [ 1, 2, 3 ] );
+            expect( appFactory.attachImages ).toHaveBeenCalled();
+            expect( appFactory.attachImages ).toHaveBeenCalledWith( [ 1, 2, 3 ] );
           })
           .end( done );
         });
@@ -139,8 +140,8 @@ module.exports = function() {
           supertest.get( route )
           .set( 'Authorization', 'Bearer ' + token )
           .expect(function( res ) {
-            expect( controller.geocodeGroupsWithoutGPS.calls.length ).toBe( 1 );
-            expect( controller.geocodeGroupsWithoutGPS ).toHaveBeenCalledWith( { 1: { gps: null } } );
+            expect( cache.geocodeGroupsWithoutGPS.calls.length ).toBe( 1 );
+            expect( cache.geocodeGroupsWithoutGPS ).toHaveBeenCalledWith( { 1: { gps: null } } );
           })
           .end( done );
         });
@@ -154,8 +155,8 @@ module.exports = function() {
           supertest.get( route )
           .set( 'Authorization', 'Bearer ' + token )
           .expect(function( res ) {
-            expect( controller.geocodeGroupsWithoutGPS ).toHaveBeenCalled();
-            expect( controller.geocodeGroupsWithoutGPS ).toHaveBeenCalledWith( {} );
+            expect( cache.geocodeGroupsWithoutGPS ).toHaveBeenCalled();
+            expect( cache.geocodeGroupsWithoutGPS ).toHaveBeenCalledWith( {} );
           })
           .end( done );
         });
@@ -170,7 +171,7 @@ module.exports = function() {
           .set( 'Authorization', 'Bearer ' + token )
           .expect( 'Content-Type', /json/ )
           .expect(function( res ) {
-            expect( controller.findDistances ).not.toHaveBeenCalled();
+            expect( appFactory.findDistances ).not.toHaveBeenCalled();
             expect( Array.isArray( res.body ) ).toBe( true );
             expect( res.body.length ).toBe( 2 );
             // kin 2 first because it didn't need geocoding
@@ -186,13 +187,13 @@ module.exports = function() {
           groupIntoKins.resolve( [ 1, 2, 3 ] );
           addGalleryImages.resolve( { 1: { kin: 1, gps: null }, 2: { kin: 2, gps: [ 1, 2 ] } } );
           geocodeIfNeeded.resolve( [ { kin: 1, gps: [ 3, 4 ] } ] );
-          route += '?userCoords[]=5&userCoords[]=6'
+          route += '?userCoords[]=5&userCoords[]=6';
           supertest.get( route )
           .set( 'Authorization', 'Bearer ' + token )
           .expect( 'Content-Type', /json/ )
           .expect(function( res ) {
-            expect( controller.findDistances ).toHaveBeenCalled();
-            expect( controller.findDistances ).toHaveBeenCalledWith( [ '5', '6' ], [ { kin: 2, gps: [ 1, 2 ] }, { kin: 1, gps: [ 3, 4 ] } ] );
+            expect( appFactory.findDistances ).toHaveBeenCalled();
+            expect( appFactory.findDistances ).toHaveBeenCalledWith( [ '5', '6' ], [ { kin: 2, gps: [ 1, 2 ] }, { kin: 1, gps: [ 3, 4 ] } ] );
             expect( res.body ).toEqual( [ 'done' ] );
           })
           .end( done );
