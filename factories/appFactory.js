@@ -6,9 +6,6 @@ var app_sponsor = require( '../models' ).app_sponsor;
 var cache = require( './geocodeCache.js' );
 var async     = require( 'async' );
 var Q = require( 'q' );
-var env = process.env.NODE_ENV || 'development';
-var config    = require( '../config/config' )[ env ];
-var geocoder = require( 'node-geocoder' )( 'google', 'https', { apiKey: config.googleApiKey, formatter: null } );
 var distance = require( './distanceFactory.js' );
 
 exports.countStationAvailability = function( usageCollection ) {
@@ -177,23 +174,24 @@ exports.groupByKin = function( stationsWithPlugs, userFaves ) {
       groupedByKin[ cutKin ].distance = null;
       groupedByKin[ cutKin ].stations = [];
       groupedByKin[ cutKin ].favorite = false;
+
+      var splitAddress = station.location_address.split( ', ' );
+
+      groupedByKin[ cutKin ].addressLine1 = splitAddress[ 0 ];
+      if ( splitAddress.length === 3 ) {
+        groupedByKin[ cutKin ].addressLine2 = splitAddress[ 1 ] + ', ' + splitAddress[ 2 ];
+      } else {
+        groupedByKin[ cutKin ].addressLine1 += ', ' + splitAddress[ 1 ];
+        groupedByKin[ cutKin ].addressLine2 = splitAddress[ 2 ] + ', ' + splitAddress[ 3 ];
+      }
     }
 
-    if ( userFaves && userFaves.length > 0 ) {
+    // if it hasn't been flagged as favorite yet
+    if ( groupedByKin[ cutKin ].favorite === false && Array.isArray( userFaves ) && userFaves.length > 0 ) {
       // if this is a user favorite
       if ( userFaves.indexOf( station.id ) !== -1 ) {
         groupedByKin[ cutKin ].favorite = true;
       }
-    }
-
-    var splitAddress = station.location_address.split( ', ' );
-
-    groupedByKin[ cutKin ].addressLine1 = splitAddress[ 0 ];
-    if ( splitAddress.length === 3 ) {
-      groupedByKin[ cutKin ].addressLine2 = splitAddress[ 1 ] + ', ' + splitAddress[ 2 ];
-    } else {
-      groupedByKin[ cutKin ].addressLine1 += ', ' + splitAddress[ 1 ];
-      groupedByKin[ cutKin ].addressLine2 = splitAddress[ 2 ] + ', ' + splitAddress[ 3 ];
     }
 
     // add to the grouping by site number
@@ -234,4 +232,54 @@ exports.groupByKin = function( stationsWithPlugs, userFaves ) {
   }
 
   return groupedByKin;
+};
+
+exports.formatStationsForApp = function( whichStations, userId, userCoords ) {
+  var readyForReturn = [];
+  var query = whichStations || {};
+
+  // get all stations
+  return station.findAll( query )
+  .then(function( stations ) {
+    return exports.connectStationsWithPlugsAndSponsors( stations );
+  })
+  .then(function( stationsAndPlugs ) {
+    // if the user is logged in
+    if ( userId ) {
+      // get their favorites
+      return user.find( { where: { id: userId } } )
+      .then(function( foundUser ) {
+        return Q( exports.groupByKin( stationsAndPlugs, foundUser.favorite_stations ) );
+      });
+    // not logged in
+    } else {
+      // group similar stations by kin
+      return Q( exports.groupByKin( stationsAndPlugs ) );
+    }
+  })
+  .then(function( groupedKin ) {
+    return exports.attachImages( groupedKin );
+  })
+  .then(function( groupsWithImages ) {
+    // add stations with GPS to ready
+    for ( var kin in groupsWithImages ) {
+      if ( Array.isArray( groupsWithImages[ kin ].gps ) ) {
+        readyForReturn.push( groupsWithImages[ kin ] );
+        // delete it so it won't get geocoded
+        delete groupsWithImages[ kin ];
+      }
+    }
+    // send the rest to be geocoded
+    return cache.geocodeGroupsWithoutGPS( groupsWithImages );
+  })
+  .then(function( geocoded ) {
+    readyForReturn = readyForReturn.concat( geocoded );
+
+    // measure as-the-crow flies distances
+    if ( userCoords ) {
+      readyForReturn = exports.findDistances( userCoords, readyForReturn );
+    }
+
+    return readyForReturn;
+  });
 };

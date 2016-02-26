@@ -1,14 +1,10 @@
 var user = require( '../../models' ).user;
 var station = require( '../../models' ).station;
 var async = require( 'async' );
-var express = require( 'express' );
+
 var Q = require( 'q' );
-var env = process.env.NODE_ENV || 'development';
-var config    = require( '../../config/config' )[ env ];
-var calculateDistance = require( '../../factories/distanceFactory.js' ).getDistanceFromLatLonInMiles;
-var geocodeCache = require( '../../factories/geocodeCache.js' ).geocodeCache;
-var geocoder = require( 'node-geocoder' )( 'google', 'https', { apiKey: config.googleApiKey, formatter: null } );
-var appController = require( './app.protectedController.js' );
+var appFactory = require( '../../factories/appFactory.js' );
+var geocodeCache = require( '../../factories/geocodeCache.js' );
 
 var groupByKin = function( stations ) {
   var groupedByKin = {
@@ -76,7 +72,7 @@ var groupByKin = function( stations ) {
     var total = groupedByKin[ cutKin ].number_available[ 1 ];
     // if there is in-use data
     if ( Array.isArray( station.in_use ) ) {
-      available += appController.countStationAvailability( station.in_use );
+      available += appFactory.countStationAvailability( station.in_use );
       total += station.in_use.length;
     } else {
       // this is a fudge
@@ -155,9 +151,9 @@ module.exports = exports = {
                 deferred.reject( error );
               } else {
                 // deferred.resolve( stationsAndPlugs );
-                appController.geocodeGroupsWithoutGPS( groupByKin( stationsAndPlugs ) )
+                geocodeCache.geocodeGroupsWithoutGPS( groupByKin( stationsAndPlugs ) )
                 .then(function( geocoded ) {
-                  res.send( appController.findDistances( req.query.userCoords, geocoded ) );
+                  res.send( appFactory.findDistances( req.query.userCoords, geocoded ) );
                 })
                 .catch(function( error ) {
                   res.status( 500 ).send( 'There was an error finding you favorites. Let\'s try again later.' );

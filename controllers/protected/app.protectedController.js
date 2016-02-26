@@ -8,50 +8,9 @@ var Q = require( 'q' );
 
 module.exports = exports = {
   getStationsAndPlugs: function ( req, res ) {
-    var readyForReturn = [];
-    // get all stations
-    station.findAll()
-    .then(function( stations ) {
-      return appFactory.connectStationsWithPlugsAndSponsors( stations );
-    })
-    .then(function( stationsAndPlugs ) {
-      // if the user is logged in
-      if ( req.query.id ) {
-        // get their favorites
-        return user.find( { where: { id: req.query.id } } )
-        .then(function( foundUser ) {
-          return Q( appFactory.groupByKin( stationsAndPlugs, foundUser.favorite_stations ) );
-        });
-      // not logged in
-      } else {
-        // group similar stations by kin
-        return Q( appFactory.groupByKin( stationsAndPlugs ) );
-      }
-    })
-    .then(function( groupedKin ) {
-      return appFactory.attachImages( groupedKin );
-    })
-    .then(function( groupsWithImages ) {
-      // add stations with GPS to ready
-      for ( var kin in groupsWithImages ) {
-        if ( Array.isArray( groupsWithImages[ kin ].gps ) ) {
-          readyForReturn.push( groupsWithImages[ kin ] );
-          // delete it so it won't get geocoded
-          delete groupsWithImages[ kin ];
-        }
-      }
-      // send the rest to be geocoded
-      return cache.geocodeGroupsWithoutGPS( groupsWithImages );
-    })
-    .then(function( geocoded ) {
-      readyForReturn = readyForReturn.concat( geocoded );
-
-      // measure as-the-crow flies distances
-      if ( req.query.userCoords ) {
-        res.json( appFactory.findDistances( req.query.userCoords, readyForReturn ) );
-      } else {
-        res.json( readyForReturn );
-      }
+    appFactory.formatStationsForApp( null, req.query.id, req.query.userCoords )
+    .then(function( formattedStations ) {
+      res.json( formattedStations );
     })
     .catch(function( error ) {
       res.status( 500 ).send( error );

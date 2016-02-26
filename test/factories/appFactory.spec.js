@@ -5,6 +5,7 @@ var models = require( '../../models' );
 var rewire = require( 'rewire' );
 var factory = rewire( '../../factories/appFactory.js' );
 var distance = require( '../../factories/distanceFactory.js' );
+var geocache = require( '../../factories/geocodeCache.js' );
 
 module.exports = function() {
   describe('appFactory.js', function() {
@@ -780,6 +781,174 @@ module.exports = function() {
         var result = groupByKin( stationsWithPlugs );
         expect( result[ '003-0043-015' ].app_sponsors.length ).toBe( 1 );
         expect( result[ '003-0043-015' ].app_sponsors ).toEqual( [ 'obi' ] );
+      });
+    });
+
+    describe('formatStationsForApp', function() {
+      var formatStationsForApp = factory.formatStationsForApp;
+      var findAllStations, connectStations, findUser, groupIntoKins, addGalleryImages, geocodeIfNeeded;
+
+      beforeEach(function() {
+        findAllStations = Q.defer();
+        connectStations = Q.defer();
+        findUser = Q.defer();
+        groupIntoKins = Q.defer();
+        addGalleryImages = Q.defer();
+        geocodeIfNeeded = Q.defer();
+
+        spyOn( models.station, 'findAll' ).andReturn( findAllStations.promise );
+        spyOn( factory, 'connectStationsWithPlugsAndSponsors' ).andReturn( connectStations.promise );
+        spyOn( models.user, 'find' ).andReturn( findUser.promise );
+        spyOn( factory, 'groupByKin' ).andReturn( groupIntoKins.promise );
+        spyOn( factory, 'attachImages' ).andReturn( addGalleryImages.promise );
+        spyOn( geocache, 'geocodeGroupsWithoutGPS' ).andReturn( geocodeIfNeeded.promise );
+        spyOn( factory, 'findDistances' ).andReturn( [ 'done' ] );
+      });
+
+      it('should be defined as a function', function() {
+        expect( typeof formatStationsForApp ).toBe( 'function' );
+      });
+
+      it('should find all stations', function( done ) {
+        findAllStations.reject();
+        formatStationsForApp()
+        .catch(function() {
+          expect( models.station.findAll ).toHaveBeenCalled();
+          expect( models.station.findAll ).toHaveBeenCalledWith( {} );
+          done();
+        });
+      });
+
+      it('should connect stations with plugs and sponsors', function( done ) {
+        findAllStations.resolve( [ 1 ] );
+        connectStations.reject();
+        formatStationsForApp()
+        .catch(function() {
+          expect( factory.connectStationsWithPlugsAndSponsors ).toHaveBeenCalled();
+          expect( factory.connectStationsWithPlugsAndSponsors ).toHaveBeenCalledWith( [ 1 ] );
+          done();
+        });
+      });
+
+      it('should find user if logged in', function( done ) {
+        findAllStations.resolve( [ 1 ] );
+        connectStations.resolve( [ 1, 2 ] );
+        findUser.reject();
+        formatStationsForApp( null, '1' )
+        .catch(function() {
+          expect( models.user.find ).toHaveBeenCalled();
+          expect( models.user.find ).toHaveBeenCalledWith( { where: { id: '1' } } );
+          done();
+        });
+      });
+
+      it('should group stations by kin with user\'s favorites', function( done ) {
+        findAllStations.resolve( [ 1 ] );
+        connectStations.resolve( [ 1, 2 ] );
+        findUser.resolve( { favorite_stations: 'faves' } );
+        groupIntoKins.reject();
+        formatStationsForApp( null, 1 )
+        .catch(function() {
+          expect( factory.groupByKin ).toHaveBeenCalled();
+          expect( factory.groupByKin ).toHaveBeenCalledWith( [ 1, 2 ], 'faves' );
+          done();
+        });
+      });
+
+      it('should group stations by kin without user\'s favorites', function( done ) {
+        findAllStations.resolve( [ 1 ] );
+        connectStations.resolve( [ 1, 2 ] );
+        groupIntoKins.reject();
+        formatStationsForApp( null )
+        .catch(function() {
+          expect( models.user.find ).not.toHaveBeenCalled();
+          expect( factory.groupByKin ).toHaveBeenCalled();
+          expect( factory.groupByKin ).toHaveBeenCalledWith( [ 1, 2 ] );
+          done();
+        });
+      });
+
+      it('should attach images to station groups', function( done ) {
+        findAllStations.resolve( [ 1 ] );
+        connectStations.resolve( [ 1, 2 ] );
+        groupIntoKins.resolve( [ 1, 2, 3 ] );
+        addGalleryImages.reject();
+        formatStationsForApp( null )
+        .catch(function() {
+          expect( factory.attachImages ).toHaveBeenCalled();
+          expect( factory.attachImages ).toHaveBeenCalledWith( [ 1, 2, 3 ] );
+          done();
+        });
+      });
+
+      it('should geocode groups without gps', function( done ) {
+        findAllStations.resolve( [ 1 ] );
+        connectStations.resolve( [ 1, 2 ] );
+        groupIntoKins.resolve( [ 1, 2, 3 ] );
+        addGalleryImages.resolve( { 1: { gps: null } } );
+        geocodeIfNeeded.reject();
+        formatStationsForApp( null  )
+        .catch(function() {
+          expect( geocache.geocodeGroupsWithoutGPS.calls.length ).toBe( 1 );
+          expect( geocache.geocodeGroupsWithoutGPS ).toHaveBeenCalledWith( { 1: { gps: null } } );
+          done();
+        });
+      });
+
+      it('should not geocode groups already with gps', function( done ) {
+        findAllStations.resolve( [ 1 ] );
+        connectStations.resolve( [ 1, 2 ] );
+        groupIntoKins.resolve( [ 1, 2, 3 ] );
+        addGalleryImages.resolve( { 2: { gps: [ 1, 2 ] } } );
+        geocodeIfNeeded.reject();
+        formatStationsForApp( null  )
+        .catch(function() {
+          expect( geocache.geocodeGroupsWithoutGPS ).toHaveBeenCalled();
+          expect( geocache.geocodeGroupsWithoutGPS ).toHaveBeenCalledWith( {} );
+          done();
+        });
+      });
+
+      it('should return array of formatted stations', function( done ) {
+        findAllStations.resolve( [ 1 ] );
+        connectStations.resolve( [ 1, 2 ] );
+        groupIntoKins.resolve( [ 1, 2, 3 ] );
+        addGalleryImages.resolve( { 1: { kin: 1, gps: null }, 2: { kin: 2, gps: [ 1, 2 ] } } );
+        geocodeIfNeeded.resolve( [ { kin: 1, gps: [ 3, 4 ] } ] );
+        formatStationsForApp( null  )
+        .then(function( result ) {
+          expect( factory.findDistances ).not.toHaveBeenCalled();
+          expect( Array.isArray( result ) ).toBe( true );
+          expect( result.length ).toBe( 2 );
+          // kin 2 first because it didn't need geocoding
+          expect( result[ 0 ] ).toEqual( { kin: 2, gps: [ 1, 2 ] } );
+          expect( result[ 1 ] ).toEqual( { kin: 1, gps: [ 3, 4 ] } );
+          done();
+        })
+        .catch(function() {
+          expect( error ).toBe( 1 );
+          done();
+        });
+      });
+
+      it('should find distances to stations if userCoords provided', function( done ) {
+        findAllStations.resolve( [ 1 ] );
+        connectStations.resolve( [ 1, 2 ] );
+        groupIntoKins.resolve( [ 1, 2, 3 ] );
+        addGalleryImages.resolve( { 1: { kin: 1, gps: null }, 2: { kin: 2, gps: [ 1, 2 ] } } );
+        geocodeIfNeeded.resolve( [ { kin: 1, gps: [ 3, 4 ] } ] );
+
+        formatStationsForApp( null, null, [ '5', '6' ] )
+        .then(function( result ) {
+          expect( factory.findDistances ).toHaveBeenCalled();
+          expect( factory.findDistances ).toHaveBeenCalledWith( [ '5', '6' ], [ { kin: 2, gps: [ 1, 2 ] }, { kin: 1, gps: [ 3, 4 ] } ] );
+          expect( result ).toEqual( [ 'done' ] );
+          done();
+        })
+        .catch(function() {
+          expect( error ).toBe( 1 );
+          done();
+        });
       });
     });
   });
