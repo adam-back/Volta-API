@@ -1,15 +1,10 @@
 var station = require( '../../models').station;
 var station_report = require( '../../models' ).station_report;
-var station_image = require( '../../models' ).station_image;
 var user = require( '../../models' ).user;
 var app_sponsor = require( '../../models' ).app_sponsor;
 var cache = require( '../../factories/geocodeCache.js' );
 var appFactory = require( '../../factories/appFactory.js' );
-var async     = require( 'async' );
 var Q = require( 'q' );
-var env = process.env.NODE_ENV || 'development';
-var config    = require( '../../config/config' )[ env ];
-var geocoder = require( 'node-geocoder' )( 'google', 'https', { apiKey: config.googleApiKey, formatter: null } );
 
 module.exports = exports = {
   getStationsAndPlugs: function ( req, res ) {
