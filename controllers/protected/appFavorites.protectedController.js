@@ -8,19 +8,7 @@ var config    = require( '../../config/config' )[ env ];
 var calculateDistance = require( '../../factories/distanceFactory.js' ).getDistanceFromLatLonInMiles;
 var geocodeCache = require( '../../factories/geocodeCache.js' ).geocodeCache;
 var geocoder = require( 'node-geocoder' )( 'google', 'https', { apiKey: config.googleApiKey, formatter: null } );
-
-var countStationAvailability = function( usageCollection ) {
-  var numberOfPlugsAvailable = 0;
-
-  var numberOfPlugs = usageCollection.length;
-  for ( var i = 0; i < numberOfPlugs; i++ ) {
-    if ( usageCollection[ i ] === 'false' ) {
-      numberOfPlugsAvailable++;
-    }
-  }
-
-  return numberOfPlugsAvailable;
-};
+var appController = require( './app.protectedController.js' );
 
 var groupByKin = function( stations ) {
   var groupedByKin = {
@@ -88,7 +76,7 @@ var groupByKin = function( stations ) {
     var total = groupedByKin[ cutKin ].number_available[ 1 ];
     // if there is in-use data
     if ( Array.isArray( station.in_use ) ) {
-      available += countStationAvailability( station.in_use );
+      available += appController.countStationAvailability( station.in_use );
       total += station.in_use.length;
     } else {
       // this is a fudge
@@ -107,47 +95,6 @@ var groupByKin = function( stations ) {
   }
 
   return JSON;
-};
-
-var geocodeGroupsWithoutGPS = function( groupsOfStations ) {
-  var deferred = Q.defer();
-
-  async.each( groupsOfStations, function( group, cb ) {
-    // if we already have it cached
-    if ( geocodeCache[ group.kin ] ) {
-      // add the location
-      group.gps = geocodeCache[ group.kin ];
-      cb( null );
-
-    // not cached yet
-    } else {
-      // use geocoder service
-      geocoder.geocode( group.address )
-      .then(function( gpx ) {
-        // add to cache
-        geocodeCache[ group.kin ] = [ gpx[ 0 ].latitude, gpx[ 0 ].longitude ];
-        // add the location
-        group.gps = [ gpx[ 0 ].latitude, gpx[ 0 ].longitude ];
-        cb( null );
-      })
-      .catch(function( error ) {
-        cb( null );
-      });
-    }
-  }, function( error ) {
-    deferred.resolve( groupsOfStations );
-  });
-
-  return deferred.promise;
-};
-
-var findDistances = function( userCoords, favorites ) {
-  var numberOfFaves = favorites.length;
-  for ( var i = 0; i < numberOfFaves; i++ ) {
-    favorites[ i ].distance = calculateDistance( userCoords, favorites[ i ].gps );
-  }
-
-  return favorites;
 };
 
 module.exports = exports = {
@@ -208,9 +155,9 @@ module.exports = exports = {
                 deferred.reject( error );
               } else {
                 // deferred.resolve( stationsAndPlugs );
-                geocodeGroupsWithoutGPS( groupByKin( stationsAndPlugs ) )
+                appController.geocodeGroupsWithoutGPS( groupByKin( stationsAndPlugs ) )
                 .then(function( geocoded ) {
-                  res.send( findDistances( req.query.userCoords, geocoded ) );
+                  res.send( appController.findDistances( req.query.userCoords, geocoded ) );
                 })
                 .catch(function( error ) {
                   res.status( 500 ).send( 'There was an error finding you favorites. Let\'s try again later.' );

@@ -10,7 +10,6 @@ var geocodeCache = require( '../../../../factories/geocodeCache.js' ).geocodeCac
 var calculateDistance = require( '../../../../factories/distanceFactory.js' ).getDistanceFromLatLonInMiles;
 var createToken = require( '../../../jwtHelper' ).createToken;
 var token = createToken( 5 );
-var geocoder = require( 'node-geocoder' )( 'google', 'https', { apiKey: config.googleApiKey, formatter: null } );
 
 module.exports = function() {
   describe('APP', function() {
