@@ -94,7 +94,7 @@ module.exports = exports = {
           }
         });
 
-      // no user with that email found
+      // no user with that email found, but they don't need to know that, so just throw generic 401 - Unauthorized
       } else {
         throw new Error( 401 );
       }
