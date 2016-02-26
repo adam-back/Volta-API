@@ -1,4 +1,5 @@
 var appSponsorFactoryTests = require( './appSponsorFactory.spec.js' );
+var appFactoryTests = require( './appFactory.spec.js' );
 var csvFactoryTests = require( './csvFactory.spec.js' );
 var ekmFactoryTests = require( './ekmFactory.spec.js' );
 var geocodeCacheTests = require( './geocodeCache.spec.js' );
@@ -14,6 +15,7 @@ describe('Factories', function() {
   });
 
   describe('APP HELPERS', function() {
+    appFactoryTests();
     geocodeCacheTests();
     appSponsorFactoryTests();
   });
