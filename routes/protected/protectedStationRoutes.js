@@ -15,7 +15,6 @@ router.route( '/count' )
 // for http://www.baseurl.com/protected/station/001-0001-001-01-K
 router.route( '/:kin' )
   .get( controller.getOneStation )
-  .delete( controller.deleteStation )
-  .put( controller.setStationStatus ); //KILLSWITCH
+  .delete( controller.deleteStation );
 
 module.exports = router;
