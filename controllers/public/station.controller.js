@@ -19,6 +19,8 @@ module.exports = exports = {
     // query database for all rows of stations
     station.findOne( { where: { kin: req.url.substring(1) } } )
     .then(function( oneStation ) {
+      console.log(oneStation);
+      console.log(Array.isArray(oneStation));
       // if found
       if( oneStation.length === 0 ) {
         res.status( 404 ).send( '<p>A station with that KIN was not found.</p>' );

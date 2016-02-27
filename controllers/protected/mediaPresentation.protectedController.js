@@ -5,7 +5,7 @@ var station = require( '../../models').station;
 var express = require( 'express' );
 var async = require( 'async' );
 
-//DO NOT ALTER, MEDIA PLAYERS IN FIELD RELY ON THIS!
+//DO NOT ALTER, MEDIA PLAYERS IN THE FIELD RELY ON THIS!
 var getMediaPresentations = function( req, res, whereObject, keyToGet ) {
 
   var receivedPresentations = function( presentations ) {
@@ -91,12 +91,13 @@ var getMediaPresentations = function( req, res, whereObject, keyToGet ) {
   }
 };
 
-// NOTE: uses query instead of params
 module.exports = exports = {
+  // Used by Station Manager
   getAllMediaPresentations: function ( req, res ) {
     getMediaPresentations( req, res, null, 'id' );
   },
 
+  // Used by Station Manager
   addMediaPresentation: function ( req, res ) {
     // Validate that a station with same KIN doesn't exist, create it
     // need to save the order of the slides here
@@ -127,86 +128,7 @@ module.exports = exports = {
     });
   },
 
-  updateMediaPresentation: function ( req, res ) {
-    mediaPresentation.find( { where: { name: req.body.name } } )
-    .then(function( mediaPresentationToUpdate ) {
-      for ( var i = 0; i < req.body.changes.length; i++ ) {
-        var field = req.body.changes[ i ][ 0 ];
-        var newData = req.body.changes[ i ][ 2 ];
-        mediaPresentationToUpdate[ field ] = newData;
-      }
-
-      mediaPresentationToUpdate.save()
-      .then(function( successmediaPresentation ) {
-        res.json( successmediaPresentation );
-      })
-      .catch(function( error ) {
-        var query = {};
-        // get the title that of the colum that errored
-        var errorColumn = Object.keys( error.fields );
-        // get the value that errored
-        var duplicateValue = error.fields[ errorColumn ];
-        query[ errorColumn ] = duplicateValue;
-
-        // where conflicting key, value
-        mediaPresentation.find( { where: query } )
-        .then(function( duplicatemediaPresentation ) {
-          error.duplicatemediaPresentation = duplicatemediaPresentation;
-          // 409 = conflict
-          res.status( 409 ).send( error );
-        })
-        .catch(function( error ) {
-          res.status( 500 ).send( error );
-        });
-      });
-    })
-    .catch(function( error ) {
-      res.status( 404 ).send( error );
-    });
-  },
-
-  getMediaPresentationsByKin: function ( req, res ) {
-    var kin = req.query.kin;
-
-    station.findAll( {
-      where: {
-        kin: kin
-      }
-    })
-    .then( function( stations ) {
-      return stations[ 0 ].getMediaSchedules();
-    })
-    .then( function( schedules ) {
-      return schedules[ 0 ].getMediaPresentations();
-    })
-    .then( function( presentations ) {
-      res.json( presentations );
-    })
-    .catch(function( error ) {
-      res.status( 500 ).send( error );
-    });
-  },
-
-  // use this one - it is faster
-  getMediaPresentationsBySchedule: function ( req, res ) {
-    var scheduleId = req.query.scheduleId;
-
-    mediaSchedule.findAll( {
-      where: {
-        id: scheduleId
-      }
-    })
-    .then( function( schedules ) {
-      return schedules[ 0 ].getMediaPresentations();
-    })
-    .then( function( presentations ) {
-      res.json( presentations );
-    })
-    .catch(function( error ) {
-      res.status( 500 ).send( error );
-    });
-  },
-
+  // Will be used by Station Manager in the future
   deleteMediaPresentation: function( req, res ) {
     var id = req.params.id;
     mediaPresentation.destroy({
@@ -223,6 +145,7 @@ module.exports = exports = {
     });
   },
 
+  // Used by Media Player
   getMediaPresentationById: function( req, res ) {
     var id = req.params.id;
     getMediaPresentations( req, res, {

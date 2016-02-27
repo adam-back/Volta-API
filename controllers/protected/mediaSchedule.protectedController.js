@@ -5,9 +5,10 @@ var station = require( '../../models').station;
 var express = require( 'express' );
 var async     = require( 'async' );
 var q = require( 'q');
-// var chainer = new Sequelize.Utils.QueryChainer;
 
 /* HELPER METHODS */
+
+// Used by Station Manager (through replaceMediaScheduleLocal)
 var deleteMediaScheduleByKin = function( kin ) {
   return mediaSchedule.destroy({
     where: {
@@ -16,11 +17,13 @@ var deleteMediaScheduleByKin = function( kin ) {
   });
 };
 
-// spreads to ( user, created )
+// Used by Station Manager (through replaceMediaScheduleLocal)
 var addMediaScheduleLocal = function ( schedule ) {
+  // spreads to ( user, created )
   return mediaSchedule.findOrCreate( { where: { kin: schedule.kin }, defaults: schedule } )
 };
 
+// Used by Station Manager (through replaceMediaScheduleLocal)
 var getMediaScheduleByKinLocal = function ( kin ) {
   return mediaSchedule.findAll( {
     where: {
@@ -29,6 +32,7 @@ var getMediaScheduleByKinLocal = function ( kin ) {
   })
 };
 
+// Used by Station Manager
 var replaceMediaScheduleLocal = function( newSchedule ) {
   // get presentation
   var presentation = newSchedule.schedule.presentation
@@ -36,9 +40,10 @@ var replaceMediaScheduleLocal = function( newSchedule ) {
 
   // add presentation to schedule
   newSchedule.schedule.presentation = presentation.id;
-
-  newSchedule.schedule = JSON.stringify( newSchedule.schedule );
   newSchedule.media_presentation_id = presentation.id;
+
+  // Stringify so that the schedule can be saved to the database
+  newSchedule.schedule = JSON.stringify( newSchedule.schedule );
 
   // find and delete existing media schedule
   return getMediaScheduleByKinLocal( newSchedule.kin )
@@ -49,11 +54,12 @@ var replaceMediaScheduleLocal = function( newSchedule ) {
       return q();
     }
   })
+  // add the new media schedule to replace the deleted one
   .then( function( deletedSchedule ) {
     return addMediaScheduleLocal( newSchedule );
   })
+  // return the media schedule with its specified presentation
   .spread( function( addedSchedule, wasCreated ) {
-    // return the media schedule with its specified presentation
     return mediaPresentation.findAll( { where: { id: presentation.id } } )
     .then( function( presentations ) {
       addedSchedule.dataValues.presentations = presentations;
@@ -65,21 +71,13 @@ var replaceMediaScheduleLocal = function( newSchedule ) {
     throw new Error ( 'failed to replace media schedule', error );
   })
 };
+
 /* END HELPER METHODS */
 
-// NOTE: uses query instead of params
-module.exports = exports = {
-  getAllMediaSchedules: function ( req, res ) {
-    mediaSchedule.findAll()
-    .then( function( schedules ) {
-      res.json( schedules );
-    })
-    .catch(function( error ) {
-      console.log( 'promise blew up', error );
-      res.status( 500 ).send( error );
-    });
-  },
 
+module.exports = exports = {
+
+  // Used by Station Manager
   getAllMediaSchedulesWithPresentations: function( req, res ) {
     mediaSchedule.findAll()
     .then( function( schedules ) {
@@ -113,6 +111,7 @@ module.exports = exports = {
     })
   },
 
+  // Will be used by Station Manager (Isn't currently...)
   deleteMediaSchedule: function( req, res ) {
     var id = req.params.id;
 
@@ -129,12 +128,7 @@ module.exports = exports = {
     });
   },
 
-  // local use only
-  deleteMediaScheduleByKin: deleteMediaScheduleByKin,
-  addMediaScheduleLocal: addMediaScheduleLocal,
-  getMediaScheduleByKinLocal: getMediaScheduleByKinLocal,
-  replaceMediaScheduleLocal: replaceMediaScheduleLocal,
-
+  // Used by Station Manager
   replaceMediaSchedule: function( req, res ) {
     var schedule = req.body;
     var kin = schedule.kin;
@@ -149,11 +143,11 @@ module.exports = exports = {
     });
   },
 
+  // Used my Station Manager
   addMediaSchedule: function ( req, res ) {
     // Validate that a station with same KIN doesn't exist, create it
     mediaSchedule.findOrCreate( { where: { kin: req.body.kin }, defaults: req.body } )
     .spread(function( schedule, created ) {
-      // send boolean
       if( created ) {
         schedule.setMediaPresentations([ schedule.dataValues.schedule.presentation ])
         res.json( { successfullyAddedMediaSchedule: created } );
@@ -166,11 +160,7 @@ module.exports = exports = {
     });
   },
 
-  // [ DEPRECATE ME! ]
-  updateMediaSchedule: function ( req, res ) {
-    updateMediaScheduleHelper( req, res, { where: { kin: req.body.kin } } );
-  },
-
+  // Will be used by Station Manager (Isn't currently...)
   setMediaScheduleSerialNumber: function( req, res ) {
     mediaSchedule.find( { where: { kin: req.body.kin } } )
     .then(function( mediaScheduleToUpdate ) {
@@ -209,6 +199,7 @@ module.exports = exports = {
     });
   },
 
+  // Used by Media Player
   getMediaScheduleBySerialNumber: function( req, res ) {
     var serialNumber = req.params.serialNumber;
 
@@ -231,98 +222,9 @@ module.exports = exports = {
 
   },
 
-  getMediaScheduleByKin: function ( req, res ) {
-    var kin = req.params.kin;
-
-    mediaSchedule.findAll( {
-      where: {
-        kin: kin
-      }
-    })
-    .then( function( schedules ) {
-      if( !schedules ) {
-        throw new Error( 'no schedules' );
-      }
-
-
-      var schedule = JSON.parse( schedules[ 0 ].dataValues.schedule );
-      //test
-      // schedule.forceRefresh = {
-      //   slides: [ 'http://techslides.com/demos/sample-videos/small.webm' ],
-      //   presentations: [ 24 ]
-      // };
-      //end test
-      res.json( schedule );
-    })
-    .catch(function( error ) {
-      console.log( 'promise blew up', error );
-      res.status( 500 ).send( error );
-    });
-  },
-
-  getMediaScheduleWithPresentationSlideURLsForKin: function ( req, res ) {
-    var kin = req.params.kin;
-
-    station.findAll( {
-      where: {
-        kin: kin
-      }
-    })
-    .then(function( stations ) {
-      if( ! stations || stations.length === 0 ) {
-        throw new Error( 'no stations' );
-      }
-      return stations[ 0 ].getMediaSchedule();
-    })
-    .then( function( schedules ) {
-      if( !schedules ) {
-        throw new Error( 'no schedules' );
-      }
-      var schedule = schedules[ 0 ];
-
-      mediaPresentation.findAll( { where: { id: schedule.dataValues.media_presentation_id } } )
-      .then( function( presentations ) {
-        return [ schedule, presentations[ 0 ] ];
-      })
-    })
-    .spread( function( schedule, presentations ) {
-      if( ! presentations ) {
-        if( ! schedule ) {
-          throw new Error( 'no schedule or presentations' );
-        } else {
-          res.json( { schedule: schedule } );
-        }
-      }
-      var calls = [];
-      for( presentation in presentations ) {
-        calls.push( presentation.getMediaSlides );
-      }
-
-      //maintains order in which functions are called, not returned
-      async.parallel(calls, function( error, result ) {
-        if( error ) {
-          console.log( 'async blew up', error );
-          res.status( 500 ).send( error );
-        } else {
-          //got all the things!
-          for( var i=0; i<result.length; i++ ) {
-            var presentation = presentations[ i ];
-            var slides = result[ i ];
-            presentation.slideURLs = slides;
-          }
-          res.json( { schedule: schedule, presentations: presentations } );
-        }
-      });
-      //for each presentation in presentations
-      //  add presentation.getMediaSlides() to presentation object
-      //return schedule and presentations ( each with media slides )
-
-      res.json( presentations );
-    })
-    .catch(function( error ) {
-      console.log( 'promise blew up', error );
-      res.status( 500 ).send( error );
-    });
-  },
-
+  // local use only (other controllers on this server can use these functions)
+  deleteMediaScheduleByKin: deleteMediaScheduleByKin,
+  addMediaScheduleLocal: addMediaScheduleLocal,
+  getMediaScheduleByKinLocal: getMediaScheduleByKinLocal,
+  replaceMediaScheduleLocal: replaceMediaScheduleLocal,
 };

@@ -14,4 +14,7 @@ router.route( '/kinNetwork' )
 router.route( '/kinGrowth' )
   .get( controller.getKinGrowthOverTime );
 
+router.route( '/30Days')
+  .get( controller.get30DaysData );
+
 module.exports = router;

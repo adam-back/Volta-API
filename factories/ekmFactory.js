@@ -3,7 +3,6 @@ var request = require( 'request' );
 var env = process.env.NODE_ENV || 'development';
 var config = require( '../config/config' )[ env ];
 
-// makes things testable
 var http = {
   request: request
 };

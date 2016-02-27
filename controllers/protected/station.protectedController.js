@@ -43,15 +43,6 @@ module.exports = exports = {
       res.status( 500 ).send( error );
     });
   },
-  //Kill switch - DO NOT CHANGE!
-  setStationStatus: function (req, res) {
-    if ( !io ) {
-      var io = require( '../../server' ).io;
-    }
-
-    io.sockets.emit( req.params.kin, { status: req.body } );
-    station.update( req.body, { where: { kin: req.params.kin } } );
-  },
   addStation: function( req, res ) {
     var successfullyAddedStation = false;
     var id;
@@ -100,17 +91,16 @@ module.exports = exports = {
         stationToUpdate[ field ] = newData;
       }
 
-      stationToUpdate.save()
+      return stationToUpdate.save()
       .then(function( successStation ) {
         // default to volta filler media
         var oldMediaSchedule = {};
-
         // new
         if( needToUpdateMediaSchedule ) {
-          mediaSchedule.getMediaScheduleByKinLocal( req.body.kin )
+          return mediaSchedule.getMediaScheduleByKinLocal( req.body.kin )
           .then( function( schedules ) {
             if( schedules.length === 0 ) {
-              return q();
+              return;
             } else {
               var oldMediaSchedule = schedules[ 0 ];
 
@@ -125,16 +115,23 @@ module.exports = exports = {
             }
           })
           .then( function() {
-            res.json( successStation );
+            return successStation;
           })
           .catch( function( error ) {
-            console.log( new Error( 'failed to replace media schedule on station pc serial number change', error ) );
-          })
+            throw new Error( 'Failed to replace media schedule on station pc serial number change:', error );
+          });
         } else {
-          res.json( successStation );
+          return successStation;
         }
-      })
-      .catch(function( error ) {
+      });
+    })
+    .then(function( finalResult ) {
+      res.json( finalResult );
+    })
+    .catch(function( error ) {
+      // this part is confusing
+      // need to trigger error to in order to mock error
+      if ( error.hasOwnProperty( 'fields' ) && error.hasOwnProperty( 'fields' ).length > 0 ) {
         var query = {};
         // get the title that of the colum that errored
         var errorColumn = Object.keys( error.fields );
@@ -152,52 +149,42 @@ module.exports = exports = {
         .catch(function( error ) {
           res.status( 500 ).send( error );
         });
-      });
-    })
-    .catch(function( error ) {
-      res.status( 404 ).send( error );
+      } else {
+        res.status( 500 ).send( error );
+      }
     });
   },
   deleteStation: function( req, res ) {
     // also deletes associated plugs
-    station.find( { where: { kin: req.url.substring(1) } } )
-    .then(function( station ) {
-      // if there is a station with that kin
-      if ( station ) {
+    station.findOne( { where: { kin: req.url.substring(1) } } )
+    .then(function( foundStation ) {
+      // if there is no station with that kin
+      if ( foundStation.length === 0 ) {
+        res.status( 404 ).send( 'Station with that KIN not found in database. Could not be deleted.' );
+      // station found
+      } else {
         // get its plugs
-        return station.getPlugs()
+        return foundStation.getPlugs()
         .then(function( plugs ) {
-          if( plugs ) {
+          if( plugs.length > 0 ) {
             // destroy each plug
-            async.each( plugs, function( plug, cb ) {
-              plug.destroy()
-              .then(function( removedPlug ) {
-                cb( null );
-              })
-              .catch(function( error ) {
-                cb( error );
-              });
-            }, function( error ) {
-              // if error destroying plug
-              if( error ) {
-                throw new Error( error );
-              } else {
-                return void( 0 );
-              }
-            });
+            var destroyPlugs = [];
+            for ( var i = 0; i < plugs.length; i++ ) {
+              destroyPlugs.push( plugs[ i ].destroy() );
+            }
+
+            return Q.all( destroyPlugs );
+          } else {
             return;
           }
         })
         .then(function() {
-          return appSponsorFactory.removeAssociationBetweenStationAndAppSponsors( station );
+          return appSponsorFactory.removeAssociationBetweenStationAndAppSponsors( foundStation );
         });
-      // a station with that kin could not be found
-      } else {
-        res.status( 404 ).send( 'Station with that KIN not found in database. Could not be deleted.' );
       }
     })
-    .then(function( station ) {
-      return station.destroy();
+    .then(function( stationToDestroy ) {
+      return stationToDestroy.destroy();
     })
     .then(function() {
       res.status( 204 ).send();

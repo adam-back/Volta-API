@@ -2,21 +2,15 @@ var express = require( 'express' );
 var router = express.Router();
 var controller = require( '../../controllers/protected/mediaSlide.protectedController.js' );
 
+// Used by Station Manager
 // for http://www.baseurl.com/protected/mediaSlide
 router.route( '/' )
   .get( controller.getAllMediaSlides )
-  .post( controller.addMediaSlide )
-  .patch( controller.updateMediaSlide )
+  .post( controller.addMediaSlide );
 
-// router.route( '/kin/:kin')
-//   .get( controller.getMediaSlidesByKin )
-
+// Will be used by Station Manager in the future
+// for http://www.baseurl.com/protected/mediaSlide/42
 router.route( '/:id')
-	.delete( controller.deleteMediaSlide )
-
-// // for http://www.baseurl.com/plug/42
-// router.route( '/:id' )
-//   .get( controller.getOnePlug )
-//   .delete( controller.deletePlug );
+	.delete( controller.deleteMediaSlide );
 
 module.exports = router;
