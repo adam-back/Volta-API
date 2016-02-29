@@ -94,90 +94,55 @@ exports.kwhByDay = function( station ) {
   });
 };
 
-exports.dataOverThirtyDays = function (argument) {
-  
+exports.dataOverThirtyDays = function() {
   var current = moment();
-  var thirtyDaysAgo = moment().subtract(30, 'days');
-  var query = { where: { time_start: { $gt: thirtyDaysAgo.toDate() } , time_stop: { $ne: null } } };
-  var station_location_query = { where: { location: { $ne: null } } };
+  var thirtyDaysAgo = moment().subtract( 30, 'days' );
   var id = null;
   var totalData = {};
 
-  station.findAll(station_location_query)
-    .then(function (stations) {
+  return station.findAll()
+  .then(function( stations ) {
+    var numberOfStations = stations.length;
+    // create hash of station info
+    for (var i = 0; i < numberOfStations; i ++) {
+      var id = stations[ i ].id;
 
-      for (var i = 0; i < stations.length; i ++) {
-        id = stations[i].id;
+      totalData[ id ] = {
+        id: stations[ i ].id,
+        kin: stations[ i ].kin,
+        network: stations[ i ].network,
+        location: stations[ i ].location,
+        kwh: 0,
+        events: 0,
+        time_spent_charging: 0
+      };
+    }
 
-          totalData[id] = {
-              id: stations[i].id,
-              kin: stations[i].kin,
-              network: stations[i].network,
-              location: stations[i].dataValues.location,
-              kwh: 0,
-              events: 1,
-              first: null,
-              last: null,
-              time_spent_charging: 0
-          }
-
+    // get all closed charge events from the last 30 days
+    return charge_event.findAll( { where: { time_start: { $gt: thirtyDaysAgo.toDate() } , time_stop: { $ne: null } } } );
+  })
+  .then(function ( chargeEvents ) {
+    var numberOfChargeEvents = chargeEvents.length;
+    for (var j = 0; j < numberOfChargeEvents; j ++) {
+      var stationId =  chargeEvents[ j ].dataValues.station_id;
+      // if we have a record of that station
+      if ( totalData[ stationId ] ) {
+        // add to the accumulator
+        totalData[ stationId ].kwh += chargeEvents[ j ].kwh;
+        totalData[ stationId ].events++;
+        var start = moment( chargeEvents[ j ].time_start );
+        var stop = moment( chargeEvents[ j ].time_stop );
+        totalData[ stationId ].time_spent_charging += stop.diff( start, 'minutes' );
       }
+    }
 
-    })
-
-  return charge_event.findAll(query)
-    .then(function (stations) {
-
-      for (var i = 0; i < stations.length; i ++) {
-        id = stations[i].dataValues.station_id;
-        if (totalData[id]) {
-          totalData[id].kwh += stations[i].dataValues.kwh;
-          totalData[id].events ++;
-          totalData[id].last = stations[i].dataValues.kwh;
-          totalData[id].time_spent_charging += (stations[i].time_stop - stations[i].time_start) / 1000 / 60 / 60;
-        }
+    // get rid of bubbles we have no data for
+    for ( var id in totalData ) {
+      if ( totalData[ id ].events === 0 || totalData[ id ].kwh === 0 || totalData[ id ].time_spent_charging === 0 ) {
+        delete totalData[ id ];
       }
+    }
 
-      return totalData;
-    })
-
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+    return totalData;
+  });
+};
