@@ -1,4 +1,3 @@
-var express = require( 'express' );
 var moment = require( 'moment' );
 moment().format();
 var Sequelize = require( 'sequelize' );
