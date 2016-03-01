@@ -6,6 +6,7 @@ var appTests = require( './apiTests/app.protectedController.spec.js' );
 var mediaSlideTests = require( './apiTests/mediaSlide.protectedController.spec.js' );
 var appFavoritesTests = require( './apiTests/appFavorites.protectedController.spec.js' );
 var appUsersTests = require( './apiTests/appUsers.protectedController.spec.js' );
+var D3Tests = require( './apiTests/d3.protectedController.spec.js' );
 
 describe('Private API Routes - protected/', function() {
   var route = '/protected';
@@ -25,4 +26,5 @@ describe('Private API Routes - protected/', function() {
   });
 
   mediaSlideTests();
+  D3Tests();
 });
