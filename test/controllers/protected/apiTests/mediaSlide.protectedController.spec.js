@@ -9,7 +9,7 @@ var createToken = require( '../../../jwtHelper' ).createToken;
 var token = createToken( 5 );
 
 module.exports = function() {
-  describe('MEDIA SLIDE ROUTES', function() {
+  describe('SLIDES', function() {
     describe('mediaSlide', function() {
       var route = '/protected/mediaSlide';
 
