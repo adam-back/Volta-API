@@ -40,6 +40,179 @@ module.exports = function() {
       var route = '/protected/D3/networkSunburst';
 
       describe('GET', function() {
+        var findStations;
+
+        beforeEach(function() {
+          findStations = Q.defer();
+          spyOn( db.station, 'findAll' ).andReturn( findStations.promise );
+        });
+
+        it('should be a defined route (not 404)', function( done ) {
+          findStations.reject();
+          supertest.get( route )
+          .set( 'Authorization', 'Bearer ' + token )
+          .expect(function( res ) {
+            expect( res.statusCode ).not.toBe( 404 );
+          })
+          .end( done );
+        });
+
+        it('should check if data has been memoized or old', function( done ) {
+          controller.memoizedData.sunburst.data = true;
+          spyOn( controller, 'isOld' ).andReturn( false );
+          supertest.get( route )
+          .set( 'Authorization', 'Bearer ' + token )
+          .expect(function( res ) {
+            expect( db.station.findAll ).not.toHaveBeenCalled();
+            expect( controller.isOld ).toHaveBeenCalled();
+            expect( controller.isOld ).toHaveBeenCalledWith( 'sunburst' );
+          })
+          .end( done );
+        });
+
+        it('should return memoized data if data is not old', function( done ) {
+          controller.memoizedData.sunburst.data = true;
+          spyOn( controller, 'isOld' ).andReturn( false );
+          supertest.get( route )
+          .set( 'Authorization', 'Bearer ' + token )
+          .expect( 200 )
+          .expect( 'true' )
+          .end( done );
+        });
+
+        it('should find all stations', function( done ) {
+          findStations.reject();
+          supertest.get( route )
+          .set( 'Authorization', 'Bearer ' + token )
+          .expect(function( res ) {
+            expect( db.station.findAll ).toHaveBeenCalled();
+            expect( db.station.findAll ).toHaveBeenCalledWith( { where: { cumulative_kwh: { $ne: null } }, attributes: [ 'kin', 'cumulative_kwh', 'location_address', 'location', 'network' ], raw: true } );
+          })
+          .end( done );
+        });
+
+        it('should return an object', function( done ) {
+          findStations.resolve();
+          supertest.get( route )
+          .set( 'Authorization', 'Bearer ' + token )
+          .expect(function( res ) {
+            expect( typeof res ).toBe( 'object' );
+            expect( Array.isArray( res ) ).toBe( false );
+          })
+          .end( done );
+        });
+
+        it('should create a tree of unique station data', function( done ) {
+          var stations = [
+            {
+              location_address: '123 Main St., San Francisco, CA 94121',
+              network: 'NoCal',
+              location: 'Home',
+              kin: '1',
+              cumulative_kwh: 2
+            },
+            {
+              location_address: '123 Main St., San Francisco, CA 94121',
+              network: 'NoCal',
+              location: 'Home',
+              kin: '2',
+              cumulative_kwh: 8
+            },
+            {
+              location_address: '1 Michigan Ave., Chicago, IL 22222',
+              network: 'Chicago',
+              location: 'Downdown Chitown',
+              kin: '4',
+              cumulative_kwh: 2.3
+            }
+          ]
+          findStations.resolve( stations );
+          supertest.get( route )
+          .set( 'Authorization', 'Bearer ' + token )
+          .expect(function( res ) {
+            // zero level
+            expect( res.body.hasOwnProperty( 'name' ) ).toBe( true );
+            expect( res.body[ 'name' ] ).toBe( 'Meter kWh' );
+            expect( res.body.hasOwnProperty( 'parent' ) ).toBe( true );
+            expect( res.body.parent ).toBe( null );
+            expect( res.body.hasOwnProperty( 'children' ) ).toBe( true );
+            expect( Array.isArray( res.body.children ) ).toBe( true );
+            expect( res.body.children.length ).toBe( 2 );
+            // first level: networks
+            var networks = res.body.children;
+            expect( networks[ 0 ].name ).toBe( 'NoCal' );
+            expect( networks[ 0 ].parent ).toBe( 'Meter kWh' );
+            expect( networks[ 0 ].hasOwnProperty( 'children' ) ).toBe( true );
+            expect( networks[ 0 ].children.length ).toBe( 1 );
+            // second level: cities
+            var cities = networks[ 0 ].children;
+            expect( cities[ 0 ].name ).toBe( 'San Francisco' );
+            expect( cities[ 0 ].parent ).toBe( 'NoCal' );
+            expect( cities[ 0 ].hasOwnProperty( 'children' ) ).toBe( true );
+            expect( cities[ 0 ].children.length ).toBe( 1 );
+            // third level: locations
+            var locations = cities[ 0 ].children;
+            expect( locations[ 0 ].name ).toBe( 'Home' );
+            expect( locations[ 0 ].parent ).toBe( 'San Francisco' );
+            expect( locations[ 0 ].hasOwnProperty( 'children' ) ).toBe( true );
+            expect( locations[ 0 ].children.length ).toBe( 2 );
+            // third level: stations
+            var stations = locations[ 0 ].children;
+            expect( stations[ 0 ].name ).toBe( '1' );
+            expect( stations[ 0 ].parent ).toBe( 'Home' );
+            expect( stations[ 0 ].hasOwnProperty( 'children' ) ).toBe( false );
+            expect( stations[ 0 ].hasOwnProperty( 'size' ) ).toBe( true );
+            expect( stations[ 0 ].size ).toBe( 2 );
+          })
+          .end( done );
+        });
+
+        it('should convert Chicago network into Chicagoland', function( done ) {
+          var stations = [
+            {
+              location_address: '1 Michigan Ave., Chicago, IL 22222',
+              network: 'Chicago',
+              location: 'Downdown Chitown',
+              kin: '4',
+              cumulative_kwh: 2.3
+            }
+          ];
+          findStations.resolve( stations );
+          supertest.get( route )
+          .set( 'Authorization', 'Bearer ' + token )
+          .expect(function( res ) {
+            // zero level
+            expect( res.body.hasOwnProperty( 'name' ) ).toBe( true );
+            expect( res.body[ 'name' ] ).toBe( 'Meter kWh' );
+            expect( res.body.hasOwnProperty( 'parent' ) ).toBe( true );
+            expect( res.body.parent ).toBe( null );
+            expect( res.body.hasOwnProperty( 'children' ) ).toBe( true );
+            expect( Array.isArray( res.body.children ) ).toBe( true );
+            expect( res.body.children.length ).toBe( 1 );
+            // first level: networks
+            var networks = res.body.children;
+            expect( networks[ 0 ].name ).toBe( 'Chicagoland' );
+            expect( networks[ 0 ].parent ).toBe( 'Meter kWh' );
+            expect( networks[ 0 ].hasOwnProperty( 'children' ) ).toBe( true );
+            expect( networks[ 0 ].children.length ).toBe( 1 );
+            // second level: cities
+            var cities = networks[ 0 ].children;
+            expect( cities[ 0 ].name ).toBe( 'Chicago' );
+            expect( cities[ 0 ].parent ).toBe( 'Chicagoland' );
+            expect( cities[ 0 ].hasOwnProperty( 'children' ) ).toBe( true );
+            expect( cities[ 0 ].children.length ).toBe( 1 );
+          })
+          .end( done );
+        });
+
+        it('should catch and send errors', function( done ) {
+          findStations.reject( 'error' );
+          supertest.get( route )
+          .set( 'Authorization', 'Bearer ' + token )
+          .expect( 500 )
+          .expect( 'error' )
+          .end( done );
+        });
       });
     });
 
@@ -77,7 +250,7 @@ module.exports = function() {
           .end( done );
         });
 
-        it('should return memoized data if data if not old', function( done ) {
+        it('should return memoized data if data is not old', function( done ) {
           controller.memoizedData.kinNetworks.data = true;
           spyOn( controller, 'isOld' ).andReturn( false );
           supertest.get( route )
@@ -157,7 +330,7 @@ module.exports = function() {
           .end( done );
         });
 
-        it('should return memoized data if data if not old', function( done ) {
+        it('should return memoized data if data is not old', function( done ) {
           controller.memoizedData.kwhGrowth.data = true;
           spyOn( controller, 'isOld' ).andReturn( false );
           supertest.get( route )
@@ -237,7 +410,7 @@ module.exports = function() {
           .end( done );
         });
 
-        it('should return memoized data if data if not old', function( done ) {
+        it('should return memoized data if data is not old', function( done ) {
           controller.memoizedData.thirtyDays.data = true;
           spyOn( controller, 'isOld' ).andReturn( false );
           supertest.get( route )

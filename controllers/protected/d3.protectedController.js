@@ -37,7 +37,7 @@ module.exports = exports = {
   getSunburstData: function ( req, res ) {
     if ( exports.memoizedData.sunburst.data === null || exports.isOld( 'sunburst' ) ) {
       // get all the stations which we have data on
-      station.findAll( { where: { cumulative_kwh: { $ne: null } }, attributes: [ 'kin', 'cumulative_kwh', 'location_address', 'location', 'network' ] } )
+      station.findAll( { where: { cumulative_kwh: { $ne: null } }, attributes: [ 'kin', 'cumulative_kwh', 'location_address', 'location', 'network' ], raw: true } )
       .then(function( stations ) {
         var unique = {
           network: {},
