@@ -163,6 +163,60 @@ module.exports = function() {
       var route = '/protected/mediaPresentation/';
 
       describe('GET', function() {
+        var getPresentations;
+
+        beforeEach(function() {
+          route += '1';
+          getPresentations = Q.defer();
+          spyOn( controller, 'getMediaPresentations' ).andReturn( getPresentations.promise );
+        });
+
+        afterEach(function() {
+          route = '/protected/mediaPresentation/';
+        });
+
+        it('should be a defined route (not 404)', function( done ) {
+          getPresentations.reject( new Error ( 'Test' ) );
+          supertest.get( route )
+          .set( 'Authorization', 'Bearer ' + token )
+          .expect(function( res ) {
+            expect( res.statusCode ).not.toBe( 404 );
+          })
+          .end( done );
+        });
+
+        it('should get all media presentations', function( done ) {
+          getPresentations.reject( new Error ( 'Test' ) );
+          supertest.get( route )
+          .set( 'Authorization', 'Bearer ' + token )
+          .expect(function( res ) {
+            expect( controller.getMediaPresentations ).toHaveBeenCalled();
+            expect( controller.getMediaPresentations ).toHaveBeenCalledWith( { where: { id: '1' } }, 'mediaUrl' );
+          })
+          .end( done );
+        });
+
+        it('should resolve 200 formatted presentations', function( done ) {
+          getPresentations.resolve( { key: true } );
+          supertest.get( route )
+          .set( 'Authorization', 'Bearer ' + token )
+          .expect( 200 )
+          .expect( 'Content-Type', /json/ )
+          .expect( { key: true } )
+          .end( done );
+        });
+
+        it('should return 500 failure for error', function( done ) {
+          getPresentations.reject( new Error ( 'Test' ) );
+          supertest.get( route )
+          .set( 'Authorization', 'Bearer ' + token )
+          .expect( 500 )
+          .expect(function( res ) {
+            expect( res.text ).toBe( 'Test' );
+            expect( controller.getMediaPresentations ).toHaveBeenCalled();
+          })
+          .end( done );
+        });
       });
 
       describe('DELETE', function() {

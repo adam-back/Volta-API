@@ -151,7 +151,7 @@ module.exports = exports = {
       res.json( oneMediaPresentation );
     })
     .catch(function( error ) {
-      res.status( 500 ).send( error );
+      res.status( 500 ).send( error.message );
     });
   },
 
