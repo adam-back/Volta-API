@@ -167,12 +167,12 @@ module.exports = exports = {
     }
   },
   get30DaysData: function ( req, res ) {
-    if (exports.memoizedData.thirtyDays.data === null || exports.isOld('thirtyDays')) {
+    if ( exports.memoizedData.thirtyDays.data === null || exports.isOld( 'thirtyDays' ) ) {
       time.dataOverThirtyDays()
-        .then(function ( csv ) {
-          exports.memoizedData.thirtyDays.data = csv;
-          exports.memoizedData.thirtyDays.lastFetch = moment();
-          res.send( csv );
+      .then(function ( csv ) {
+        exports.memoizedData.thirtyDays.data = csv;
+        exports.memoizedData.thirtyDays.lastFetch = moment();
+        res.send( csv );
       })
       .catch(function ( error ) {
         res.status( 500 ).send( error );

@@ -14,7 +14,7 @@ var time = require( '../../../../factories/reports/eventsOverTime.js' );
 var controller = require( '../../../../controllers/protected/d3.protectedController.js' );
 
 module.exports = function() {
-  ddescribe('D3 ROUTES', function() {
+  describe('D3 ROUTES', function() {
     afterEach(function() {
       controller.memoizedData = {
         kinNetworks: {
@@ -207,8 +207,79 @@ module.exports = function() {
       var route = '/protected/D3/30Days';
 
       describe('GET', function() {
-        var get30DaysData = controller.get30DaysData;
+        var get30Days;
 
+        beforeEach(function() {
+          get30Days = Q.defer();
+          spyOn( time, 'dataOverThirtyDays' ).andReturn( get30Days.promise );
+        });
+
+        it('should be a defined route (not 404)', function( done ) {
+          get30Days.reject();
+          supertest.get( route )
+          .set( 'Authorization', 'Bearer ' + token )
+          .expect(function( res ) {
+            expect( res.statusCode ).not.toBe( 404 );
+          })
+          .end( done );
+        });
+
+        it('should check if data has been memoized or old', function( done ) {
+          controller.memoizedData.thirtyDays.data = true;
+          spyOn( controller, 'isOld' ).andReturn( false );
+          supertest.get( route )
+          .set( 'Authorization', 'Bearer ' + token )
+          .expect(function( res ) {
+            expect( time.dataOverThirtyDays ).not.toHaveBeenCalled();
+            expect( controller.isOld ).toHaveBeenCalled();
+            expect( controller.isOld ).toHaveBeenCalledWith( 'thirtyDays' );
+          })
+          .end( done );
+        });
+
+        it('should return memoized data if data if not old', function( done ) {
+          controller.memoizedData.thirtyDays.data = true;
+          spyOn( controller, 'isOld' ).andReturn( false );
+          supertest.get( route )
+          .set( 'Authorization', 'Bearer ' + token )
+          .expect( 200 )
+          .expect( 'true' )
+          .end( done );
+        });
+
+        it('should call dataOverThirtyDays', function( done ) {
+          get30Days.reject();
+          supertest.get( route )
+          .set( 'Authorization', 'Bearer ' + token )
+          .expect(function( res ) {
+            expect( time.dataOverThirtyDays ).toHaveBeenCalled();
+            expect( time.dataOverThirtyDays ).toHaveBeenCalledWith();
+          })
+          .end( done );
+        });
+
+        it('should memoize and return data', function( done ) {
+          get30Days.resolve( 'csv,stuff' );
+          supertest.get( route )
+          .set( 'Authorization', 'Bearer ' + token )
+          .expect( 200 )
+          .expect( 'csv,stuff' )
+          .expect(function( res ) {
+            expect( controller.memoizedData.thirtyDays.data ).toBe( 'csv,stuff' );
+            expect( moment.isMoment( controller.memoizedData.thirtyDays.lastFetch ) ).toBe( true );
+            expect( controller.memoizedData.thirtyDays.lastFetch.fromNow() ).toBe( 'a few seconds ago' );
+          })
+          .end( done );
+        });
+
+        it('should catch and send errors', function( done ) {
+          get30Days.reject( 'error' );
+          supertest.get( route )
+          .set( 'Authorization', 'Bearer ' + token )
+          .expect( 500 )
+          .expect( 'error' )
+          .end( done );
+        });
       });
     });
   });
