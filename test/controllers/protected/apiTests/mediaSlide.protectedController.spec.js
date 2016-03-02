@@ -10,7 +10,7 @@ var token = createToken( 5 );
 
 module.exports = function() {
   describe('SLIDES', function() {
-    describe('mediaSlide', function() {
+    describe('mediaSlide/', function() {
       var route = '/protected/mediaSlide';
 
       describe('GET', function() {
