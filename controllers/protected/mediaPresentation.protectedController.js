@@ -131,18 +131,16 @@ module.exports = exports = {
 
   // Will be used by Station Manager in the future
   deleteMediaPresentation: function( req, res ) {
-    var id = req.params.id;
-    mediaPresentation.destroy({
-      where: {
-        id: id
-      },
-    })
-    .then( function( presentation ) {
-      res.json( presentation );
+    mediaPresentation.destroy( { where: { id: req.params.id } } )
+    .then( function( numberDestroyed ) {
+      if ( numberDestroyed !== 1 ) {
+        throw new Error( 'Wrong number of media presentations destroyed: ' + numberDestroyed );
+      } else {
+        res.json( numberDestroyed );
+      }
     })
     .catch( function( error ) {
-      console.log( error );
-      res.status( 500 ).send( error );
+      res.status( 500 ).send( error.message );
     });
   },
 

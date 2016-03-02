@@ -166,6 +166,83 @@ module.exports = function() {
       });
 
       describe('DELETE', function() {
+        var deletePresentation;
+
+        beforeEach(function() {
+          route += '1';
+          deletePresentation = Q.defer();
+          spyOn( models.media_presentation, 'destroy' ).andReturn( deletePresentation.promise );
+        });
+
+        afterEach(function() {
+          route = '/protected/mediaPresentation/';
+        });
+
+        it('should be a defined route (not 404)', function( done ) {
+          deletePresentation.reject( new Error( 'Test' ) );
+          supertest.delete( route )
+          .set( 'Authorization', 'Bearer ' + token )
+          .expect(function( res ) {
+            expect( res.statusCode ).not.toBe( 404 );
+          })
+          .end( done );
+        });
+
+        it('should destroy on media presentation by id', function( done ) {
+          deletePresentation.reject( new Error( 'Test' ) );
+          supertest.delete( route )
+          .set( 'Authorization', 'Bearer ' + token )
+          .expect(function( res ) {
+            expect( models.media_presentation.destroy ).toHaveBeenCalled();
+            expect( models.media_presentation.destroy ).toHaveBeenCalledWith( { where: { id: '1' } } );
+          })
+          .end( done );
+        });
+
+        it('should resolve the number of presentations destroyed', function( done ) {
+          deletePresentation.resolve( 1 );
+          supertest.delete( route )
+          .set( 'Authorization', 'Bearer ' + token )
+          .expect( 200 )
+          .expect(function( res ) {
+            expect( res.body ).toBe( 1 );
+          })
+          .end( done );
+        });
+
+        it('should throw an error if more than one presentation was destroyed', function( done ) {
+          deletePresentation.resolve( 2 );
+          supertest.delete( route )
+          .set( 'Authorization', 'Bearer ' + token )
+          .expect( 500 )
+          .expect(function( res ) {
+            expect( res.text ).toBe( 'Wrong number of media presentations destroyed: 2' );
+          })
+          .end( done );
+        });
+
+        it('should throw an error if no presentation was destroyed', function( done ) {
+          deletePresentation.resolve( 0 );
+          supertest.delete( route )
+          .set( 'Authorization', 'Bearer ' + token )
+          .expect( 500 )
+          .expect(function( res ) {
+            expect( res.text ).toBe( 'Wrong number of media presentations destroyed: 0' );
+          })
+          .end( done );
+        });
+
+        it('should return 500 failure for error', function( done ) {
+          deletePresentation.reject( new Error( 'Test' ) );
+          supertest.delete( route )
+          .set( 'Authorization', 'Bearer ' + token )
+          .expect( 500 )
+          .expect(function( res ) {
+            expect( res.text ).toBe( 'Test' );
+            expect( models.media_presentation.destroy ).toHaveBeenCalled();
+          })
+          .end( done );
+        });
       });
     });
   });
