@@ -1,100 +1,96 @@
-var request = require( 'request' );
 var mediaPresentation = require( '../../models').media_presentation;
 var mediaSchedule = require( '../../models' ).media_schedule;
 var station = require( '../../models').station;
-var express = require( 'express' );
 var async = require( 'async' );
 
-//DO NOT ALTER, MEDIA PLAYERS IN THE FIELD RELY ON THIS!
-var getMediaPresentations = function( req, res, whereObject, keyToGet ) {
+module.exports = exports = {
+  getMediaPresentations: function( req, res, whereObject, keyToGet ) {
 
-  var receivedPresentations = function( presentations ) {
-    if( !presentations ) {
-      throw new Error( 'No presentations found' );
-    }
-
-    //get slide ids
-    var calls = [];
-    var makeObjectIntoArray = function( obj ) {
-      var array = [];
-      for( var key in obj ) {
-        var contents = {};
-        contents.key = key;
-        contents.contents = obj[ key ];
-        array.push( contents );
+    var receivedPresentations = function( presentations ) {
+      if( !presentations ) {
+        throw new Error( 'No presentations found' );
       }
-      return array;
-    };
 
-    async.each( makeObjectIntoArray( presentations ), function( presentation, callback ) {
-      presentation.contents.getMediaSlides()
-      .then( function( slideData ) {
-        // console.log( 'slideData', slideData );
-
-        var slidesById = {};
-        // var slideIds = [];
-
-        for( var i=0; i<slideData.length; i++ ) {
-          // console.log('slideId: ', slideData[ i ].dataValues[ keyToGet ] );
-          var slideId = slideData[ i ].dataValues.id;
-          var slideValue = slideData[ i ].dataValues[ keyToGet ];
-          // slideIds.push( slideData[ i ].dataValues[ keyToGet ] );
-          slidesById[ slideId ] = slideValue;
+      //get slide ids
+      var calls = [];
+      var makeObjectIntoArray = function( obj ) {
+        var array = [];
+        for( var key in obj ) {
+          var contents = {};
+          contents.key = key;
+          contents.contents = obj[ key ];
+          array.push( contents );
         }
+        return array;
+      };
 
-        // console.log( 'slidesById', slidesById );
+      async.each( makeObjectIntoArray( presentations ), function( presentation, callback ) {
+        presentation.contents.getMediaSlides()
+        .then( function( slideData ) {
+          // console.log( 'slideData', slideData );
 
-        //order the urls
-        var orderedURLs = [];
-        var slideOrder = presentation.contents.dataValues.slide_order;
-        for( var i=0; i<slideOrder.length; i++ ) {
-          var slideId = slideOrder[ i ];
-          if( !slidesById[ slideId ] ) {
-            console.log( 'MISSING SLIDE URL', slideId );
-            throw new Error( 'Slide ' + slideId + ' is missing URL' );
+          var slidesById = {};
+          // var slideIds = [];
+
+          for( var i=0; i<slideData.length; i++ ) {
+            // console.log('slideId: ', slideData[ i ].dataValues[ keyToGet ] );
+            var slideId = slideData[ i ].dataValues.id;
+            var slideValue = slideData[ i ].dataValues[ keyToGet ];
+            // slideIds.push( slideData[ i ].dataValues[ keyToGet ] );
+            slidesById[ slideId ] = slideValue;
           }
 
-          orderedURLs.push( slidesById[ slideId ] );
+          // console.log( 'slidesById', slidesById );
+
+          //order the urls
+          var orderedURLs = [];
+          var slideOrder = presentation.contents.dataValues.slide_order;
+          for( var i=0; i<slideOrder.length; i++ ) {
+            var slideId = slideOrder[ i ];
+            if( !slidesById[ slideId ] ) {
+              console.log( 'MISSING SLIDE URL', slideId );
+              throw new Error( 'Slide ' + slideId + ' is missing URL' );
+            }
+
+            orderedURLs.push( slidesById[ slideId ] );
+          }
+
+          // presentation.contents.dataValues.slideIds = slideIds;
+          presentation.contents.dataValues.slideIds = orderedURLs;
+          callback( null );
+        })
+        .catch( function( error ) {
+          callback( error );
+        });
+      }, function( error ) {
+        if( error ) {
+          console.log( '\n\n', error, '\n\n' );
+          throw new Error( 'Slides are missing' );
+        } else {
+          res.json( presentations );
         }
-
-        // presentation.contents.dataValues.slideIds = slideIds;
-        presentation.contents.dataValues.slideIds = orderedURLs;
-        callback( null );
-      })
-      .catch( function( error ) {
-        callback( error );
       });
-    }, function( error ) {
-      if( error ) {
-        console.log( '\n\n', error, '\n\n' );
-        throw new Error( 'Slides are missing' );
-      } else {
-        res.json( presentations );
-      }
-    });
-  };
+    };
 
-  if( whereObject ) {
-    mediaPresentation.findAll( whereObject )
-    .then( receivedPresentations )
-    .catch( function( error ) {
-      console.log( 'YOU BROKE YOUR PROMISE!', error );
-      res.status( 500 ).send( error );
-    });
-  } else {
-    mediaPresentation.findAll()
-    .then( receivedPresentations )
-    .catch( function( error ) {
-      console.log( 'YOU BROKE YOUR PROMISE!', error );
-      res.status( 500 ).send( error );
-    });
-  }
-};
-
-module.exports = exports = {
+    if( whereObject ) {
+      mediaPresentation.findAll( whereObject )
+      .then( receivedPresentations )
+      .catch( function( error ) {
+        console.log( 'YOU BROKE YOUR PROMISE!', error );
+        res.status( 500 ).send( error );
+      });
+    } else {
+      mediaPresentation.findAll()
+      .then( receivedPresentations )
+      .catch( function( error ) {
+        console.log( 'YOU BROKE YOUR PROMISE!', error );
+        res.status( 500 ).send( error );
+      });
+    }
+  },
   // Used by Station Manager
   getAllMediaPresentations: function ( req, res ) {
-    getMediaPresentations( req, res, null, 'id' );
+    exports.getMediaPresentations( req, res, null, 'id' );
   },
 
   // Used by Station Manager
@@ -148,7 +144,7 @@ module.exports = exports = {
   // Used by Media Player
   getMediaPresentationById: function( req, res ) {
     var id = req.params.id;
-    getMediaPresentations( req, res, {
+    exports.getMediaPresentations( req, res, {
       where: {
         id: id
       }
