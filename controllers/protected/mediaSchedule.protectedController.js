@@ -50,14 +50,13 @@ module.exports = exports = {
   // Used by Station Manager
   replaceMediaSchedule: function( req, res ) {
     var schedule = req.body;
-    var kin = schedule.kin;
 
-    replaceMediaScheduleLocal( schedule )
+    mediaScheduleFactory.replaceMediaScheduleLocal( schedule )
     .then( function( newSchedule ) {
       res.json( newSchedule );
     })
     .catch( function( error ) {
-      res.status( 500 ).send( error );
+      res.status( 500 ).send( error.message );
     });
   },
 
@@ -67,14 +66,15 @@ module.exports = exports = {
     mediaSchedule.findOrCreate( { where: { kin: req.body.kin }, defaults: req.body } )
     .spread(function( schedule, created ) {
       if( created ) {
-        schedule.setMediaPresentations([ schedule.dataValues.schedule.presentation ])
+        var scheduleJSON = JSON.parse( schedule.schedule );
+        schedule.setMediaPresentations( [ scheduleJSON.presentation ] );
         res.json( { successfullyAddedMediaSchedule: created } );
       } else {
-        throw new Error ( 'Schedule already exits for kin ' + req.body.kin );
+        throw new Error ( 'Schedule already exists for kin ' + req.body.kin );
       }
     })
     .catch( function( error ) {
-      res.status( 500 ).send( error );
+      res.status( 500 ).send( error.message );
     });
   },
 
