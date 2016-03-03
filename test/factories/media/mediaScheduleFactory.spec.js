@@ -170,5 +170,109 @@ module.exports = function() {
         });
       });
     });
+
+    describe('replaceMediaScheduleLocal', function() {
+      var replaceMediaScheduleLocal = factory.replaceMediaScheduleLocal;
+      var newSchedule, deleteScheduleByKin, addSchedule, findPresentations;
+
+      beforeEach(function() {
+        newSchedule = { schedule: { day: 'Monday', presentation: { id: 1 } }, kin: '001-0001-001-01-K', serial_number: 'ABC', active: true };
+        getScheduleByKin = Q.defer();
+        deleteScheduleByKin = Q.defer();
+        addSchedule = Q.defer();
+        findPresentations = Q.defer();
+        spyOn( factory, 'deleteMediaScheduleByKin' ).andReturn( deleteScheduleByKin.promise );
+        spyOn( factory, 'addMediaScheduleLocal' ).andReturn( addSchedule.promise );
+        spyOn( models.media_presentation, 'findAll' ).andReturn( findPresentations.promise );
+      });
+
+      it('should be defined as a function', function() {
+        expect( typeof replaceMediaScheduleLocal ).toBe( 'function' );
+      });
+
+      it('should return a promise', function() {
+        var result = replaceMediaScheduleLocal( newSchedule );
+        expect( Q.isPromise( result ) ).toBe( true );
+      });
+
+      it('should delete the existing schedule', function( done ) {
+        deleteScheduleByKin.reject();
+        replaceMediaScheduleLocal( newSchedule )
+        .catch(function() {
+          expect( factory.deleteMediaScheduleByKin ).toHaveBeenCalled();
+          expect( factory.deleteMediaScheduleByKin ).toHaveBeenCalledWith( '001-0001-001-01-K' );
+          done();
+        });
+      });
+
+      it('should add the new media schedule', function( done ) {
+        var scheduleForComparison = JSON.parse( JSON.stringify( newSchedule ) );
+        var presentation = scheduleForComparison.schedule.presentation;
+        delete scheduleForComparison.schedule.presentation;
+
+        // add presentation to schedule
+        scheduleForComparison.schedule.presentation = presentation.id;
+        scheduleForComparison.media_presentation_id = presentation.id;
+
+        // Stringify so that the schedule can be saved to the database
+        scheduleForComparison.schedule = JSON.stringify( scheduleForComparison.schedule );
+
+        deleteScheduleByKin.resolve( 1 );
+        addSchedule.reject();
+        replaceMediaScheduleLocal( newSchedule )
+        .catch(function() {
+          expect( factory.addMediaScheduleLocal ).toHaveBeenCalled();
+          expect( factory.addMediaScheduleLocal ).toHaveBeenCalledWith( scheduleForComparison );
+          done();
+        });
+      });
+
+      it('should find all presentations by id', function( done ) {
+        deleteScheduleByKin.resolve( 1 );
+        addSchedule.resolve( [ null, true ] );
+        findPresentations.reject();
+        replaceMediaScheduleLocal( newSchedule )
+        .catch(function() {
+          expect( models.media_presentation.findAll ).toHaveBeenCalled();
+          expect( models.media_presentation.findAll ).toHaveBeenCalledWith( { where: { id: 1 } } );
+          done();
+        });
+      });
+
+      it('should return added schedule with presentations attached', function( done ) {
+        deleteScheduleByKin.resolve( 1 );
+        var schedule = {
+          id: 2,
+          get: function() {
+            return void( 0 );
+          }
+        };
+        spyOn( schedule, 'get' ).andReturn( { id: 2 } );
+        addSchedule.resolve( [ schedule, true ] );
+        findPresentations.resolve( [ 1, 2, 3 ] );
+        replaceMediaScheduleLocal( newSchedule )
+        .then(function( result ) {
+          expect( schedule.get ).toHaveBeenCalled();
+          expect( schedule.get ).toHaveBeenCalledWith( { plain: true } );
+          expect( typeof result ).toBe( 'object' );
+          expect( result.id ).toBe( 2 );
+          expect( result.presentations ).toEqual( [ 1, 2, 3 ] );
+          done();
+        })
+        .catch(function( error ) {
+          expect( error ).not.toBeDefined();
+          done();
+        });
+      });
+
+      it('should propagate errors', function( done ) {
+        deleteScheduleByKin.reject( new Error( 'Test' ) );
+        replaceMediaScheduleLocal( newSchedule )
+        .catch(function( error ) {
+          expect( error ).toEqual( new Error( 'Test' ) );
+          done();
+        });
+      });
+    });
   });
 };

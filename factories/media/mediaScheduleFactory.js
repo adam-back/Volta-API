@@ -32,24 +32,19 @@ exports.replaceMediaScheduleLocal = function( newSchedule ) {
   newSchedule.schedule = JSON.stringify( newSchedule.schedule );
 
   // find and delete existing media schedule
-  return exports.getMediaScheduleByKinLocal( newSchedule.kin )
-  .then( function( schedule ) {
-    if( schedule ) {
-      return exports.deleteMediaScheduleByKin( newSchedule.kin );
-    } else {
-      return Q();
-    }
-  })
+
+  return exports.deleteMediaScheduleByKin( newSchedule.kin )
   // add the new media schedule to replace the deleted one
-  .then( function( deletedSchedule ) {
+  .then( function( numberDeleted ) {
     return exports.addMediaScheduleLocal( newSchedule );
   })
   // return the media schedule with its specified presentation
   .spread( function( addedSchedule, wasCreated ) {
     return mediaPresentation.findAll( { where: { id: presentation.id } } )
     .then( function( presentations ) {
-      addedSchedule.dataValues.presentations = presentations;
-      return addedSchedule.dataValues;
+      var rawAddedSchedule = addedSchedule.get( { plain: true } );
+      rawAddedSchedule.presentations = presentations;
+      return rawAddedSchedule;
     });
   });
 };
