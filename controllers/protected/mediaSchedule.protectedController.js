@@ -2,9 +2,7 @@ var request = require( 'request' );
 var mediaPresentation = require( '../../models').media_presentation;
 var mediaSchedule = require( '../../models' ).media_schedule;
 var station = require( '../../models').station;
-var express = require( 'express' );
-var async     = require( 'async' );
-var q = require( 'q');
+var Q = require( 'q' );
 
 /* HELPER METHODS */
 
@@ -20,7 +18,7 @@ var deleteMediaScheduleByKin = function( kin ) {
 // Used by Station Manager (through replaceMediaScheduleLocal)
 var addMediaScheduleLocal = function ( schedule ) {
   // spreads to ( user, created )
-  return mediaSchedule.findOrCreate( { where: { kin: schedule.kin }, defaults: schedule } )
+  return mediaSchedule.findOrCreate( { where: { kin: schedule.kin }, defaults: schedule } );
 };
 
 // Used by Station Manager (through replaceMediaScheduleLocal)
@@ -29,13 +27,13 @@ var getMediaScheduleByKinLocal = function ( kin ) {
     where: {
       kin: kin
     }
-  })
+  });
 };
 
 // Used by Station Manager
 var replaceMediaScheduleLocal = function( newSchedule ) {
   // get presentation
-  var presentation = newSchedule.schedule.presentation
+  var presentation = newSchedule.schedule.presentation;
   delete newSchedule.schedule.presentation;
 
   // add presentation to schedule
@@ -51,7 +49,7 @@ var replaceMediaScheduleLocal = function( newSchedule ) {
     if( schedule ) {
       return deleteMediaScheduleByKin( newSchedule.kin );
     } else {
-      return q();
+      return Q();
     }
   })
   // add the new media schedule to replace the deleted one
@@ -79,52 +77,43 @@ module.exports = exports = {
 
   // Used by Station Manager
   getAllMediaSchedulesWithPresentations: function( req, res ) {
-    mediaSchedule.findAll()
+    mediaSchedule.findAll( { raw: true } )
     .then( function( schedules ) {
-      var presentationPromises = [];
-
-      mediaPresentation.findAll()
+      return mediaPresentation.findAll( { raw: true } )
       .then( function( presentations ) {
         // convert presentations array to hash table where id is key
         var presentationsHash = {};
-        for( var i=0; i< presentations.length; i++ ) {
+        for( var i = 0; i < presentations.length; i++ ) {
           var presentation = presentations[ i ];
           presentationsHash[ presentation.id ] = presentation;
         }
 
-        for( var i=0; i<schedules.length; i++ ) {
-          var presentationID = schedules[ i ].dataValues.media_presentation_id;
-          schedules[ i ].dataValues.presentations = [ presentationsHash[ presentationID ] ];
+        for( var j = 0; j < schedules.length; j++ ) {
+          var presentationID = schedules[ j ].media_presentation_id;
+          // every schedule has one presentation (1-* relationship)
+          schedules[ j ].presentations = [ presentationsHash[ presentationID ] ];
         }
 
         res.json( schedules );
-      })
-      .catch( function( error ) {
-        console.log( '\n\n getAllMediaSchedulesWithPresentations - error', error, '\n\n' );
-        throw error;
       });
-
     })
     .catch( function( error ) {
-      console.log( 'getAllMediaSchedulesWithPresentations - failed to getAllMediaSchedulesWithPresentations', error );
-      res.status( 500 ).send( error );
-    })
+      res.status( 500 ).send( error.message );
+    });
   },
 
   // Will be used by Station Manager (Isn't currently...)
   deleteMediaSchedule: function( req, res ) {
-    var id = req.params.id;
-
-    mediaSchedule.destroy({
-      where: {
-        id: id
+    mediaSchedule.destroy( { where: { id: req.params.id } } )
+    .then( function( numberDestroyed ) {
+      if ( numberDestroyed !== 1 ) {
+        throw new Error( 'Wrong number of media schedules destroyed: ' + numberDestroyed );
+      } else {
+        res.json( numberDestroyed );
       }
     })
-    .then( function( schedule ) {
-      res.json( schedule );
-    })
     .catch( function( error ) {
-      res.status( 500 ).send( error );
+      res.status( 500 ).send( error.message );
     });
   },
 

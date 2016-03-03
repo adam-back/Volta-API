@@ -1,64 +1,48 @@
-var request = require( 'request' );
 var mediaPresentation = require( '../../models').media_presentation;
 var mediaSchedule = require( '../../models' ).media_schedule;
 var station = require( '../../models').station;
-var express = require( 'express' );
 var async = require( 'async' );
+var Q = require( 'q' );
 
-//DO NOT ALTER, MEDIA PLAYERS IN THE FIELD RELY ON THIS!
-var getMediaPresentations = function( req, res, whereObject, keyToGet ) {
+module.exports = exports = {
+  formatMediaSlidesForPresentations: function( presentations, keyToGet ) {
+    var deferred = Q.defer();
+    var completedPlainPresentations = [];
 
-  var receivedPresentations = function( presentations ) {
-    if( !presentations ) {
-      throw new Error( 'No presentations found' );
+    if( Array.isArray( presentations ) === false || presentations.length === 0 ) {
+      deferred.reject( 'No presentations found' );
     }
 
-    //get slide ids
-    var calls = [];
-    var makeObjectIntoArray = function( obj ) {
-      var array = [];
-      for( var key in obj ) {
-        var contents = {};
-        contents.key = key;
-        contents.contents = obj[ key ];
-        array.push( contents );
-      }
-      return array;
-    };
-
-    async.each( makeObjectIntoArray( presentations ), function( presentation, callback ) {
-      presentation.contents.getMediaSlides()
+    // loop over presentations
+    async.each( presentations, function( presentation, callback ) {
+      // get media slides for each presentation
+      presentation.getMediaSlides()
       .then( function( slideData ) {
-        // console.log( 'slideData', slideData );
-
+        var plainPresentation = presentation.get( { plain: true } );
         var slidesById = {};
-        // var slideIds = [];
 
-        for( var i=0; i<slideData.length; i++ ) {
-          // console.log('slideId: ', slideData[ i ].dataValues[ keyToGet ] );
-          var slideId = slideData[ i ].dataValues.id;
-          var slideValue = slideData[ i ].dataValues[ keyToGet ];
-          // slideIds.push( slideData[ i ].dataValues[ keyToGet ] );
+        // make id: value pair from each slide based on whatever field is specifed by keyToGet
+        for( var i = 0; i < slideData.length; i++ ) {
+          var slideId = slideData[ i ][ 'id' ];
+          var slideValue = slideData[ i ][ keyToGet ];
           slidesById[ slideId ] = slideValue;
         }
 
-        // console.log( 'slidesById', slidesById );
-
-        //order the urls
-        var orderedURLs = [];
-        var slideOrder = presentation.contents.dataValues.slide_order;
-        for( var i=0; i<slideOrder.length; i++ ) {
-          var slideId = slideOrder[ i ];
+        // order the { slideId: field } objects by presentation.slide_order
+        var orderedSlides = [];
+        var slideOrder = presentation.slide_order;
+        for( var j = 0; j < slideOrder.length; j++ ) {
+          var slideId = slideOrder[ j ];
           if( !slidesById[ slideId ] ) {
-            console.log( 'MISSING SLIDE URL', slideId );
             throw new Error( 'Slide ' + slideId + ' is missing URL' );
           }
 
-          orderedURLs.push( slidesById[ slideId ] );
+          orderedSlides.push( slidesById[ slideId ] );
         }
 
-        // presentation.contents.dataValues.slideIds = slideIds;
-        presentation.contents.dataValues.slideIds = orderedURLs;
+        // could actually be slideIds or slideUrls, depending on what keyToGet is
+        plainPresentation.slideIds = orderedSlides;
+        completedPlainPresentations.push( plainPresentation );
         callback( null );
       })
       .catch( function( error ) {
@@ -66,35 +50,31 @@ var getMediaPresentations = function( req, res, whereObject, keyToGet ) {
       });
     }, function( error ) {
       if( error ) {
-        console.log( '\n\n', error, '\n\n' );
-        throw new Error( 'Slides are missing' );
+        deferred.reject( 'Slides are missing.' );
       } else {
-        res.json( presentations );
+        deferred.resolve( completedPlainPresentations );
       }
     });
-  };
 
-  if( whereObject ) {
-    mediaPresentation.findAll( whereObject )
-    .then( receivedPresentations )
-    .catch( function( error ) {
-      console.log( 'YOU BROKE YOUR PROMISE!', error );
-      res.status( 500 ).send( error );
-    });
-  } else {
-    mediaPresentation.findAll()
-    .then( receivedPresentations )
-    .catch( function( error ) {
-      console.log( 'YOU BROKE YOUR PROMISE!', error );
-      res.status( 500 ).send( error );
-    });
-  }
-};
+    return deferred.promise;
+  },
+  getMediaPresentations: function( whereObject, keyToGet ) {
+    var query = whereObject || {};
 
-module.exports = exports = {
+    return mediaPresentation.findAll( query )
+    .then(function( mediaPresentations ) {
+      return exports.formatMediaSlidesForPresentations( mediaPresentations, keyToGet );
+    });
+  },
   // Used by Station Manager
   getAllMediaPresentations: function ( req, res ) {
-    getMediaPresentations( req, res, null, 'id' );
+    exports.getMediaPresentations( null, 'id' )
+    .then(function( formattedPresentations ) {
+      res.json( formattedPresentations );
+    })
+    .catch(function( error ) {
+      res.status( 500 ).send( error );
+    });
   },
 
   // Used by Station Manager
@@ -120,39 +100,48 @@ module.exports = exports = {
           mediaSlideIds.push( req.body.mediaSlides[ i ].id );
         }
 
-        presentation.addMediaSlides( mediaSlideIds );
+        return presentation.addMediaSlides( mediaSlideIds )
+        .then(function() {
+          return Q( created );
+        });
+      } else {
+        return Q( created );
       }
 
+    })
+    .then(function( wasCreated ) {
       // send boolean
-      res.json( { successfullyAddedmediaPresentation: created } );
+      res.json( { successfullyAddedmediaPresentation: wasCreated } );
+    })
+    .catch(function( error ) {
+      res.status( 500 ).send( error );
     });
   },
 
   // Will be used by Station Manager in the future
   deleteMediaPresentation: function( req, res ) {
-    var id = req.params.id;
-    mediaPresentation.destroy({
-      where: {
-        id: id
-      },
-    })
-    .then( function( presentation ) {
-      res.json( presentation );
+    mediaPresentation.destroy( { where: { id: req.params.id } } )
+    .then( function( numberDestroyed ) {
+      if ( numberDestroyed !== 1 ) {
+        throw new Error( 'Wrong number of media presentations destroyed: ' + numberDestroyed );
+      } else {
+        res.json( numberDestroyed );
+      }
     })
     .catch( function( error ) {
-      console.log( error );
-      res.status( 500 ).send( error );
+      res.status( 500 ).send( error.message );
     });
   },
 
   // Used by Media Player
   getMediaPresentationById: function( req, res ) {
-    var id = req.params.id;
-    getMediaPresentations( req, res, {
-      where: {
-        id: id
-      }
-    }, 'mediaUrl' );
+    exports.getMediaPresentations( { where: { id: req.params.id } }, 'mediaUrl' )
+    .then(function( oneMediaPresentation ) {
+      res.json( oneMediaPresentation );
+    })
+    .catch(function( error ) {
+      res.status( 500 ).send( error.message );
+    });
   },
 
   // getMediaPresentationsWithSlides
