@@ -1,4 +1,3 @@
-var request = require( 'request' );
 var mediaPresentation = require( '../../models').media_presentation;
 var mediaSchedule = require( '../../models' ).media_schedule;
 var station = require( '../../models').station;
