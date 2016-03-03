@@ -1,76 +1,7 @@
 var mediaPresentation = require( '../../models').media_presentation;
 var mediaSchedule = require( '../../models' ).media_schedule;
 var station = require( '../../models').station;
-var Q = require( 'q' );
-
-/* HELPER METHODS */
-
-// Used by Station Manager (through replaceMediaScheduleLocal)
-var deleteMediaScheduleByKin = function( kin ) {
-  return mediaSchedule.destroy({
-    where: {
-      kin: kin
-    }
-  });
-};
-
-// Used by Station Manager (through replaceMediaScheduleLocal)
-var addMediaScheduleLocal = function ( schedule ) {
-  // spreads to ( user, created )
-  return mediaSchedule.findOrCreate( { where: { kin: schedule.kin }, defaults: schedule } );
-};
-
-// Used by Station Manager (through replaceMediaScheduleLocal)
-var getMediaScheduleByKinLocal = function ( kin ) {
-  return mediaSchedule.findAll( {
-    where: {
-      kin: kin
-    }
-  });
-};
-
-// Used by Station Manager
-var replaceMediaScheduleLocal = function( newSchedule ) {
-  // get presentation
-  var presentation = newSchedule.schedule.presentation;
-  delete newSchedule.schedule.presentation;
-
-  // add presentation to schedule
-  newSchedule.schedule.presentation = presentation.id;
-  newSchedule.media_presentation_id = presentation.id;
-
-  // Stringify so that the schedule can be saved to the database
-  newSchedule.schedule = JSON.stringify( newSchedule.schedule );
-
-  // find and delete existing media schedule
-  return getMediaScheduleByKinLocal( newSchedule.kin )
-  .then( function( schedule ) {
-    if( schedule ) {
-      return deleteMediaScheduleByKin( newSchedule.kin );
-    } else {
-      return Q();
-    }
-  })
-  // add the new media schedule to replace the deleted one
-  .then( function( deletedSchedule ) {
-    return addMediaScheduleLocal( newSchedule );
-  })
-  // return the media schedule with its specified presentation
-  .spread( function( addedSchedule, wasCreated ) {
-    return mediaPresentation.findAll( { where: { id: presentation.id } } )
-    .then( function( presentations ) {
-      addedSchedule.dataValues.presentations = presentations;
-      return addedSchedule.dataValues;
-    })
-  })
-  .catch( function( error ) {
-    console.log( '\n\n ERROR', error );
-    throw new Error ( 'failed to replace media schedule', error );
-  })
-};
-
-/* END HELPER METHODS */
-
+var mediaScheduleFactory = require( '../../factories/media/mediaScheduleFactory' );
 
 module.exports = exports = {
 
@@ -126,7 +57,6 @@ module.exports = exports = {
       res.json( newSchedule );
     })
     .catch( function( error ) {
-      console.log( 'failed to replaceMediaSchedule', error );
       res.status( 500 ).send( error );
     });
   },
@@ -204,15 +134,8 @@ module.exports = exports = {
       res.json( schedules );
     })
     .catch(function( error ) {
-      console.log( 'promise blew up in getMediaScheduleBySerialNumber', error );
       res.status( 500 ).send( error );
     });
 
-  },
-
-  // local use only (other controllers on this server can use these functions)
-  deleteMediaScheduleByKin: deleteMediaScheduleByKin,
-  addMediaScheduleLocal: addMediaScheduleLocal,
-  getMediaScheduleByKinLocal: getMediaScheduleByKinLocal,
-  replaceMediaScheduleLocal: replaceMediaScheduleLocal,
+  }
 };

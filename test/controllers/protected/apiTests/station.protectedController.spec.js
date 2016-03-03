@@ -8,7 +8,7 @@ var station = require( '../../../../models' ).station;
 var plug = require( '../../../../models' ).plug;
 var schedule = require( '../../../../models' ).media_schedule;
 var appSponsorFactory = require( '../../../../factories/appSponsorFactory' );
-var mediaSchedule = require( '../../../../controllers/protected/mediaSchedule.protectedController.js' );
+var mediaScheduleFactory = require( '../../../../factories/media/mediaScheduleFactory.js' );
 var createToken = require( '../../../jwtHelper' ).createToken;
 var token = createToken( 5 );
 
@@ -169,8 +169,8 @@ module.exports = function() {
           replaceMediaSchedule = Q.defer();
           spyOn( station, 'find' ).andReturn( findStation.promise );
           spyOn( stationToUpdate, 'save' ).andReturn( stationSave.promise );
-          spyOn( mediaSchedule, 'getMediaScheduleByKinLocal' ).andReturn( getMediaSchedule.promise );
-          spyOn( mediaSchedule, 'replaceMediaScheduleLocal' ).andReturn( replaceMediaSchedule.promise );
+          spyOn( mediaScheduleFactory, 'getMediaScheduleByKinLocal' ).andReturn( getMediaSchedule.promise );
+          spyOn( mediaScheduleFactory, 'replaceMediaScheduleLocal' ).andReturn( replaceMediaSchedule.promise );
         });
 
         it('should be a defined route (not 404)', function( done ) {
@@ -221,8 +221,8 @@ module.exports = function() {
             .expect(function( res ) {
               stationToUpdate.location = 'home';
               expect( res.body ).toEqual( stationToUpdate.get( { plain: true } ) );
-              expect( mediaSchedule.getMediaScheduleByKinLocal ).not.toHaveBeenCalled();
-              expect( mediaSchedule.replaceMediaScheduleLocal ).not.toHaveBeenCalled();
+              expect( mediaScheduleFactory.getMediaScheduleByKinLocal ).not.toHaveBeenCalled();
+              expect( mediaScheduleFactory.replaceMediaScheduleLocal ).not.toHaveBeenCalled();
             })
             .end( done );
           });
@@ -241,8 +241,8 @@ module.exports = function() {
             .set( 'Authorization', 'Bearer ' + token )
             .send( body )
             .expect(function( res ) {
-              expect( mediaSchedule.getMediaScheduleByKinLocal ).toHaveBeenCalled();
-              expect( mediaSchedule.getMediaScheduleByKinLocal ).toHaveBeenCalledWith( '001-0001-001-01-K' );
+              expect( mediaScheduleFactory.getMediaScheduleByKinLocal ).toHaveBeenCalled();
+              expect( mediaScheduleFactory.getMediaScheduleByKinLocal ).toHaveBeenCalledWith( '001-0001-001-01-K' );
             })
             .end( done );
           });
@@ -260,7 +260,7 @@ module.exports = function() {
               stationToUpdate.location = 'home';
               stationToUpdate.front_display_pc_serial_number = 'A';
               expect( res.body ).toEqual( stationToUpdate.get( { plain: true } ) );
-              expect( mediaSchedule.replaceMediaScheduleLocal ).not.toHaveBeenCalled();
+              expect( mediaScheduleFactory.replaceMediaScheduleLocal ).not.toHaveBeenCalled();
             })
             .end( done );
           });
@@ -277,11 +277,11 @@ module.exports = function() {
             .expect( 200 )
             .expect( 'Content-Type', /json/ )
             .expect(function( res ) {
-              expect( mediaSchedule.replaceMediaScheduleLocal ).toHaveBeenCalled();
+              expect( mediaScheduleFactory.replaceMediaScheduleLocal ).toHaveBeenCalled();
               // instead of toHaveBeenCalledWith()
-              expect( mediaSchedule.replaceMediaScheduleLocal.calls[ 0 ].args[ 0 ].hasOwnProperty( 'id' ) ).toBe( false );
-              expect( mediaSchedule.replaceMediaScheduleLocal.calls[ 0 ].args[ 0 ].hasOwnProperty( 'deleted_at' ) ).toBe( false );
-              expect( mediaSchedule.replaceMediaScheduleLocal.calls[ 0 ].args[ 0 ].serial_number ).toBe( 'A' );
+              expect( mediaScheduleFactory.replaceMediaScheduleLocal.calls[ 0 ].args[ 0 ].hasOwnProperty( 'id' ) ).toBe( false );
+              expect( mediaScheduleFactory.replaceMediaScheduleLocal.calls[ 0 ].args[ 0 ].hasOwnProperty( 'deleted_at' ) ).toBe( false );
+              expect( mediaScheduleFactory.replaceMediaScheduleLocal.calls[ 0 ].args[ 0 ].serial_number ).toBe( 'A' );
               stationToUpdate.location = 'home';
               stationToUpdate.front_display_pc_serial_number = 'A';
               expect( res.body ).toEqual( stationToUpdate.get( { plain: true } ) );

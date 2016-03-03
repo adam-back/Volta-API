@@ -4,7 +4,7 @@ var app_sponsor = require( '../../models' ).app_sponsor;
 var express = require( 'express' );
 var async     = require( 'async' );
 var appSponsorFactory = require( '../../factories/appSponsorFactory' );
-var mediaSchedule = require( './mediaSchedule.protectedController.js' );
+var mediaScheduleFactory = require( '../../factories/media/mediaScheduleFactory.js' );
 var q = require( 'q' );
 
 module.exports = exports = {
@@ -97,7 +97,7 @@ module.exports = exports = {
         var oldMediaSchedule = {};
         // new
         if( needToUpdateMediaSchedule ) {
-          return mediaSchedule.getMediaScheduleByKinLocal( req.body.kin )
+          return mediaScheduleFactory.getMediaScheduleByKinLocal( req.body.kin )
           .then( function( schedules ) {
             if( schedules.length === 0 ) {
               return;
@@ -111,7 +111,7 @@ module.exports = exports = {
               // update front_display_pc_serial_number
               newMediaSchedule.serial_number = stationToUpdate.front_display_pc_serial_number;
 
-              return mediaSchedule.replaceMediaScheduleLocal( newMediaSchedule );
+              return mediaScheduleFactory.replaceMediaScheduleLocal( newMediaSchedule );
             }
           })
           .then( function() {
