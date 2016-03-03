@@ -7,53 +7,42 @@ var Q = require( 'q' );
 module.exports = exports = {
   formatMediaSlidesForPresentations: function( presentations, keyToGet ) {
     var deferred = Q.defer();
+    var completedPlainPresentations = [];
 
-    if( !presentations ) {
+    if( Array.isArray( presentations ) === false || presentations.length === 0 ) {
       deferred.reject( 'No presentations found' );
     }
 
-    //get slide ids
-    var calls = [];
-    var makeObjectIntoArray = function( obj ) {
-      var array = [];
-      for( var key in obj ) {
-        var contents = {};
-        contents.key = key;
-        contents.contents = obj[ key ];
-        array.push( contents );
-      }
-      return array;
-    };
-
     // loop over presentations
-    async.each( makeObjectIntoArray( presentations ), function( presentation, callback ) {
+    async.each( presentations, function( presentation, callback ) {
       // get media slides for each presentation
-      presentation.contents.getMediaSlides()
+      presentation.getMediaSlides()
       .then( function( slideData ) {
+        var plainPresentation = presentation.get( { plain: true } );
         var slidesById = {};
 
-        // make id: value pair from each slide
-        for( var i=0; i<slideData.length; i++ ) {
-          var slideId = slideData[ i ].dataValues.id;
-          var slideValue = slideData[ i ].dataValues[ keyToGet ];
-          // slideIds.push( slideData[ i ].dataValues[ keyToGet ] );
+        // make id: value pair from each slide based on whatever field is specifed by keyToGet
+        for( var i = 0; i < slideData.length; i++ ) {
+          var slideId = slideData[ i ][ 'id' ];
+          var slideValue = slideData[ i ][ keyToGet ];
           slidesById[ slideId ] = slideValue;
         }
 
-        //order the urls
-        var orderedURLs = [];
-        var slideOrder = presentation.contents.dataValues.slide_order;
-        for( var i=0; i<slideOrder.length; i++ ) {
-          var slideId = slideOrder[ i ];
+        // order the { slideId: field } objects by presentation.slide_order
+        var orderedSlides = [];
+        var slideOrder = presentation.slide_order;
+        for( var j = 0; j < slideOrder.length; j++ ) {
+          var slideId = slideOrder[ j ];
           if( !slidesById[ slideId ] ) {
             throw new Error( 'Slide ' + slideId + ' is missing URL' );
           }
 
-          orderedURLs.push( slidesById[ slideId ] );
+          orderedSlides.push( slidesById[ slideId ] );
         }
 
-        // presentation.contents.dataValues.slideIds = slideIds;
-        presentation.contents.dataValues.slideIds = orderedURLs;
+        // could actually be slideIds or slideUrls, depending on what keyToGet is
+        plainPresentation.slideIds = orderedSlides;
+        completedPlainPresentations.push( plainPresentation );
         callback( null );
       })
       .catch( function( error ) {
@@ -63,7 +52,7 @@ module.exports = exports = {
       if( error ) {
         deferred.reject( 'Slides are missing.' );
       } else {
-        deferred.resolve( presentations );
+        deferred.resolve( completedPlainPresentations );
       }
     });
 
