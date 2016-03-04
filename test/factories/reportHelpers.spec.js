@@ -2,9 +2,11 @@ var reportHelpers = require( '../../factories/reportHelpers.js' );
 var Q = require( 'q' );
 var db = require( '../../models/index.js' );
 var csv = require( '../../factories/csvFactory.js' );
+var moment = require( 'moment' );
+moment().format();
 
 module.exports = function() {
-  describe('reportHelpers.js', function() {
+  ddescribe('reportHelpers.js', function() {
     describe('orderByKin', function() {
       var orderByKin = reportHelpers.orderByKin;
       var collectionOfStations;
@@ -49,6 +51,30 @@ module.exports = function() {
 
       it('should return a median for an even number of inputs', function() {
         expect( findMedian( [ 1, 2, 3, 4 ] ) ).toBe( 2.5 );
+      });
+    });
+
+    describe('calculateChargeEventDuration', function() {
+      var calculateChargeEventDuration = reportHelpers.calculateChargeEventDuration;
+      var chargeEvent;
+
+      beforeEach(function() {
+        chargeEvent = {
+          time_start: moment().subtract( 23, 'minutes' ).toDate(),
+          time_stop: moment().toDate()
+        };
+      });
+
+      it('should be defined as a function', function() {
+        expect( typeof calculateChargeEventDuration ).toBe( 'function' );
+      });
+
+      it('should return a number', function() {
+        expect( typeof calculateChargeEventDuration( chargeEvent ) ).toBe( 'number' );
+      });
+
+      it('should return number of minutes spent charging', function() {
+        expect( calculateChargeEventDuration( chargeEvent ) ).toBe( 23 );
       });
     });
 
