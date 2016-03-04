@@ -6,7 +6,7 @@ var plug = require( '../models').plug;
 var charge_event = require( '../models').charge_event;
 var async     = require( 'async' );
 var ekm = require( './ekmFactory.js' );
-var csv = require( './csvFactory')
+var csv = require( './csvFactory');
 
 exports.orderByKin = function( collection ) {
   collection.sort(function( a, b ) {
@@ -27,10 +27,12 @@ exports.findMedian = function( collection ) {
 
   var half = Math.floor( collection.length / 2 );
 
+  // if odd numbered length
   if( collection.length % 2 ) {
     return collection[ half ];
+  // even numbered
   } else {
-    return ( collection[ half - 1 ] + collection[ half ] ) / 2.0;
+    return ( collection[ half - 1 ] + collection[ half ] ) / 2;
   }
 };
 

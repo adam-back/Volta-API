@@ -5,6 +5,53 @@ var csv = require( '../../factories/csvFactory.js' );
 
 module.exports = function() {
   describe('reportHelpers.js', function() {
+    describe('orderByKin', function() {
+      var orderByKin = reportHelpers.orderByKin;
+      var collectionOfStations;
+
+      beforeEach(function(  ) {
+        collectionOfStations = [ { kin: '001-0002-001-01-K' }, { kin: '001-0001-001-02-K' }, { kin: '001-0001-001-01-K' } ];
+      });
+
+      it('should be defined as a function', function() {
+        expect( typeof orderByKin ).toBe( 'function' );
+      });
+
+      it('should return an array', function() {
+        expect( typeof orderByKin( collectionOfStations ) ).toBe( 'object' );
+        expect( Array.isArray( orderByKin( collectionOfStations ) ) ).toBe( true );
+      });
+
+      it('should sort kins alphabetically', function() {
+        expect( orderByKin( collectionOfStations ) ).toEqual( [ { kin: '001-0001-001-01-K' }, { kin: '001-0001-001-02-K' }, { kin: '001-0002-001-01-K' } ] );
+      });
+
+      it('should force everything to lowercase, then compare', function() {
+        collectionOfStations[ 2 ].kin = '001-0001-001-01-k';
+        expect( orderByKin( collectionOfStations ) ).toEqual( [ { kin: '001-0001-001-01-k' }, { kin: '001-0001-001-02-K' }, { kin: '001-0002-001-01-K' } ] );
+      });
+    });
+
+    describe('findMedian', function() {
+      var findMedian = reportHelpers.findMedian;
+
+      it('should be defined as a function', function() {
+        expect( typeof findMedian ).toBe( 'function' );
+      });
+
+      it('should return a number', function() {
+        expect( typeof findMedian( [ 1, 2, 3 ] ) ).toBe( 'number' );
+      });
+
+      it('should return a median for an odd number of inputs', function() {
+        expect( findMedian( [ 1, 2, 3 ] ) ).toBe( 2 );
+      });
+
+      it('should return a median for an even number of inputs', function() {
+        expect( findMedian( [ 1, 2, 3, 4 ] ) ).toBe( 2.5 );
+      });
+    });
+
     describe('standardizeNetworkInfo', function() {
       var standardizeNetworkInfo = reportHelpers.standardizeNetworkInfo;
       var stations;
