@@ -6,7 +6,7 @@ var moment = require( 'moment' );
 moment().format();
 
 module.exports = function() {
-  ddescribe('reportHelpers.js', function() {
+  describe('reportHelpers.js', function() {
     describe('orderByKin', function() {
       var orderByKin = reportHelpers.orderByKin;
       var collectionOfStations;
