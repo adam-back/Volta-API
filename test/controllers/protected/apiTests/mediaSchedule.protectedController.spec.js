@@ -9,7 +9,7 @@ var createToken = require( '../../../jwtHelper' ).createToken;
 var token = createToken( 5 );
 
 module.exports = function() {
-  ddescribe('SCHEDULES', function() {
+  describe('SCHEDULES', function() {
     describe('mediaSchedules/', function() {
       var route = '/protected/mediaSchedule';
 
@@ -302,7 +302,65 @@ module.exports = function() {
 
     describe('mediaSchedule/serial/:serialNumber', function() {
       var route = '/protected/mediaSchedule/serial/1';
+
       describe('GET', function() {
+        var findSchedule;
+
+        beforeEach(function() {
+          findSchedule = Q.defer();
+          spyOn( models.media_schedule, 'findAll' ).andReturn( findSchedule.promise );
+        });
+
+        it('should be a defined route (not 404)', function( done ) {
+          findSchedule.reject( new Error( 'Test' ) );
+          supertest.get( route )
+          .set( 'Authorization', 'Bearer ' + token )
+          .expect(function( res ) {
+            expect( res.statusCode ).not.toBe( 404 );
+          })
+          .end( done );
+        });
+
+        it('should findAll schedules by serial number', function( done ) {
+          findSchedule.resolve( [ 1 ] );
+          supertest.get( route )
+          .set( 'Authorization', 'Bearer ' + token )
+          .expect(function( res ) {
+            expect( models.media_schedule.findAll ).toHaveBeenCalled();
+            expect( models.media_schedule.findAll ).toHaveBeenCalledWith( { where: { serial_number: '1' } } );
+          })
+          .end( done );
+        });
+
+        it('should return JSON of schedules', function( done ) {
+          findSchedule.resolve( [ 1, 'schedule' ] );
+          supertest.get( route )
+          .set( 'Authorization', 'Bearer ' + token )
+          .expect( 200 )
+          .expect( 'Content-Type', /json/ )
+          .expect( [ 1, 'schedule' ] )
+          .end( done );
+        });
+
+        it('should throw an error if no schedules were found', function( done ) {
+          findSchedule.resolve( [] );
+          supertest.get( route )
+          .set( 'Authorization', 'Bearer ' + token )
+          .expect( 500 )
+          .expect( 'No schedules for serialNumber 1' )
+          .expect( 'Content-Type', /text/ )
+          .end( done );
+        });
+
+        it('should return 500 failure for error', function( done ) {
+          findSchedule.reject( new Error( 'Test' ) );
+          supertest.get( route )
+          .set( 'Authorization', 'Bearer ' + token )
+          .expect( 500 )
+          .expect( 'Test' )
+          .expect( 'Content-Type', /text/ )
+          .end( done );
+        });
       });
 
       describe('POST', function() {
@@ -331,7 +389,7 @@ module.exports = function() {
           .end( done );
         });
 
-        it('should find one media scheduled by kin', function( done ) {
+        it('should find one media schedules by kin', function( done ) {
           findSchedule.reject( new Error( 'Test' ) );
           supertest.post( route )
           .set( 'Authorization', 'Bearer ' + token )
@@ -352,7 +410,7 @@ module.exports = function() {
           .expect(function( res ) {
             expect( foundSchedule.save ).toHaveBeenCalled();
             expect( foundSchedule.save ).toHaveBeenCalledWith();
-            expect( foundSchedule.changed( 'schedule' ) ).toBe( true )
+            expect( foundSchedule.changed( 'schedule' ) ).toBe( true );
             expect( foundSchedule.schedule ).toBe( 'changes' );
           })
           .end( done );

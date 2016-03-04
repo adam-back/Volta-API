@@ -88,7 +88,6 @@ module.exports = exports = {
           var newData = req.body.changes[ i ][ 2 ];
           mediaScheduleToUpdate[ field ] = newData;
         }
-        console.log( 'mediaScheduleToUpdate', mediaScheduleToUpdate );
         return mediaScheduleToUpdate.save();
       } else {
         throw new Error( 'No Media Schedule found for kin ' + req.body.kin );
@@ -110,20 +109,20 @@ module.exports = exports = {
   getMediaScheduleBySerialNumber: function( req, res ) {
     var serialNumber = req.params.serialNumber;
 
-    mediaSchedule.findAll( {
+    mediaSchedule.findAll({
       where: {
         serial_number: serialNumber
       }
     })
-    .then( function( schedules ) {
-      if( !schedules ) {
-        throw new Error( 'no schedules for serialNumber', serialNumber );
+    .then(function( schedules ) {
+      if( schedules.length === 0 ) {
+        throw new Error( 'No schedules for serialNumber ' + serialNumber );
+      } else {
+        res.json( schedules );
       }
-
-      res.json( schedules );
     })
     .catch(function( error ) {
-      res.status( 500 ).send( error );
+      res.status( 500 ).send( error.message );
     });
 
   }
