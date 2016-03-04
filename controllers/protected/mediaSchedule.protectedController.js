@@ -80,40 +80,29 @@ module.exports = exports = {
 
   // Will be used by Station Manager (Isn't currently...)
   setMediaScheduleSerialNumber: function( req, res ) {
-    mediaSchedule.find( { where: { kin: req.body.kin } } )
+    mediaSchedule.findOne( { where: { kin: req.body.kin } } )
     .then(function( mediaScheduleToUpdate ) {
-      for ( var i = 0; i < req.body.changes.length; i++ ) {
-        var field = req.body.changes[ i ][ 0 ];
-        var newData = req.body.changes[ i ][ 2 ];
-        mediaScheduleToUpdate[ field ] = newData;
+      if ( mediaScheduleToUpdate ) {
+        for ( var i = 0; i < req.body.changes.length; i++ ) {
+          var field = req.body.changes[ i ][ 0 ];
+          var newData = req.body.changes[ i ][ 2 ];
+          mediaScheduleToUpdate[ field ] = newData;
+        }
+        console.log( 'mediaScheduleToUpdate', mediaScheduleToUpdate );
+        return mediaScheduleToUpdate.save();
+      } else {
+        throw new Error( 'No Media Schedule found for kin ' + req.body.kin );
       }
-
-      mediaScheduleToUpdate.save()
-      .then(function( successmediaSchedule ) {
-        res.json( successmediaSchedule );
-      })
-      .catch(function( error ) {
-        var query = {};
-        // get the title that of the colum that errored
-        var errorColumn = Object.keys( error.fields );
-        // get the value that errored
-        var duplicateValue = error.fields[ errorColumn ];
-        query[ errorColumn ] = duplicateValue;
-
-        // where conflicting key, value
-        mediaSchedule.find( { where: query } )
-        .then(function( duplicatemediaSchedule ) {
-          error.duplicatemediaSchedule = duplicatemediaSchedule;
-          // 409 = conflict
-          res.status( 409 ).send( error );
-        })
-        .catch(function( error ) {
-          res.status( 500 ).send( error );
-        });
-      });
+    })
+    .then(function( successmediaSchedule ) {
+      res.json( successmediaSchedule );
     })
     .catch(function( error ) {
-      res.status( 404 ).send( error );
+      if ( error.message.match( /No Media Schedule/ ) !== null ) {
+        res.status( 404 ).send( error.message );
+      } else {
+        res.status( 500 ).send( error.message );
+      }
     });
   },
 

@@ -301,10 +301,99 @@ module.exports = function() {
     });
 
     describe('mediaSchedule/serial/:serialNumber', function() {
+      var route = '/protected/mediaSchedule/serial/1';
       describe('GET', function() {
       });
 
       describe('POST', function() {
+        var body, findSchedule, foundSchedule, saveSchedule;
+
+        beforeEach(function() {
+          body = {
+            changes: [ [ 'schedule', null, 'changes' ] ],
+            kin: '001-0001-001-01-K'
+          };
+          findSchedule = Q.defer();
+          foundSchedule = models.media_schedule.build( { kin: '001-0001-001-01-K' } );
+          saveSchedule = Q.defer();
+          spyOn( models.media_schedule, 'findOne' ).andReturn( findSchedule.promise );
+          spyOn( foundSchedule, 'save' ).andReturn( saveSchedule.promise );
+        });
+
+        it('should be a defined route (not 404)', function( done ) {
+          findSchedule.reject( new Error( 'Test' ) );
+          supertest.post( route )
+          .set( 'Authorization', 'Bearer ' + token )
+          .send( body )
+          .expect(function( res ) {
+            expect( res.statusCode ).not.toBe( 404 );
+          })
+          .end( done );
+        });
+
+        it('should find one media scheduled by kin', function( done ) {
+          findSchedule.reject( new Error( 'Test' ) );
+          supertest.post( route )
+          .set( 'Authorization', 'Bearer ' + token )
+          .send( body )
+          .expect(function( res ) {
+            expect( models.media_schedule.findOne ).toHaveBeenCalled();
+            expect( models.media_schedule.findOne ).toHaveBeenCalledWith( { where: { kin: '001-0001-001-01-K' } } );
+          })
+          .end( done );
+        });
+
+        it('should update media schedule and save changes', function( done ) {
+          findSchedule.resolve( foundSchedule );
+          saveSchedule.reject( new Error( 'Test' ) );
+          supertest.post( route )
+          .set( 'Authorization', 'Bearer ' + token )
+          .send( body )
+          .expect(function( res ) {
+            expect( foundSchedule.save ).toHaveBeenCalled();
+            expect( foundSchedule.save ).toHaveBeenCalledWith();
+            expect( foundSchedule.changed( 'schedule' ) ).toBe( true )
+            expect( foundSchedule.schedule ).toBe( 'changes' );
+          })
+          .end( done );
+        });
+
+        it('should resolve JSON of updated schedule', function( done ) {
+          findSchedule.resolve( foundSchedule );
+          saveSchedule.resolve( foundSchedule );
+          supertest.post( route )
+          .set( 'Authorization', 'Bearer ' + token )
+          .send( body )
+          .expect( 200 )
+          .expect( 'Content-Type', /json/ )
+          .expect(function( res ) {
+            expect( res.body.schedule ).toBe( 'changes' );
+            expect( res.body.kin ).toBe( '001-0001-001-01-K' );
+          })
+          .end( done );
+        });
+
+        it('should return 500 failure for error', function( done ) {
+          findSchedule.reject( new Error( 'Test' ) );
+          supertest.post( route )
+          .set( 'Authorization', 'Bearer ' + token )
+          .send( body )
+          .expect( 500 )
+          .expect( 'Test' )
+          .expect( 'Content-Type', /text/ )
+          .end( done );
+        });
+
+        it('should return 404 if no schedule found by kin', function( done ) {
+          findSchedule.resolve( null );
+          supertest.post( route )
+          .set( 'Authorization', 'Bearer ' + token )
+          .send( body )
+          .expect( 404 )
+          .expect( 'No Media Schedule found for kin 001-0001-001-01-K' )
+          .expect( 'Content-Type', /text/ )
+          .end( done );
+        });
       });
     });
   });
