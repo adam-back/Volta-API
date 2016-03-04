@@ -122,9 +122,9 @@ exports.countChargesAndDuration = function( chargeEvents ) {
   // median duration of charge event
   data.medianDurationOfEvent = Math.round( exports.findMedian( chargeDurations ) );
   // average kWh of charge event
-  data.averageKwhOfEvent = Math.round( totalKwh / chargeKwh.length );
+  data.averageKwhOfEvent = Number( ( totalKwh / chargeKwh.length ).toFixed( 1 ) );
   // median kWh of charge event
-  data.medianKwhOfEvent = Math.round( exports.findMedian( chargeKwh ) );
+  data.medianKwhOfEvent = Number( exports.findMedian( chargeKwh ).toFixed( 1 ) );
 
   return data;
 };

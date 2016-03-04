@@ -119,6 +119,108 @@ module.exports = function() {
       });
     });
 
+    describe('countChargesAndDuration', function() {
+      var countChargesAndDuration = reportHelpers.countChargesAndDuration;
+
+      var chargeEvents = [
+        {
+          time_start: new Date( 'Mon Feb 29 2016 16:00:00 GMT-0800 (PST)' ),
+          time_stop: new Date( 'Mon Feb 29 2016 16:35:00 GMT-0800 (PST)' ),
+          // 35 mins
+          kwh: 12.3
+        },
+        {
+          time_start: new Date( 'Mon Feb 29 2016 17:00:00 GMT-0800 (PST)' ),
+          time_stop: new Date( 'Mon Feb 29 2016 17:18:00 GMT-0800 (PST)' ),
+          // 18 mins
+          kwh: 5.1
+        },
+        {
+          time_start: new Date( 'Tue Mar 01 2016 15:33:00 GMT-0800 (PST)' ),
+          time_stop: new Date( 'Tue Mar 01 2016 16:33:00 GMT-0800 (PST)' ),
+          // 60 mins
+          kwh: 2.2
+        },
+        {
+          time_start: new Date( 'Fri Mar 04 2016 16:30:00 GMT-0800 (PST)' ),
+          time_stop: new Date( 'Fri Mar 04 2016 17:33:00 GMT-0800 (PST)' ),
+          // 63 mins
+          kwh: 1.2
+        }
+      ];
+
+      it('should be defined as a function', function() {
+        expect( typeof countChargesAndDuration ).toBe( 'function' );
+      });
+
+      it('should throw an error if passed no charge events', function() {
+        expect( function() { countChargesAndDuration(); } ).toThrow();
+      });
+
+      it('should return an object', function() {
+        expect( typeof countChargesAndDuration( chargeEvents ) ).toBe( 'object' );
+        expect( Array.isArray( countChargesAndDuration( chargeEvents ) ) ).toBe( false );
+      });
+
+      it('should call calculateChargeEventDuration', function() {
+        spyOn( reportHelpers, 'calculateChargeEventDuration' ).andCallThrough();
+        countChargesAndDuration( chargeEvents );
+        expect( reportHelpers.calculateChargeEventDuration.calls.length ).toBe( 4 );
+      });
+
+      describe('should calculate', function() {
+        var result = countChargesAndDuration( chargeEvents );
+
+        it('totalChargeEventDays', function() {
+          expect( result.hasOwnProperty( 'totalChargeEventDays' ) ).toBe( true );
+          expect( typeof result.totalChargeEventDays ).toBe( 'number' );
+          expect( result.totalChargeEventDays ).toBe( 3 );
+        });
+
+        it('cumulativeKwh', function() {
+          expect( result.hasOwnProperty( 'cumulativeKwh' ) ).toBe( true );
+          expect( typeof result.cumulativeKwh ).toBe( 'number' );
+          expect( result.cumulativeKwh ).toBe( 20.8 );
+        });
+
+        it('averageChargeEventsPerDay', function() {
+          expect( result.hasOwnProperty( 'averageChargeEventsPerDay' ) ).toBe( true );
+          expect( typeof result.averageChargeEventsPerDay ).toBe( 'number' );
+          expect( result.averageChargeEventsPerDay ).toBe( 1 );
+        });
+
+        it('medianChargeEventsPerDay', function() {
+          expect( result.hasOwnProperty( 'medianChargeEventsPerDay' ) ).toBe( true );
+          expect( typeof result.medianChargeEventsPerDay ).toBe( 'number' );
+          expect( result.medianChargeEventsPerDay ).toBe( 2 );
+        });
+
+        it('averageDurationOfEvent', function() {
+          expect( result.hasOwnProperty( 'averageDurationOfEvent' ) ).toBe( true );
+          expect( typeof result.averageDurationOfEvent ).toBe( 'number' );
+          expect( result.averageDurationOfEvent ).toBe( 44 );
+        });
+
+        it('medianDurationOfEvent', function() {
+          expect( result.hasOwnProperty( 'medianDurationOfEvent' ) ).toBe( true );
+          expect( typeof result.medianDurationOfEvent ).toBe( 'number' );
+          expect( result.medianDurationOfEvent ).toBe( 48 );
+        });
+
+        it('averageKwhOfEvent', function() {
+          expect( result.hasOwnProperty( 'averageKwhOfEvent' ) ).toBe( true );
+          expect( typeof result.averageKwhOfEvent ).toBe( 'number' );
+          expect( result.averageKwhOfEvent ).toBe( 5.2 );
+        });
+
+        it('medianKwhOfEvent', function() {
+          expect( result.hasOwnProperty( 'medianKwhOfEvent' ) ).toBe( true );
+          expect( typeof result.medianKwhOfEvent ).toBe( 'number' );
+          expect( result.medianKwhOfEvent ).toBe( 3.6 );
+        });
+      });
+    });
+
     describe('standardizeNetworkInfo', function() {
       var standardizeNetworkInfo = reportHelpers.standardizeNetworkInfo;
       var stations;
