@@ -78,6 +78,47 @@ module.exports = function() {
       });
     });
 
+    describe('convertKwhToConsumerEquivalents', function() {
+      var convertKwhToConsumerEquivalents = reportHelpers.convertKwhToConsumerEquivalents;
+
+      it('should be defined as a function', function() {
+        expect( typeof convertKwhToConsumerEquivalents ).toBe( 'function' );
+      });
+
+      it('should return an object', function() {
+        expect( typeof convertKwhToConsumerEquivalents( 12.3 ) ).toBe( 'object' );
+        expect( Array.isArray( convertKwhToConsumerEquivalents( 12.3 ) ) ).toBe( false );
+      });
+
+      describe('should calculate', function() {
+        var result = convertKwhToConsumerEquivalents( 12.3 );
+
+        it('CO2 offset', function() {
+          expect( result.hasOwnProperty( 'offset' ) ).toBe( true );
+          expect( typeof result.offset ).toBe( 'number' );
+          expect( result.offset ).toBe( 18.7 );
+        });
+
+        it('gallons of gas saved', function() {
+          expect( result.hasOwnProperty( 'gallons' ) ).toBe( true );
+          expect( typeof result.gallons ).toBe( 'number' );
+          expect( result.gallons ).toBe( 0.9 );
+        });
+
+        it('trees planted', function() {
+          expect( result.hasOwnProperty( 'trees' ) ).toBe( true );
+          expect( typeof result.trees ).toBe( 'number' );
+          expect( result.trees ).toBe( 0.2 );
+        });
+
+        it('equivalent eV miles driven', function() {
+          expect( result.hasOwnProperty( 'miles' ) ).toBe( true );
+          expect( typeof result.miles ).toBe( 'number' );
+          expect( result.miles ).toBe( 43.1 );
+        });
+      });
+    });
+
     describe('standardizeNetworkInfo', function() {
       var standardizeNetworkInfo = reportHelpers.standardizeNetworkInfo;
       var stations;
