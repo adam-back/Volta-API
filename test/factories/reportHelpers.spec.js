@@ -221,6 +221,32 @@ module.exports = function() {
       });
     });
 
+    describe('getBrokenPlugs', function() {
+      var getBrokenPlugs = reportHelpers.getBrokenPlugs;
+      var findPlugs, findStation;
+
+      beforeEach(function() {
+        findPlugs = Q.defer();
+        findStation = Q.defer();
+        spyOn( db.plug, 'findAll' ).andReturn( findPlugs.promise );
+        spyOn( db.station, 'findOne' ).andReturn( findPlugs.promise );
+      });
+
+      it('should be defined as a function', function() {
+        expect( typeof getBrokenPlugs ).toBe( 'function' );
+      });
+
+      it('should find all plugs', function( done ) {
+        findPlugs.reject();
+        getBrokenPlugs()
+        .catch(function() {
+          expect( db.plug.findAll ).toHaveBeenCalled();
+          expect( db.plug.findAll ).toHaveBeenCalledWith( { where: { meter_status: 'error', ekm_omnimeter_serial: { $ne: null } }, raw: true });
+          done();
+        });
+      });
+    });
+
     describe('standardizeNetworkInfo', function() {
       var standardizeNetworkInfo = reportHelpers.standardizeNetworkInfo;
       var stations;

@@ -134,7 +134,7 @@ exports.getBrokenPlugs = function () {
   var broken = [];
 
   // find all the plugs where there is an omnimeter and the meter status is error
-  plug.findAll( { where: { meter_status: 'error', ekm_omnimeter_serial: { $ne: null } } } )
+  plug.findAll( { where: { meter_status: 'error', ekm_omnimeter_serial: { $ne: null } }, raw: true } )
   .then(function( plugs ) {
     //for each one of the plugs
     async.each(plugs, function( plug, cb ) {
@@ -149,17 +149,21 @@ exports.getBrokenPlugs = function () {
         ekm_url: null
       };
       // get the station
-      station.find( { where: { id: plug.station_id } } )
+      station.findOne( { where: { id: plug.station_id }, raw: true } )
       .then(function( stationAssociatedWithPlug ) {
-        data.kin = stationAssociatedWithPlug.kin;
-        data.location = stationAssociatedWithPlug.location;
-        data.location_address = stationAssociatedWithPlug.location_address;
-        data.network = stationAssociatedWithPlug.network;
-        data.ekm_push_mac = stationAssociatedWithPlug.ekm_push_mac;
-        data.ekm_url = ekm.makeMeterUrl( plug.ekm_omnimeter_serial );
+        if ( stationAssociatedWithPlug ) {
+          data.kin = stationAssociatedWithPlug.kin;
+          data.location = stationAssociatedWithPlug.location;
+          data.location_address = stationAssociatedWithPlug.location_address;
+          data.network = stationAssociatedWithPlug.network;
+          data.ekm_push_mac = stationAssociatedWithPlug.ekm_push_mac;
+          data.ekm_url = ekm.makeMeterUrl( plug.ekm_omnimeter_serial );
 
-        broken.push( data );
-        cb( null );
+          broken.push( data );
+          cb( null );
+        } else {
+          throw new Error( 'No station for plug id ' + plug.id );
+        }
       })
       .catch(function( error ) {
         cb( error );
