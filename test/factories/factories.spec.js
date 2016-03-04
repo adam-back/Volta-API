@@ -3,6 +3,7 @@ var appFactoryTests = require( './appFactory.spec.js' );
 var csvFactoryTests = require( './csvFactory.spec.js' );
 var distanceFactoryTests = require( './distanceFactory.spec.js' );
 var ekmFactoryTests = require( './ekmFactory.spec.js' );
+var jwtFactoryTests = require( './jwtFactory.spec.js' );
 var geocodeCacheTests = require( './geocodeCache.spec.js' );
 var reportHelpersTests = require( './reportHelpers.spec.js' );
 var eventsOverTimeTests = require( './reports/eventsOverTime.spec.js' );
@@ -30,6 +31,7 @@ describe('Factories', function() {
     csvFactoryTests();
     ekmFactoryTests();
     distanceFactoryTests();
+    jwtFactoryTests();
   });
 
 });
