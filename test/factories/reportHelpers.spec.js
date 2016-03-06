@@ -8,7 +8,7 @@ var async = require( 'async' );
 var ekmFactory = require( '../../factories/ekmFactory.js' );
 
 module.exports = function() {
-  ddescribe('reportHelpers.js', function() {
+  describe('reportHelpers.js', function() {
     describe('orderByKin', function() {
       var orderByKin = reportHelpers.orderByKin;
       var collectionOfStations;
@@ -404,9 +404,210 @@ module.exports = function() {
 
     describe('chargesOverLastThirtyDaysForOneStation', function() {
       var chargesOverLastThirtyDaysForOneStation = reportHelpers.chargesOverLastThirtyDaysForOneStation;
+      var findChargeEvents;
+      var station1 = {
+        id: 1,
+        kin: '001-0001-001-01-K',
+        location: 'Home'
+      };
+      var averagesAndMedians = {
+        totalChargeEvents: 1,
+        firstChargeEvent: 2,
+        totalChargeEventDays: 3,
+        cumulativeKwh: 4,
+        averageChargeEventsPerDay: 5,
+        medianChargeEventsPerDay: 6,
+        averageDurationOfEvent: 7,
+        medianDurationOfEvent: 8,
+        averageKwhOfEvent: 9,
+        medianKwhOfEvent: 10
+      };
+      var conversions = {
+        offset: 11,
+        miles: 14,
+        trees: 13,
+        gallons: 12
+      };
+
+      beforeEach(function() {
+        findChargeEvents = Q.defer();
+        spyOn( db.charge_event, 'findAll' ).andReturn( findChargeEvents.promise );
+        spyOn( reportHelpers, 'countChargesAndDuration' ).andReturn( averagesAndMedians );
+        spyOn( reportHelpers, 'convertKwhToConsumerEquivalents' ).andReturn( conversions );
+      });
 
       it('should be defined as a function', function() {
         expect( typeof chargesOverLastThirtyDaysForOneStation ).toBe( 'function' );
+      });
+
+      it('should return a promise', function( done ) {
+        var result = chargesOverLastThirtyDaysForOneStation( station1 );
+        expect( Q.isPromise( result ) ).toBe( true );
+        done();
+      });
+
+      it('should find all charge events for last 30 days', function( done ) {
+        findChargeEvents.reject();
+        chargesOverLastThirtyDaysForOneStation( station1 )
+        .catch(function() {
+          expect( db.charge_event.findAll ).toHaveBeenCalled();
+          expect( db.charge_event.findAll.calls[ 0 ].args[ 0 ].hasOwnProperty( 'where' ) ).toBe( true );
+          expect( db.charge_event.findAll.calls[ 0 ].args[ 0 ].where.station_id ).toBe( 1 );
+          // can't really test date directly
+          expect( db.charge_event.findAll.calls[ 0 ].args[ 0 ].where.time_start[ '$gt' ] ).toBeDefined();
+          expect( db.charge_event.findAll.calls[ 0 ].args[ 0 ].where.time_stop[ '$ne' ] ).toBe( null );
+          expect( db.charge_event.findAll.calls[ 0 ].args[ 0 ].hasOwnProperty( 'raw' ) ).toBe( true );
+          expect( db.charge_event.findAll.calls[ 0 ].args[ 0 ].raw ).toBe( true );
+          expect( db.charge_event.findAll.calls[ 0 ].args[ 0 ].hasOwnProperty( 'order' ) ).toBe( true );
+          expect( db.charge_event.findAll.calls[ 0 ].args[ 0 ].order ).toEqual( [ [ 'time_start', 'ASC' ] ] );
+          done();
+        });
+      });
+
+      it('should make various calcs and return object for CSV', function( done ) {
+        var oneEvent = { time_start: moment().toDate() };
+        findChargeEvents.resolve( [ oneEvent ] );
+        chargesOverLastThirtyDaysForOneStation( station1 )
+        .then(function( result ) {
+          expect( typeof result ).toBe( 'object' );
+          expect( Array.isArray( result ) ).toBe( false );
+          expect( reportHelpers.countChargesAndDuration ).toHaveBeenCalled();
+          expect( reportHelpers.countChargesAndDuration ).toHaveBeenCalledWith( [ oneEvent ] );
+          expect( reportHelpers.convertKwhToConsumerEquivalents ).toHaveBeenCalled();
+          expect( reportHelpers.convertKwhToConsumerEquivalents ).toHaveBeenCalledWith( 4 );
+          expect( result.hasOwnProperty( 'kin' ) ).toBe( true );
+          expect( result.hasOwnProperty( 'location' ) ).toBe( true );
+          expect( result.hasOwnProperty( 'since' ) ).toBe( true );
+          // cumulative kWh
+          expect( result.hasOwnProperty( 'kWh' ) ).toBe( true );
+          expect( result.hasOwnProperty( 'carbon' ) ).toBe( true );
+          expect( result.hasOwnProperty( 'miles' ) ).toBe( true );
+          expect( result.hasOwnProperty( 'trees' ) ).toBe( true );
+          expect( result.hasOwnProperty( 'gallons' ) ).toBe( true );
+          // charge events
+          expect( result.hasOwnProperty( 'numberOfCharges' ) ).toBe( true );
+          expect( result.hasOwnProperty( 'averageChargeEventsPerDay' ) ).toBe( true );
+          expect( result.hasOwnProperty( 'medianChargeEventsPerDay' ) ).toBe( true );
+          expect( result.hasOwnProperty( 'averageDurationOfEvent' ) ).toBe( true );
+          expect( result.hasOwnProperty( 'medianDurationOfEvent' ) ).toBe( true );
+          // Average kwh per event
+          expect( result.hasOwnProperty( 'averageKwhOfEvent' ) ).toBe( true );
+          expect( result.hasOwnProperty( 'averageCarbonPerEvent' ) ).toBe( true );
+          expect( result.hasOwnProperty( 'averageMilesPerEvent' ) ).toBe( true );
+          expect( result.hasOwnProperty( 'averageTreesPerEvent' ) ).toBe( true );
+          expect( result.hasOwnProperty( 'averageGallonsPerEvent' ) ).toBe( true );
+          // Median kwh per event
+          expect( result.hasOwnProperty( 'medianKwhOfEvent' ) ).toBe( true );
+          expect( result.hasOwnProperty( 'medianCarbonPerEvent' ) ).toBe( true );
+          expect( result.hasOwnProperty( 'medianMilesPerEvent' ) ).toBe( true );
+          expect( result.hasOwnProperty( 'medianTreesPerEvent' ) ).toBe( true );
+          expect( result.hasOwnProperty( 'medianGallonsPerEvent' ) ).toBe( true );
+
+          expect( result.kin ).toBe( '001-0001-001-01-K' );
+          expect( result.location ).toBe( 'Home' );
+          expect( result.since ).toBe( moment().format( 'MMM D, YYYY' ) );
+          // cumulative kWh
+          expect( result.kWh ).toBe( 4 );
+          expect( result.carbon ).toBe( 11 );
+          expect( result.miles ).toBe( 14 );
+          expect( result.trees ).toBe( 13 );
+          expect( result.gallons ).toBe( 12 );
+          // charge events
+          expect( result.numberOfCharges ).toBe( 1 );
+          expect( result.averageChargeEventsPerDay ).toBe( 5 );
+          expect( result.medianChargeEventsPerDay ).toBe( 6 );
+          expect( result.averageDurationOfEvent ).toBe( 7 );
+          expect( result.medianDurationOfEvent ).toBe( 8 );
+          // Average kwh per event
+          expect( result.averageKwhOfEvent ).toBe( 9 );
+          expect( result.averageCarbonPerEvent ).toBe( 11 );
+          expect( result.averageMilesPerEvent ).toBe( 14 );
+          expect( result.averageTreesPerEvent ).toBe( 13 );
+          expect( result.averageGallonsPerEvent ).toBe( 12 );
+          // Median kwh per event
+          expect( result.medianKwhOfEvent ).toBe( 10 );
+          expect( result.medianCarbonPerEvent ).toBe( 11 );
+          expect( result.medianMilesPerEvent ).toBe( 14 );
+          expect( result.medianTreesPerEvent ).toBe( 13 );
+          expect( result.medianGallonsPerEvent ).toBe( 12 );
+          done();
+        })
+        .catch(function( error ) {
+          expect( error ).not.toBeDefined();
+          done();
+        });
+      });
+
+      it('should return basic station info, even if no charge events', function( done ) {
+        var oneEvent = { time_start: moment().toDate() };
+        findChargeEvents.resolve( [] );
+        chargesOverLastThirtyDaysForOneStation( station1 )
+        .then(function( result ) {
+          expect( typeof result ).toBe( 'object' );
+          expect( Array.isArray( result ) ).toBe( false );
+          expect( reportHelpers.countChargesAndDuration ).not.toHaveBeenCalled();
+          expect( reportHelpers.convertKwhToConsumerEquivalents ).not.toHaveBeenCalled();
+          expect( result.hasOwnProperty( 'kin' ) ).toBe( true );
+          expect( result.hasOwnProperty( 'location' ) ).toBe( true );
+          expect( result.hasOwnProperty( 'since' ) ).toBe( true );
+          // cumulative kWh
+          expect( result.hasOwnProperty( 'kWh' ) ).toBe( true );
+          expect( result.hasOwnProperty( 'carbon' ) ).toBe( true );
+          expect( result.hasOwnProperty( 'miles' ) ).toBe( true );
+          expect( result.hasOwnProperty( 'trees' ) ).toBe( true );
+          expect( result.hasOwnProperty( 'gallons' ) ).toBe( true );
+          // charge events
+          expect( result.hasOwnProperty( 'numberOfCharges' ) ).toBe( true );
+          expect( result.hasOwnProperty( 'averageChargeEventsPerDay' ) ).toBe( true );
+          expect( result.hasOwnProperty( 'medianChargeEventsPerDay' ) ).toBe( true );
+          expect( result.hasOwnProperty( 'averageDurationOfEvent' ) ).toBe( true );
+          expect( result.hasOwnProperty( 'medianDurationOfEvent' ) ).toBe( true );
+          // Average kwh per event
+          expect( result.hasOwnProperty( 'averageKwhOfEvent' ) ).toBe( true );
+          expect( result.hasOwnProperty( 'averageCarbonPerEvent' ) ).toBe( true );
+          expect( result.hasOwnProperty( 'averageMilesPerEvent' ) ).toBe( true );
+          expect( result.hasOwnProperty( 'averageTreesPerEvent' ) ).toBe( true );
+          expect( result.hasOwnProperty( 'averageGallonsPerEvent' ) ).toBe( true );
+          // Median kwh per event
+          expect( result.hasOwnProperty( 'medianKwhOfEvent' ) ).toBe( true );
+          expect( result.hasOwnProperty( 'medianCarbonPerEvent' ) ).toBe( true );
+          expect( result.hasOwnProperty( 'medianMilesPerEvent' ) ).toBe( true );
+          expect( result.hasOwnProperty( 'medianTreesPerEvent' ) ).toBe( true );
+          expect( result.hasOwnProperty( 'medianGallonsPerEvent' ) ).toBe( true );
+
+          expect( result.kin ).toBe( '001-0001-001-01-K' );
+          expect( result.location ).toBe( 'Home' );
+          expect( result.since ).toBe( '' );
+          // cumulative kWh
+          expect( result.kWh ).toBe( '' );
+          expect( result.carbon ).toBe( '' );
+          expect( result.miles ).toBe( '' );
+          expect( result.trees ).toBe( '' );
+          expect( result.gallons ).toBe( '' );
+          // charge events
+          expect( result.numberOfCharges ).toBe( '' );
+          expect( result.averageChargeEventsPerDay ).toBe( '' );
+          expect( result.medianChargeEventsPerDay ).toBe( '' );
+          expect( result.averageDurationOfEvent ).toBe( '' );
+          expect( result.medianDurationOfEvent ).toBe( '' );
+          // Average kwh per event
+          expect( result.averageKwhOfEvent ).toBe( '' );
+          expect( result.averageCarbonPerEvent ).toBe( '' );
+          expect( result.averageMilesPerEvent ).toBe( '' );
+          expect( result.averageTreesPerEvent ).toBe( '' );
+          expect( result.averageGallonsPerEvent ).toBe( '' );
+          // Median kwh per event
+          expect( result.medianKwhOfEvent ).toBe( '' );
+          expect( result.medianCarbonPerEvent ).toBe( '' );
+          expect( result.medianMilesPerEvent ).toBe( '' );
+          expect( result.medianTreesPerEvent ).toBe( '' );
+          expect( result.medianGallonsPerEvent ).toBe( '' );
+          done();
+        })
+        .catch(function( error ) {
+          expect( error ).not.toBeDefined();
+          done();
+        });
       });
     });
 
