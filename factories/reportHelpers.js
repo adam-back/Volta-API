@@ -170,7 +170,7 @@ exports.getBrokenPlugs = function () {
       });
     }, function( error ) {
       if ( error ) {
-        throw error;
+        deferred.reject( error );
       } else {
         deferred.resolve( broken );
       }

@@ -4,9 +4,11 @@ var db = require( '../../models/index.js' );
 var csv = require( '../../factories/csvFactory.js' );
 var moment = require( 'moment' );
 moment().format();
+var async = require( 'async' );
+var ekmFactory = require( '../../factories/ekmFactory.js' );
 
 module.exports = function() {
-  describe('reportHelpers.js', function() {
+  ddescribe('reportHelpers.js', function() {
     describe('orderByKin', function() {
       var orderByKin = reportHelpers.orderByKin;
       var collectionOfStations;
@@ -223,13 +225,26 @@ module.exports = function() {
 
     describe('getBrokenPlugs', function() {
       var getBrokenPlugs = reportHelpers.getBrokenPlugs;
-      var findPlugs, findStation;
+      var findPlugs, findStation, plug1, station1;
 
       beforeEach(function() {
+        plug1 = {
+          id: 1,
+          number_on_station: 1,
+          ekm_omnimeter_serial: 'A',
+          station_id: 1
+        };
+        station1 = {
+          kin: '001-0001-001-01-K',
+          location: 'Home',
+          location_address: '123 Main',
+          network: 'NoCal',
+          ekm_push_mac: 'B'
+        };
         findPlugs = Q.defer();
         findStation = Q.defer();
         spyOn( db.plug, 'findAll' ).andReturn( findPlugs.promise );
-        spyOn( db.station, 'findOne' ).andReturn( findPlugs.promise );
+        spyOn( db.station, 'findOne' ).andReturn( findStation.promise );
       });
 
       it('should be defined as a function', function() {
@@ -242,6 +257,68 @@ module.exports = function() {
         .catch(function() {
           expect( db.plug.findAll ).toHaveBeenCalled();
           expect( db.plug.findAll ).toHaveBeenCalledWith( { where: { meter_status: 'error', ekm_omnimeter_serial: { $ne: null } }, raw: true });
+          done();
+        });
+      });
+
+      it('should loop through all plugs', function( done ) {
+        findPlugs.resolve( [ plug1, plug1 ] );
+        spyOn( async, 'each' ).andCallThrough();
+        findStation.reject( 'Test' );
+        getBrokenPlugs()
+        .catch(function() {
+          expect( async.each ).toHaveBeenCalled();
+          expect( async.each.calls[ 0 ].args[ 0 ] ).toEqual( [ plug1, plug1 ] );
+          done();
+        });
+      });
+
+      it('should find plug\'s station', function( done ) {
+        findPlugs.resolve( [ plug1, plug1 ] );
+        findStation.reject( 'Test' );
+        getBrokenPlugs()
+        .catch(function() {
+          expect( db.station.findOne ).toHaveBeenCalled();
+          expect( db.station.findOne.calls[ 0 ].args ).toEqual( [ { where: { id: 1 }, raw: true } ] );
+          done();
+        });
+      });
+
+      it('should return array with coalated station and plug data', function( done ) {
+        spyOn( ekmFactory, 'makeMeterUrl' ).andReturn( 'http://someurl.com' );
+        var data = {
+          kin: '001-0001-001-01-K',
+          location: 'Home',
+          location_address: '123 Main',
+          network: 'NoCal',
+          ekm_omnimeter_serial: 'A',
+          ekm_push_mac: 'B',
+          number_on_station: 1,
+          ekm_url: 'http://someurl.com'
+        };
+        findPlugs.resolve( [ plug1, plug1 ] );
+        findStation.resolve( station1 );
+        getBrokenPlugs()
+        .then(function( result ) {
+          expect( Array.isArray( result ) ).toBe( true );
+          expect( result.length ).toBe( 2 );
+          expect( ekmFactory.makeMeterUrl ).toHaveBeenCalled();
+          expect( ekmFactory.makeMeterUrl ).toHaveBeenCalledWith( 'A' );
+          expect( result[ 0 ] ).toEqual( data );
+          done();
+        })
+        .catch(function( error ) {
+          expect( error ).not.toBeDefined();
+          done();
+        });
+      });
+
+      it('should throw error if no station found for plug', function( done ) {
+        findPlugs.resolve( [ plug1, plug1 ] );
+        findStation.resolve( null );
+        getBrokenPlugs()
+        .catch(function( error ) {
+          expect( error ).toEqual( new Error( 'No station for plug id 1' ) );
           done();
         });
       });
