@@ -1,13 +1,11 @@
-var request = require( 'request' );
 var plug = require( '../../models').plug;
 var station = require( '../../models').station;
-var express = require( 'express' );
 var Q = require( 'q' );
 
 module.exports = exports = {
   getAllPlugs: function ( req, res ) {
     // query database for all rows of plugs
-    plug.findAll()
+    plug.findAll( { raw: true } )
     .then(function( plugs ) {
       var orderedByStation = {};
       for ( var i = 0; i < plugs.length; i++ ) {
@@ -26,12 +24,12 @@ module.exports = exports = {
       res.json( orderedByStation );
     })
     .catch(function( error ) {
-      res.status( 500 ).send( error );
+      res.status( 500 ).send( error.message );
     });
   },
   getOnePlug: function ( req, res ) {
     // query database for a plug by its id
-    plug.find( { where: { id: req.url.substring( 1 ) } } )
+    plug.findOne( { where: { id: Number( req.params.id ) }, raw: true } )
     .then(function( plug ) {
       if( plug ) {
         res.json( plug );
@@ -40,7 +38,7 @@ module.exports = exports = {
       }
     })
     .catch(function( error ) {
-      res.status( 500 ).send( error );
+      res.status( 500 ).send( error.message );
     });
   },
   addPlug: function( req, res ) {
