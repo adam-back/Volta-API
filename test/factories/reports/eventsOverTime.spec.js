@@ -1,4 +1,6 @@
-var charge_event = require( '../../../models' ).charge_event;
+var models = require( '../../../models' );
+var charge_event = models.charge_event;
+var station = models.station;
 var time = require( '../../../factories/reports/eventsOverTime.js' );
 var Q = require( 'q' );
 var moment = require( 'moment' );
@@ -228,6 +230,113 @@ module.exports = function() {
         })
         .catch(function( error ) {
           expect( error ).toBe( 1 );
+          done();
+        });
+      });
+    });
+
+    describe('dataOverThirtyDays', function() {
+      var dataOverThirtyDays = time.dataOverThirtyDays;
+      var findStations, findChargeEvents;
+
+      beforeEach(function() {
+        findStations = Q.defer();
+        findChargeEvents = Q.defer();
+        spyOn( station, 'findAll' ).andReturn( findStations.promise );
+        spyOn( charge_event, 'findAll' ).andReturn( findChargeEvents.promise );
+      });
+
+      it('should be defined as a function', function() {
+        expect( typeof dataOverThirtyDays ).toBe( 'function' );
+      });
+
+      it('should return a promise', function( done ) {
+        var result = dataOverThirtyDays();
+        expect( Q.isPromise( result ) ).toBe( true );
+        done();
+      });
+
+      it('should find all stations', function( done ) {
+        findStations.reject();
+        dataOverThirtyDays()
+        .catch(function() {
+          expect( station.findAll ).toHaveBeenCalled();
+          expect( station.findAll ).toHaveBeenCalledWith( { raw: true } );
+          done();
+        });
+      });
+
+      it('should find all charge events in last 30 days', function( done ) {
+        findStations.resolve( [] );
+        findChargeEvents.reject();
+        dataOverThirtyDays()
+        .catch(function() {
+          expect( charge_event.findAll ).toHaveBeenCalled();
+          expect( charge_event.findAll.calls[ 0 ].args[ 0 ].where ).toBeDefined();
+          expect( charge_event.findAll.calls[ 0 ].args[ 0 ].where.time_start ).toBeDefined();
+          expect( charge_event.findAll.calls[ 0 ].args[ 0 ].where.time_start[ '$gt' ] ).toBeDefined();
+          expect( charge_event.findAll.calls[ 0 ].args[ 0 ].where.time_stop ).toEqual( { $ne: null } );
+          done();
+        });
+      });
+
+      it('should return stations with cumulative 30-day data', function( done ) {
+        findStations.resolve( [ { id: 1, kin: '001-0001-001-01-K', network: 'LA', location: 'Hollywood' }, { id: 2, kin: '002-0002-002-02-K', network: 'LA', location: 'Brea' } ] );
+        var chargeEvents = [];
+
+        // 5-16 @ 12a to 5-16 @ 12:30a for 30 minutes
+        chargeEvents.push( { time_start: moment( '2015 05 16', 'YYYY MM DD' ).toDate(), time_stop: moment( '2015 05 16', 'YYYY MM DD' ).add( 30, 'minutes' ).toDate(), kwh: 5.2, station_id: 1 } );
+        // 5-17 @ 1a to 5-17 @ 2:05a for 65 minutes
+        chargeEvents.push( { time_start: moment( '2015 05 17', 'YYYY MM DD' ).add( 1, 'hours' ).toDate(), time_stop: moment( '2015 05 17', 'YYYY MM DD' ).add( 2, 'hours' ).add( 5, 'minutes' ).toDate(), kwh: 2.1, station_id: 2 } );
+        // 5-17 @ 4a to 5-17 @ 5a for 65 minutes
+        chargeEvents.push( { time_start: moment( '2015 05 17', 'YYYY MM DD' ).add( 4, 'hours' ).toDate(), time_stop: moment( '2015 05 17', 'YYYY MM DD' ).add( 5, 'hours' ).toDate(), kwh: 1.5, station_id: 1  } );
+        // skip one day
+        // 5-19 @ 12a to 5-17 @ 2a for 120 minutes
+        chargeEvents.push( { time_start: moment( '2015 05 19', 'YYYY MM DD' ).toDate(), time_stop: moment( '2015 05 19', 'YYYY MM DD' ).add( 2, 'hours' ).toDate(), kwh: 10, station_id: 1 } );
+
+        findChargeEvents.resolve( chargeEvents );
+        dataOverThirtyDays()
+        .then(function( result ) {
+          expect( result[ '1' ].kwh ).toBe( 16.7 );
+          expect( result[ '1' ].events ).toBe( 3 );
+          expect( result[ '1' ].time_spent_charging ).toBe( 210 );
+          expect( result[ '2' ].kwh ).toBe( 2.1 );
+          expect( result[ '2' ].events ).toBe( 1 );
+          expect( result[ '2' ].time_spent_charging ).toBe( 65 );
+          done();
+        })
+        .catch(function( error ) {
+          expect( error ).not.toBeDefined();
+          done();
+        });
+      });
+
+      it('should delete stations which have no charge events', function( done ) {
+        findStations.resolve( [ { id: 1, kin: '001-0001-001-01-K', network: 'LA', location: 'Hollywood' }, { id: 2, kin: '002-0002-002-02-K', network: 'LA', location: 'Brea' } ] );
+        var chargeEvents = [];
+
+        // 5-16 @ 12a to 5-16 @ 12:30a for 30 minutes
+        chargeEvents.push( { time_start: moment( '2015 05 16', 'YYYY MM DD' ).toDate(), time_stop: moment( '2015 05 16', 'YYYY MM DD' ).add( 30, 'minutes' ).toDate(), kwh: 5.2, station_id: 1 } );
+        // 5-17 @ 1a to 5-17 @ 2:05a for 65 minutes
+        chargeEvents.push( { time_start: moment( '2015 05 17', 'YYYY MM DD' ).add( 1, 'hours' ).toDate(), time_stop: moment( '2015 05 17', 'YYYY MM DD' ).add( 2, 'hours' ).add( 5, 'minutes' ).toDate(), kwh: 2.1, station_id: 3 } );
+        // 5-17 @ 4a to 5-17 @ 5a for 65 minutes
+        chargeEvents.push( { time_start: moment( '2015 05 17', 'YYYY MM DD' ).add( 4, 'hours' ).toDate(), time_stop: moment( '2015 05 17', 'YYYY MM DD' ).add( 5, 'hours' ).toDate(), kwh: 1.5, station_id: 1  } );
+        // skip one day
+        // 5-19 @ 12a to 5-17 @ 2a for 120 minutes
+        chargeEvents.push( { time_start: moment( '2015 05 19', 'YYYY MM DD' ).toDate(), time_stop: moment( '2015 05 19', 'YYYY MM DD' ).add( 2, 'hours' ).toDate(), kwh: 10, station_id: 1 } );
+
+        findChargeEvents.resolve( chargeEvents );
+        dataOverThirtyDays()
+        .then(function( result ) {
+          expect( result[ '1' ].kwh ).toBe( 16.7 );
+          expect( result[ '1' ].events ).toBe( 3 );
+          expect( result[ '1' ].time_spent_charging ).toBe( 210 );
+          expect( result.hasOwnProperty( '2' ) ).toBe( false );
+          expect( result.hasOwnProperty( '3' ) ).toBe( false );
+          done();
+        })
+        .catch(function( error ) {
+          expect( error ).not.toBeDefined();
           done();
         });
       });
