@@ -324,6 +324,92 @@ module.exports = function() {
       });
     });
 
+    describe('chargeEventsOverTime', function() {
+      var chargeEventsOverTime = reportHelpers.chargeEventsOverTime;
+      var timePeriod, findChargeEvents;
+
+      beforeEach(function() {
+        timePeriod = [ 1, 'days' ];
+        findChargeEvents = Q.defer();
+        spyOn( db.charge_event, 'findAll' ).andReturn( findChargeEvents.promise );
+      });
+
+      it('should be defined as a function', function() {
+        expect( typeof chargeEventsOverTime ).toBe( 'function' );
+      });
+
+      it('should return a promise', function( done ) {
+        var result = chargeEventsOverTime( null, timePeriod );
+        expect( Q.isPromise( result ) ).toBe( true );
+        done();
+      });
+
+      it('should find all charge events', function( done ) {
+        findChargeEvents.reject();
+        chargeEventsOverTime( null, timePeriod )
+        .catch(function() {
+          expect( db.charge_event.findAll ).toHaveBeenCalled();
+          done();
+        });
+      });
+
+      it('should construct query user-passed WHERE', function( done ) {
+        findChargeEvents.reject();
+        chargeEventsOverTime( { where: { id: 1 } }, timePeriod )
+        .catch(function() {
+          expect( db.charge_event.findAll ).toHaveBeenCalledWith( { where: { id: 1, time_stop: { $ne: null } }, order: 'id', raw: true } );
+          done();
+        });
+      });
+
+      it('should construct query if one is not provided', function( done ) {
+        findChargeEvents.reject();
+        chargeEventsOverTime( null, timePeriod )
+        .catch(function() {
+          expect( db.charge_event.findAll ).toHaveBeenCalledWith( { where: { time_stop: { $ne: null } }, order: 'id', raw: true } );
+          done();
+        });
+      });
+
+      it('should return array with accumulators over the time interval', function( done ) {
+        var chargeEvents = [];
+
+        // 5-16 @ 12a to 5-16 @ 12:30a
+        chargeEvents.push( { time_start: moment( '2015 05 16', 'YYYY MM DD' ).toDate(), time_stop: moment( '2015 05 16', 'YYYY MM DD' ).add( 30, 'minutes' ).toDate(), kwh: 5.2 } );
+        // 5-17 @ 1a to 5-17 @ 2:05a
+        chargeEvents.push( { time_start: moment( '2015 05 17', 'YYYY MM DD' ).add( 1, 'hours' ).toDate(), time_stop: moment( '2015 05 17', 'YYYY MM DD' ).add( 2, 'hours' ).add( 5, 'minutes' ).toDate(), kwh: 2.1 } );
+        // 5-17 @ 4a to 5-17 @ 5a
+        chargeEvents.push( { time_start: moment( '2015 05 17', 'YYYY MM DD' ).add( 4, 'hours' ).toDate(), time_stop: moment( '2015 05 17', 'YYYY MM DD' ).add( 5, 'hours' ).toDate(), kwh: 1.5 } );
+        // skip one day
+        // 5-19 @ 12a to 5-17 @ 2a
+        chargeEvents.push( { time_start: moment( '2015 05 19', 'YYYY MM DD' ).toDate(), time_stop: moment( '2015 05 19', 'YYYY MM DD' ).add( 2, 'hours' ).toDate(), kwh: 10 } );
+
+        findChargeEvents.resolve( chargeEvents );
+        chargeEventsOverTime( null, timePeriod )
+        .then(function( result ) {
+          expect( Array.isArray( result ) ).toBe( true );
+          expect( result.length ).toBe( 3 );
+          expect( typeof result[ 0 ] ).toBe( 'object' );
+          expect( result[ 0 ] ).toEqual( { time: moment( '2015 05 17', 'YYYY MM DD' ).toDate(), events: 1, kwh: 5.2 } );
+          expect( result[ 1 ] ).toEqual( { time: moment( '2015 05 18', 'YYYY MM DD' ).toDate(), events: 3, kwh: 8.8 } );
+          expect( result[ 2 ] ).toEqual( { time: moment( '2015 05 20', 'YYYY MM DD' ).toDate(), events: 4, kwh: 18.8 } );
+          done();
+        })
+        .catch(function( error ) {
+          expect( error ).not.toBeDefined();
+          done();
+        });
+      });
+    });
+
+    describe('chargesOverLastThirtyDaysForOneStation', function() {
+      var chargesOverLastThirtyDaysForOneStation = reportHelpers.chargesOverLastThirtyDaysForOneStation;
+
+      it('should be defined as a function', function() {
+        expect( typeof chargesOverLastThirtyDaysForOneStation ).toBe( 'function' );
+      });
+    });
+
     describe('standardizeNetworkInfo', function() {
       var standardizeNetworkInfo = reportHelpers.standardizeNetworkInfo;
       var stations;

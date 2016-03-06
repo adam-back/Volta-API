@@ -184,9 +184,11 @@ exports.getBrokenPlugs = function () {
 };
 
 exports.chargeEventsOverTime = function( where, timePeriod ) {
+  // doesn't fill in for dates without charge events
+  // fe.[ 1, 'days' ]
   var timeNum = timePeriod[ 0 ];
   var timeUnit = timePeriod[ 1 ];
-  var query = where || { where: {}, order: 'id', raw: true };
+  var query = where || { where: { time_stop: { $ne: null } }, order: 'id', raw: true };
   query.order = 'id';
   query.raw = true;
   query.where.time_stop = { $ne: null };
@@ -212,11 +214,9 @@ exports.chargeEventsOverTime = function( where, timePeriod ) {
         // toFixed returns string
         collector.kwh = Number( collector.kwh.toFixed( 1 ) );
         // save
-
-        periods.push( { time: currentPeriod, events: collector.totalEvents, kwh: collector.kwh } );
-
+        periods.push( { time: currentPeriod.clone().toDate(), events: collector.totalEvents, kwh: collector.kwh } );
         // set new period
-        currentPeriod = moment( currentPeriod.add( timeNum, timeUnit ) );
+        currentPeriod = currentPeriod.clone().add( timeNum, timeUnit );
       }
 
       // always add
@@ -225,8 +225,8 @@ exports.chargeEventsOverTime = function( where, timePeriod ) {
     }
 
     // don't forget the last period
-    currentPeriod = moment( currentPeriod.add( timeNum, timeUnit ) );
-    periods.push( { time: currentPeriod, events: collector.totalEvents, kwh: collector.kwh.toFixed( 1 ) } );
+    currentPeriod = currentPeriod.clone().add( timeNum, timeUnit );
+    periods.push( { time: currentPeriod.clone().toDate(), events: collector.totalEvents, kwh: Number( collector.kwh.toFixed( 1 ) ) } );
     return periods;
   });
 };
