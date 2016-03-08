@@ -1,77 +1,7 @@
-var request = require( 'request' );
 var mediaPresentation = require( '../../models').media_presentation;
 var mediaSchedule = require( '../../models' ).media_schedule;
 var station = require( '../../models').station;
-var Q = require( 'q' );
-
-/* HELPER METHODS */
-
-// Used by Station Manager (through replaceMediaScheduleLocal)
-var deleteMediaScheduleByKin = function( kin ) {
-  return mediaSchedule.destroy({
-    where: {
-      kin: kin
-    }
-  });
-};
-
-// Used by Station Manager (through replaceMediaScheduleLocal)
-var addMediaScheduleLocal = function ( schedule ) {
-  // spreads to ( user, created )
-  return mediaSchedule.findOrCreate( { where: { kin: schedule.kin }, defaults: schedule } );
-};
-
-// Used by Station Manager (through replaceMediaScheduleLocal)
-var getMediaScheduleByKinLocal = function ( kin ) {
-  return mediaSchedule.findAll( {
-    where: {
-      kin: kin
-    }
-  });
-};
-
-// Used by Station Manager
-var replaceMediaScheduleLocal = function( newSchedule ) {
-  // get presentation
-  var presentation = newSchedule.schedule.presentation;
-  delete newSchedule.schedule.presentation;
-
-  // add presentation to schedule
-  newSchedule.schedule.presentation = presentation.id;
-  newSchedule.media_presentation_id = presentation.id;
-
-  // Stringify so that the schedule can be saved to the database
-  newSchedule.schedule = JSON.stringify( newSchedule.schedule );
-
-  // find and delete existing media schedule
-  return getMediaScheduleByKinLocal( newSchedule.kin )
-  .then( function( schedule ) {
-    if( schedule ) {
-      return deleteMediaScheduleByKin( newSchedule.kin );
-    } else {
-      return Q();
-    }
-  })
-  // add the new media schedule to replace the deleted one
-  .then( function( deletedSchedule ) {
-    return addMediaScheduleLocal( newSchedule );
-  })
-  // return the media schedule with its specified presentation
-  .spread( function( addedSchedule, wasCreated ) {
-    return mediaPresentation.findAll( { where: { id: presentation.id } } )
-    .then( function( presentations ) {
-      addedSchedule.dataValues.presentations = presentations;
-      return addedSchedule.dataValues;
-    })
-  })
-  .catch( function( error ) {
-    console.log( '\n\n ERROR', error );
-    throw new Error ( 'failed to replace media schedule', error );
-  })
-};
-
-/* END HELPER METHODS */
-
+var mediaScheduleFactory = require( '../../factories/media/mediaScheduleFactory' );
 
 module.exports = exports = {
 
@@ -120,15 +50,13 @@ module.exports = exports = {
   // Used by Station Manager
   replaceMediaSchedule: function( req, res ) {
     var schedule = req.body;
-    var kin = schedule.kin;
 
-    replaceMediaScheduleLocal( schedule )
+    mediaScheduleFactory.replaceMediaScheduleLocal( schedule )
     .then( function( newSchedule ) {
       res.json( newSchedule );
     })
     .catch( function( error ) {
-      console.log( 'failed to replaceMediaSchedule', error );
-      res.status( 500 ).send( error );
+      res.status( 500 ).send( error.message );
     });
   },
 
@@ -138,53 +66,42 @@ module.exports = exports = {
     mediaSchedule.findOrCreate( { where: { kin: req.body.kin }, defaults: req.body } )
     .spread(function( schedule, created ) {
       if( created ) {
-        schedule.setMediaPresentations([ schedule.dataValues.schedule.presentation ])
+        var scheduleJSON = JSON.parse( schedule.schedule );
+        schedule.setMediaPresentations( [ scheduleJSON.presentation ] );
         res.json( { successfullyAddedMediaSchedule: created } );
       } else {
-        throw new Error ( 'Schedule already exits for kin ' + req.body.kin );
+        throw new Error ( 'Schedule already exists for kin ' + req.body.kin );
       }
     })
     .catch( function( error ) {
-      res.status( 500 ).send( error );
+      res.status( 500 ).send( error.message );
     });
   },
 
   // Will be used by Station Manager (Isn't currently...)
   setMediaScheduleSerialNumber: function( req, res ) {
-    mediaSchedule.find( { where: { kin: req.body.kin } } )
+    mediaSchedule.findOne( { where: { kin: req.body.kin } } )
     .then(function( mediaScheduleToUpdate ) {
-      for ( var i = 0; i < req.body.changes.length; i++ ) {
-        var field = req.body.changes[ i ][ 0 ];
-        var newData = req.body.changes[ i ][ 2 ];
-        mediaScheduleToUpdate[ field ] = newData;
+      if ( mediaScheduleToUpdate ) {
+        for ( var i = 0; i < req.body.changes.length; i++ ) {
+          var field = req.body.changes[ i ][ 0 ];
+          var newData = req.body.changes[ i ][ 2 ];
+          mediaScheduleToUpdate[ field ] = newData;
+        }
+        return mediaScheduleToUpdate.save();
+      } else {
+        throw new Error( 'No Media Schedule found for kin ' + req.body.kin );
       }
-
-      mediaScheduleToUpdate.save()
-      .then(function( successmediaSchedule ) {
-        res.json( successmediaSchedule );
-      })
-      .catch(function( error ) {
-        var query = {};
-        // get the title that of the colum that errored
-        var errorColumn = Object.keys( error.fields );
-        // get the value that errored
-        var duplicateValue = error.fields[ errorColumn ];
-        query[ errorColumn ] = duplicateValue;
-
-        // where conflicting key, value
-        mediaSchedule.find( { where: query } )
-        .then(function( duplicatemediaSchedule ) {
-          error.duplicatemediaSchedule = duplicatemediaSchedule;
-          // 409 = conflict
-          res.status( 409 ).send( error );
-        })
-        .catch(function( error ) {
-          res.status( 500 ).send( error );
-        });
-      });
+    })
+    .then(function( successmediaSchedule ) {
+      res.json( successmediaSchedule );
     })
     .catch(function( error ) {
-      res.status( 404 ).send( error );
+      if ( error.message.match( /No Media Schedule/ ) !== null ) {
+        res.status( 404 ).send( error.message );
+      } else {
+        res.status( 500 ).send( error.message );
+      }
     });
   },
 
@@ -192,28 +109,21 @@ module.exports = exports = {
   getMediaScheduleBySerialNumber: function( req, res ) {
     var serialNumber = req.params.serialNumber;
 
-    mediaSchedule.findAll( {
+    mediaSchedule.findAll({
       where: {
         serial_number: serialNumber
       }
     })
-    .then( function( schedules ) {
-      if( !schedules ) {
-        throw new Error( 'no schedules for serialNumber', serialNumber );
+    .then(function( schedules ) {
+      if( schedules.length === 0 ) {
+        throw new Error( 'No schedules for serialNumber ' + serialNumber );
+      } else {
+        res.json( schedules );
       }
-
-      res.json( schedules );
     })
     .catch(function( error ) {
-      console.log( 'promise blew up in getMediaScheduleBySerialNumber', error );
-      res.status( 500 ).send( error );
+      res.status( 500 ).send( error.message );
     });
 
-  },
-
-  // local use only (other controllers on this server can use these functions)
-  deleteMediaScheduleByKin: deleteMediaScheduleByKin,
-  addMediaScheduleLocal: addMediaScheduleLocal,
-  getMediaScheduleByKinLocal: getMediaScheduleByKinLocal,
-  replaceMediaScheduleLocal: replaceMediaScheduleLocal,
+  }
 };

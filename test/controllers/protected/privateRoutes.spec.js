@@ -2,6 +2,8 @@ var supertest = require( 'supertest' );
 var app = require( '../../../server.js' ).app;
 supertest = supertest( app );
 var stationTests = require( './apiTests/station.protectedController.spec.js' );
+var plugTests = require( './apiTests/plug.protectedController.spec.js' );
+var networkTests = require( './apiTests/network.protectedController.spec.js' );
 var appTests = require( './apiTests/app.protectedController.spec.js' );
 var mediaSlideTests = require( './apiTests/mediaSlide.protectedController.spec.js' );
 var mediaPresentationTests = require( './apiTests/mediaPresentation.protectedController.spec.js' );
@@ -20,6 +22,9 @@ describe('Private API Routes - protected/', function() {
   });
 
   stationTests();
+  plugTests();
+  networkTests();
+  D3Tests();
 
   describe('APP ROUTES', function() {
     appTests();
@@ -33,5 +38,4 @@ describe('Private API Routes - protected/', function() {
     mediaScheduleTests();
   });
 
-  D3Tests();
 });

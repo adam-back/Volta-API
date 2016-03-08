@@ -100,7 +100,7 @@ exports.dataOverThirtyDays = function() {
   var id = null;
   var totalData = {};
 
-  return station.findAll()
+  return station.findAll( { raw: true } )
   .then(function( stations ) {
     var numberOfStations = stations.length;
     // create hash of station info
@@ -119,12 +119,12 @@ exports.dataOverThirtyDays = function() {
     }
 
     // get all closed charge events from the last 30 days
-    return charge_event.findAll( { where: { time_start: { $gt: thirtyDaysAgo.toDate() } , time_stop: { $ne: null } } } );
+    return charge_event.findAll( { where: { time_start: { $gt: thirtyDaysAgo.toDate() } , time_stop: { $ne: null } }, raw: true } );
   })
   .then(function ( chargeEvents ) {
     var numberOfChargeEvents = chargeEvents.length;
     for (var j = 0; j < numberOfChargeEvents; j ++) {
-      var stationId =  chargeEvents[ j ].dataValues.station_id;
+      var stationId =  chargeEvents[ j ].station_id;
       // if we have a record of that station
       if ( totalData[ stationId ] ) {
         // add to the accumulator
@@ -133,6 +133,8 @@ exports.dataOverThirtyDays = function() {
         var start = moment( chargeEvents[ j ].time_start );
         var stop = moment( chargeEvents[ j ].time_stop );
         totalData[ stationId ].time_spent_charging += stop.diff( start, 'minutes' );
+      } else {
+        continue;
       }
     }
 
