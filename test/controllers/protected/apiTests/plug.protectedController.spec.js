@@ -8,7 +8,7 @@ var createToken = require( '../../../jwtHelper' ).createToken;
 var token = createToken( 5 );
 
 module.exports = function() {
-  describe('PLUG ROUTES', function() {
+  ddescribe('PLUG ROUTES', function() {
     describe('plug/', function() {
       var route = '/protected/plug';
 
@@ -67,6 +67,131 @@ module.exports = function() {
           .expect( 'Test' )
           .expect(function( res ) {
             expect( models.plug.findAll ).toHaveBeenCalled();
+          })
+          .end( done );
+        });
+      });
+
+      describe('POST', function() {
+        var body, findStation, foundStation, findOrCreatePlug, foundPlug, associatePlug;
+
+        beforeEach(function() {
+          body = {
+            kin: '001-0001-001-01-K',
+            ekm_omnimeter_serial: 'A'
+          };
+          findStation = Q.defer();
+          foundStation = models.station.build( { kin: '001-0001-001-01-K' } );
+          findOrCreatePlug = Q.defer();
+          foundPlug = { id: 1 };
+          associatePlug = Q.defer();
+          spyOn( models.station, 'findOne' ).andReturn( findStation.promise );
+          spyOn( models.plug, 'findOrCreate' ).andReturn( findOrCreatePlug.promise );
+          spyOn( foundStation, 'addPlug' ).andReturn( associatePlug.promise );
+        });
+
+        it('should be a defined route (not 404)', function( done ) {
+          findStation.reject( new Error( 'Test' ) );
+          supertest.post( route )
+          .set( 'Authorization', 'Bearer ' + token )
+          .send( body )
+          .expect(function( res ) {
+            expect( res.statusCode ).not.toBe( 404 );
+          })
+          .end( done );
+        });
+
+        it('should find one station by kin', function( done ) {
+          findStation.reject( new Error( 'Test' ) );
+          supertest.post( route )
+          .set( 'Authorization', 'Bearer ' + token )
+          .send( body )
+          .expect(function( res ) {
+            expect( models.station.findOne ).toHaveBeenCalled();
+            expect( models.station.findOne ).toHaveBeenCalledWith( { where: { kin: '001-0001-001-01-K' } } );
+          })
+          .end( done );
+        });
+
+        it('should send 500 if no station found by kin', function( done ) {
+          findStation.resolve( null );
+          supertest.post( route )
+          .set( 'Authorization', 'Bearer ' + token )
+          .send( body )
+          .expect( 500 )
+          .expect( 'Content-Type', /text/ )
+          .expect( 'No station found for kin 001-0001-001-01-K' )
+          .expect(function( res ) {
+            expect( models.plug.findOrCreate ).not.toHaveBeenCalled();
+          })
+          .end( done );
+        });
+
+        it('should find or create plug', function( done ) {
+          findStation.resolve( foundStation );
+          findOrCreatePlug.reject( new Error( 'Test' ) );
+          supertest.post( route )
+          .set( 'Authorization', 'Bearer ' + token )
+          .send( body )
+          .expect(function( res ) {
+            expect( models.plug.findOrCreate ).toHaveBeenCalled();
+            expect( models.plug.findOrCreate ).toHaveBeenCalledWith( { where: { ekm_omnimeter_serial: 'A' }, defaults: { ekm_omnimeter_serial: 'A' } } );
+          })
+          .end( done );
+        });
+
+        it('should associate plug if created', function( done ) {
+          findStation.resolve( foundStation );
+          findOrCreatePlug.resolve( [ foundPlug, true ] );
+          associatePlug.reject( new Error( 'Test' ) );
+          supertest.post( route )
+          .set( 'Authorization', 'Bearer ' + token )
+          .send( body )
+          .expect(function( res ) {
+            expect( foundStation.addPlug ).toHaveBeenCalled();
+            expect( foundStation.addPlug ).toHaveBeenCalledWith( foundPlug );
+          })
+          .end( done );
+        });
+
+        it('should throw 409 if plug not created', function( done ) {
+          findStation.resolve( foundStation );
+          findOrCreatePlug.resolve( [ foundPlug, false ] );
+          supertest.post( route )
+          .set( 'Authorization', 'Bearer ' + token )
+          .send( body )
+          .expect( 409 )
+          .expect( 'Content-Type', /json/ )
+          .expect( foundPlug )
+          .expect(function( res ) {
+            expect( foundStation.addPlug ).not.toHaveBeenCalled();
+          })
+          .end( done );
+        });
+
+        it('should send success boolean on creation', function( done ) {
+          findStation.resolve( foundStation );
+          findOrCreatePlug.resolve( [ foundPlug, true ] );
+          associatePlug.resolve();
+          supertest.post( route )
+          .set( 'Authorization', 'Bearer ' + token )
+          .send( body )
+          .expect( 200 )
+          .expect( 'Content-Type', /json/ )
+          .expect( { successfullyAddedPlug: true } )
+          .end( done );
+        });
+
+        it('should return 500 failure for error', function( done ) {
+          findStation.reject( new Error( 'Test' ) );
+          supertest.post( route )
+          .set( 'Authorization', 'Bearer ' + token )
+          .send( body )
+          .expect( 500 )
+          .expect( 'Content-Type', /text/ )
+          .expect( 'Test' )
+          .expect(function( res ) {
+            expect( models.station.findOne ).toHaveBeenCalled();
           })
           .end( done );
         });

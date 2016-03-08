@@ -43,26 +43,35 @@ module.exports = exports = {
   },
   addPlug: function( req, res ) {
     // Get the station so you can associate it
-    station.find( { where: { kin: req.body.kin } } )
-    .then(function( station ) {
+    station.findOne( { where: { kin: req.body.kin } } )
+    .then(function( foundStation ) {
+      if ( foundStation ) {
+        return Q( foundStation );
+      } else {
+        throw new Error( 'No station found for kin ' + req.body.kin );
+      }
+    })
+    .then(function( stationWithPlug ) {
       // kin is not part of plug schema
       delete req.body.kin;
       // Validate that a plug with same omnimeter doesn't exist, create it
-      plug.findOrCreate( { where: { ekm_omnimeter_serial: req.body.ekm_omnimeter_serial }, defaults: req.body } )
-      .spread(function( plug, created ) {
+      return plug.findOrCreate( { where: { ekm_omnimeter_serial: req.body.ekm_omnimeter_serial }, defaults: req.body } )
+      .spread(function( foundPlug, created ) {
         if( created ) {
           // associate
-          station.addPlug( plug );
-          // send boolean
-          res.json( { successfullyAddedPlug: created } );
+          return stationWithPlug.addPlug( foundPlug )
+          .then(function() {
+            // send boolean
+            res.json( { successfullyAddedPlug: created } );
+          });
         } else {
           // 409 = conflict
-          res.status( 409 ).send( plug );
+          res.status( 409 ).send( foundPlug );
         }
       });
     })
     .catch(function( error ) {
-      res.status( 500 ).send( error );
+      res.status( 500 ).send( error.message );
     });
   },
   updatePlug: function(req, res) {
