@@ -11,7 +11,7 @@ var createToken = require( '../../../jwtHelper' ).createToken;
 var token = createToken( 5 );
 
 module.exports = function() {
-  describe('NETWORK ROUTES', function() {
+  ddescribe('NETWORK ROUTES', function() {
     describe('station/network/top10', function() {
       var route = '/protected/station/network/top10';
 
@@ -102,6 +102,37 @@ module.exports = function() {
           .expect(function( res ) {
             expect( res.statusCode ).not.toBe( 404 );
           })
+          .end( done );
+        });
+
+        it('should find all stations', function( done ) {
+          findStations.reject( new Error( 'Test' ) );
+          supertest.get( route )
+          .set( 'Authorization', 'Bearer ' + token )
+          .expect(function( res ) {
+            expect( models.station.findAll ).toHaveBeenCalled();
+            expect( models.station.findAll ).toHaveBeenCalledWith( { where: { network: 'Arizona' } } );
+          })
+          .end( done );
+        });
+
+        it('should resolve JSON of stations', function( done ) {
+          findStations.resolve( [ { id: 1 }, { id: 2 } ] );
+          supertest.get( route )
+          .set( 'Authorization', 'Bearer ' + token )
+          .expect( 200 )
+          .expect( 'Content-Type', /json/ )
+          .expect( [ { id: 1 }, { id: 2 } ] )
+          .end( done );
+        });
+
+        it('should resolve 404 if no stations found', function( done ) {
+          findStations.resolve( [] );
+          supertest.get( route )
+          .set( 'Authorization', 'Bearer ' + token )
+          .expect( 404 )
+          .expect( 'Content-Type', /text/ )
+          .expect( 'That region was not found. Please try Arizona, Hawaii, Chicago, NoCal for Northern California, LA for Los Angeles, SD for San Diego, or SB for Santa Barbara Area.' )
           .end( done );
         });
 
