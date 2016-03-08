@@ -57,7 +57,6 @@ exports.convertKwhToConsumerEquivalents = function( kwh ) {
 };
 
 exports.countChargesAndDuration = function( chargeEvents ) {
-  console.log( 'chargeEvents', chargeEvents );
   var data = {};
   // save the total charge events
   data.totalChargeEvents = chargeEvents.length;
@@ -111,11 +110,9 @@ exports.countChargesAndDuration = function( chargeEvents ) {
     }
   }
   // save total days
-  console.log( '\n\nnumber of days', numberOfDays );
   data.totalChargeEventDays = numberOfDays;
   data.cumulativeKwh = Number( totalKwh.toFixed( 1 ) );
 
-  console.log( '\n\n\ntotalChargeEvents', data.totalChargeEvents );
   // average number of events per day
   data.averageChargeEventsPerDay = Math.round( data.totalChargeEvents / data.totalChargeEventDays );
   // median number of events per day

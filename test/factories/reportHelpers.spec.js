@@ -126,26 +126,26 @@ module.exports = function() {
 
       var chargeEvents = [
         {
-          time_start: new Date( 'Mon Feb 29 2016 16:00:00 GMT-0800 (PST)' ),
-          time_stop: new Date( 'Mon Feb 29 2016 16:35:00 GMT-0800 (PST)' ),
+          time_start: new Date( 'Mon Feb 29 2016 16:00:00 GMT-0000 (UTC)' ),
+          time_stop: new Date( 'Mon Feb 29 2016 16:35:00 GMT-0000 (UTC)' ),
           // 35 mins
           kwh: 12.3
         },
         {
-          time_start: new Date( 'Mon Feb 29 2016 17:00:00 GMT-0800 (PST)' ),
-          time_stop: new Date( 'Mon Feb 29 2016 17:18:00 GMT-0800 (PST)' ),
+          time_start: new Date( 'Mon Feb 29 2016 17:00:00 GMT-0000 (UTC)' ),
+          time_stop: new Date( 'Mon Feb 29 2016 17:18:00 GMT-0000 (UTC)' ),
           // 18 mins
           kwh: 5.1
         },
         {
-          time_start: new Date( 'Tue Mar 01 2016 15:33:00 GMT-0800 (PST)' ),
-          time_stop: new Date( 'Tue Mar 01 2016 16:33:00 GMT-0800 (PST)' ),
+          time_start: new Date( 'Tue Mar 01 2016 15:33:00 GMT-0000 (UTC)' ),
+          time_stop: new Date( 'Tue Mar 01 2016 16:33:00 GMT-0000 (UTC)' ),
           // 60 mins
           kwh: 2.2
         },
         {
-          time_start: new Date( 'Fri Mar 04 2016 16:30:00 GMT-0800 (PST)' ),
-          time_stop: new Date( 'Fri Mar 04 2016 17:33:00 GMT-0800 (PST)' ),
+          time_start: new Date( 'Fri Mar 04 2016 16:30:00 GMT-0000 (UTC)' ),
+          time_stop: new Date( 'Fri Mar 04 2016 17:33:00 GMT-0000 (UTC)' ),
           // 63 mins
           kwh: 1.2
         }
