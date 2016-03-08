@@ -134,7 +134,7 @@ module.exports = exports = {
         // new day
         } else {
           currentDay = moment( charges[ i ].time_start );
-          days.push( moment( charges[ i ].time_start ).format( 'MMM[/]D') );
+          days.push( moment( charges[ i ].time_start ).format( 'M[/]D') );
           dayIndex++;
           plugIns.push( 1 );
           kwhGiven.push( +charges[ i ].kwh );
