@@ -173,6 +173,18 @@ module.exports = function() {
       describe('should calculate', function() {
         var result = countChargesAndDuration( chargeEvents );
 
+        it('totalChargeEvents', function() {
+          expect( result.hasOwnProperty( 'totalChargeEvents' ) ).toBe( true );
+          expect( typeof result.totalChargeEvents ).toBe( 'number' );
+          expect( result.totalChargeEvents ).toBe( 4 );
+        });
+
+        it('firstChargeEvent', function() {
+          expect( result.hasOwnProperty( 'firstChargeEvent' ) ).toBe( true );
+          expect( typeof result.firstChargeEvent ).toBe( 'string' );
+          expect( result.firstChargeEvent ).toBe( 'Feb 29, 2016' );
+        });
+
         it('totalChargeEventDays', function() {
           expect( result.hasOwnProperty( 'totalChargeEventDays' ) ).toBe( true );
           expect( typeof result.totalChargeEventDays ).toBe( 'number' );
