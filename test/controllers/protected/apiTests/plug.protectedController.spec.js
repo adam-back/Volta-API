@@ -8,7 +8,7 @@ var createToken = require( '../../../jwtHelper' ).createToken;
 var token = createToken( 5 );
 
 module.exports = function() {
-  ddescribe('PLUG ROUTES', function() {
+  describe('PLUG ROUTES', function() {
     describe('plug/', function() {
       var route = '/protected/plug';
 
@@ -192,6 +192,66 @@ module.exports = function() {
           .expect( 'Test' )
           .expect(function( res ) {
             expect( models.station.findOne ).toHaveBeenCalled();
+          })
+          .end( done );
+        });
+      });
+
+      describe('PATCH', function() {
+        var body, checkPlugEkm, findPlug, foundPlug, savePlug;
+
+        beforeEach(function() {
+          body = {
+            serialNumber: 'A',
+            id: 1,
+            changes: [ [ 'charger_type', 2, 3 ] ]
+          };
+          checkPlugEkm = Q.defer();
+          findPlug = Q.defer();
+          foundPlug = models.plug.build( { ekm_omnimeter_serial: 'A' } );
+          savePlug = Q.defer();
+          spyOn( models.plug, 'findOne' ).andCallFake(function( query ) {
+            if ( query.hasOwnProperty( 'raw' ) ) {
+              return checkPlugEkm.promise;
+            } else {
+              return findPlug.promise;
+            }
+          });
+        });
+
+        it('should be a defined route (not 404)', function( done ) {
+          checkPlugEkm.reject( new Error( 'Test' ) );
+          supertest.patch( route )
+          .set( 'Authorization', 'Bearer ' + token )
+          .send( body )
+          .expect(function( res ) {
+            expect( res.statusCode ).not.toBe( 404 );
+          })
+          .end( done );
+        });
+
+        it('should check if patch will violate unique omnimeter constraint', function( done ) {
+          checkPlugEkm.reject( new Error( 'Test' ) );
+          supertest.patch( route )
+          .set( 'Authorization', 'Bearer ' + token )
+          .send( body )
+          .expect(function( res ) {
+            expect( models.plug.findOne ).toHaveBeenCalled();
+            expect( models.plug.findOne ).toHaveBeenCalledWith( { where: { ekm_omnimeter_serial: 'A', id: { $ne: 1 } }, raw: true } );
+          })
+          .end( done );
+        });
+
+        it('should reject 409 if plug violates unique omnimeter', function( done ) {
+          checkPlugEkm.resolve( { id: 1 } );
+          supertest.patch( route )
+          .set( 'Authorization', 'Bearer ' + token )
+          .send( body )
+          .expect( 409 )
+          .expect( 'Content-Type', /json/ )
+          .expect( { title: 'Duplicate Error', message: 'There was already plug with the same omnimeter serial number.', duplicateId: 1 } )
+          .expect(function( res ) {
+            expect( models.plug.findOne.calls.length ).toBe( 1 );
           })
           .end( done );
         });

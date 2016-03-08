@@ -77,34 +77,34 @@ module.exports = exports = {
   updatePlug: function(req, res) {
     // object looks like:
     // { kin: #, changes: [ [ field, old, new ], [ field, old, new ] ] }
-    plug.find( { where: { ekm_omnimeter_serial: req.body.serialNumber, id: { $ne: req.body.id } } } )
+    plug.findOne( { where: { ekm_omnimeter_serial: req.body.serialNumber, id: { $ne: req.body.id } }, raw: true } )
     .then(function( searchResult ) {
       if( searchResult ) {
         // throw error
-        throw searchResult;
+        var text = {};
+        text.title = 'Duplicate Error';
+        text.message = 'There was already plug with the same omnimeter serial number.';
+        text.duplicateId = searchResult.id;
+        res.status( 409 ).send( text );
       // ok to add
       } else {
-        return plug.find( { where: { id: req.body.id } } );
-      }
-    })
-    .then(function( plugToUpdate ) {
-      for ( var i = 0; i < req.body.changes.length; i++ ) {
-        var field = req.body.changes[ i ][ 0 ];
-        var newData = req.body.changes[ i ][ 2 ];
-        plugToUpdate[ field ] = newData;
-      }
+        return plug.findOne( { where: { id: req.body.id } } )
+        .then(function( plugToUpdate ) {
+          for ( var i = 0; i < req.body.changes.length; i++ ) {
+            var field = req.body.changes[ i ][ 0 ];
+            var newData = req.body.changes[ i ][ 2 ];
+            plugToUpdate[ field ] = newData;
+          }
 
-      return plugToUpdate.save();
-    })
-    .then(function( success ) {
-      res.status( 204 ).send();
+          return plugToUpdate.save();
+        })
+        .then(function( success ) {
+          res.status( 204 ).send();
+        });
+      }
     })
     .catch(function( error ) {
-      var text = {};
-      text.title = 'Duplicate Error';
-      text.message = 'There was already plug with the same omnimeter serial number.';
-      text.duplicateId = error.id;
-      res.status( 409 ).send( text );
+      res.status( 500 ).send( error.message );
     });
   },
   deletePlug: function(req,res) {
