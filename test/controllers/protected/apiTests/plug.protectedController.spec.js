@@ -8,7 +8,7 @@ var createToken = require( '../../../jwtHelper' ).createToken;
 var token = createToken( 5 );
 
 module.exports = function() {
-  describe('PLUG ROUTES', function() {
+  ddescribe('PLUG ROUTES', function() {
     describe('plug/', function() {
       var route = '/protected/plug';
 
@@ -208,7 +208,7 @@ module.exports = function() {
           };
           checkPlugEkm = Q.defer();
           findPlug = Q.defer();
-          foundPlug = models.plug.build( { ekm_omnimeter_serial: 'A' } );
+          foundPlug = models.plug.build( { ekm_omnimeter_serial: 'A', charger_type: 2 } );
           savePlug = Q.defer();
           spyOn( models.plug, 'findOne' ).andCallFake(function( query ) {
             if ( query.hasOwnProperty( 'raw' ) ) {
@@ -217,6 +217,7 @@ module.exports = function() {
               return findPlug.promise;
             }
           });
+          spyOn( foundPlug, 'save' ).andReturn( savePlug.promise );
         });
 
         it('should be a defined route (not 404)', function( done ) {
@@ -252,6 +253,60 @@ module.exports = function() {
           .expect( { title: 'Duplicate Error', message: 'There was already plug with the same omnimeter serial number.', duplicateId: 1 } )
           .expect(function( res ) {
             expect( models.plug.findOne.calls.length ).toBe( 1 );
+          })
+          .end( done );
+        });
+
+        it('should findOne plug by id to update', function( done ) {
+          checkPlugEkm.resolve( null );
+          findPlug.reject( new Error( 'Test' ) );
+          supertest.patch( route )
+          .set( 'Authorization', 'Bearer ' + token )
+          .send( body )
+          .expect(function( res ) {
+            expect( models.plug.findOne.calls.length ).toBe( 2 );
+            expect( models.plug.findOne.calls[ 1 ].args[ 0 ] ).toEqual( { where: { id: 1 } } );
+          })
+          .end( done );
+        });
+
+        it('should update the plug with changes', function( done ) {
+          checkPlugEkm.resolve( null );
+          findPlug.resolve( foundPlug );
+          savePlug.reject( new Error( 'Test' ) );
+          supertest.patch( route )
+          .set( 'Authorization', 'Bearer ' + token )
+          .send( body )
+          .expect(function( res ) {
+            expect( foundPlug.save ).toHaveBeenCalled();
+            expect( foundPlug.save ).toHaveBeenCalledWith();
+            expect( foundPlug.get( { plain: true } ) ).toEqual( { id: null, ekm_omnimeter_serial: 'A', charger_type: 3 } );
+          })
+          .end( done );
+        });
+
+        it('should resolve 204 on success', function( done ) {
+          checkPlugEkm.resolve( null );
+          findPlug.resolve( foundPlug );
+          savePlug.resolve();
+          supertest.patch( route )
+          .set( 'Authorization', 'Bearer ' + token )
+          .send( body )
+          .expect( 204 )
+          .expect( '' )
+          .end( done );
+        });
+
+        it('should return 500 failure for error', function( done ) {
+          checkPlugEkm.reject( new Error( 'Test' ) );
+          supertest.patch( route )
+          .set( 'Authorization', 'Bearer ' + token )
+          .send( body )
+          .expect( 500 )
+          .expect( 'Content-Type', /text/ )
+          .expect( 'Test' )
+          .expect(function( res ) {
+            expect( models.plug.findOne ).toHaveBeenCalled();
           })
           .end( done );
         });
