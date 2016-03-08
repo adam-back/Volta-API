@@ -8,7 +8,7 @@ var createToken = require( '../../../jwtHelper' ).createToken;
 var token = createToken( 5 );
 
 module.exports = function() {
-  ddescribe('PLUG ROUTES', function() {
+  describe('PLUG ROUTES', function() {
     describe('plug/', function() {
       var route = '/protected/plug';
 
@@ -379,6 +379,220 @@ module.exports = function() {
           .expect(function( res ) {
             expect( models.plug.findOne ).toHaveBeenCalled();
           })
+          .end( done );
+        });
+      });
+
+      describe('DELETE', function() {
+        var plugFind, foundPlug, stationFind, foundStation, disassociatePlug, destroyPlug, updateStation, getAssociatedPlugs, plug2, plug3, decrementPlug;
+
+        beforeEach(function() {
+          plugFind = Q.defer();
+          // middle of the plugs
+          foundPlug = models.plug.build( { id: 2, number_on_station: 2, station_id: 2 } );
+          stationFind = Q.defer();
+          foundStation = models.station.build( { id: 2, in_use: [ 'true', 'false', 'false' ] } );
+          disassociatePlug = Q.defer();
+          destroyPlug = Q.defer();
+          updateStation = Q.defer();
+          getAssociatedPlugs = Q.defer();
+          // first plug should not decrement
+          plug1 = models.plug.build( { id: 1, number_on_station: 1, station_id: 2 } );
+          // third plug should drop to 2
+          plug3 = models.plug.build( { id: 3, number_on_station: 3, station_id: 2 } );
+          decrementPlug = Q.defer();
+
+          spyOn( models.plug, 'findOne' ).andReturn( plugFind.promise );
+          spyOn( models.station, 'findOne' ).andReturn( stationFind.promise );
+          spyOn( foundStation, 'removePlug' ).andReturn( disassociatePlug.promise );
+          spyOn( foundPlug, 'destroy' ).andReturn( destroyPlug.promise );
+          spyOn( foundStation, 'update' ).andReturn( updateStation.promise );
+          spyOn( foundStation, 'getPlugs' ).andReturn( getAssociatedPlugs.promise );
+          spyOn( plug1, 'decrement' );
+          spyOn( plug3, 'decrement' ).andReturn( decrementPlug.promise );
+
+        });
+
+        it('should be a defined route (not 404)', function( done ) {
+          plugFind.reject( new Error( 'Test' ) );
+          supertest.delete( route )
+          .set( 'Authorization', 'Bearer ' + token )
+          .expect(function( res ) {
+            expect( res.statusCode ).not.toBe( 404 );
+          })
+          .end( done );
+        });
+
+        it('should find plug by id', function( done ) {
+          plugFind.reject( new Error( 'Test' ) );
+          supertest.delete( route )
+          .set( 'Authorization', 'Bearer ' + token )
+          .expect(function( res ) {
+            expect( models.plug.findOne ).toHaveBeenCalled();
+            expect( models.plug.findOne ).toHaveBeenCalledWith( { where: { id: 42 } } );
+          })
+          .end( done );
+        });
+
+        it('should throw 404 error if no plug is found', function( done ) {
+          plugFind.resolve( null );
+          supertest.delete( route )
+          .set( 'Authorization', 'Bearer ' + token )
+          .expect( 404 )
+          .expect( 'Content-Type', /text/ )
+          .expect( 'A plug with that id could not be found' )
+          .expect(function( res ) {
+            expect( models.plug.findOne ).toHaveBeenCalled();
+            expect( models.plug.findOne ).toHaveBeenCalledWith( { where: { id: 42 } } );
+          })
+          .end( done );
+        });
+
+        it('should find plug\'s station', function( done ) {
+          plugFind.resolve( foundPlug );
+          stationFind.reject( new Error( 'Test' ) );
+          supertest.delete( route )
+          .set( 'Authorization', 'Bearer ' + token )
+          .expect(function( res ) {
+            expect( models.station.findOne ).toHaveBeenCalled();
+            expect( models.station.findOne ).toHaveBeenCalledWith( { where: { id: 2 } } );
+          })
+          .end( done );
+        });
+
+        it('should throw error if no station found', function( done ) {
+          plugFind.resolve( foundPlug );
+          stationFind.resolve( null );
+          supertest.delete( route )
+          .set( 'Authorization', 'Bearer ' + token )
+          .expect( 500 )
+          .expect( 'Content-Type', /text/ )
+          .expect( 'There is no station association for plug 2' )
+          .end( done );
+        });
+
+        it('should disassociate plug from station', function( done ) {
+          plugFind.resolve( foundPlug );
+          stationFind.resolve( foundStation );
+          disassociatePlug.reject( new Error( 'Test' ) );
+          supertest.delete( route )
+          .set( 'Authorization', 'Bearer ' + token )
+          .expect(function( res ) {
+            expect( foundStation.removePlug ).toHaveBeenCalled();
+            expect( foundStation.removePlug ).toHaveBeenCalledWith( foundPlug );
+          })
+          .end( done );
+        });
+
+        it('should destroy plug', function( done ) {
+          plugFind.resolve( foundPlug );
+          stationFind.resolve( foundStation );
+          disassociatePlug.resolve();
+          destroyPlug.reject( new Error( 'Test' ) );
+          supertest.delete( route )
+          .set( 'Authorization', 'Bearer ' + token )
+          .expect(function( res ) {
+            expect( foundPlug.destroy ).toHaveBeenCalled();
+            expect( foundPlug.destroy ).toHaveBeenCalledWith();
+          })
+          .end( done );
+        });
+
+        it('should update station in_use', function( done ) {
+          plugFind.resolve( foundPlug );
+          stationFind.resolve( foundStation );
+          disassociatePlug.resolve();
+          destroyPlug.resolve();
+          updateStation.reject( new Error( 'Test' ) );
+          supertest.delete( route )
+          .set( 'Authorization', 'Bearer ' + token )
+          .expect(function( res ) {
+            expect( foundStation.update ).toHaveBeenCalled();
+            expect( foundStation.update ).toHaveBeenCalledWith( { in_use: [ 'true', 'false' ] } );
+          })
+          .end( done );
+        });
+
+        it('should make station in_use null if removing only plug', function( done ) {
+          plugFind.resolve( foundPlug );
+          foundPlug.number_on_station = 1;
+          foundStation.in_use = [ 'true' ];
+          stationFind.resolve( foundStation );
+          disassociatePlug.resolve();
+          destroyPlug.resolve();
+          updateStation.reject( new Error( 'Test' ) );
+          supertest.delete( route )
+          .set( 'Authorization', 'Bearer ' + token )
+          .expect(function( res ) {
+            expect( foundStation.update ).toHaveBeenCalled();
+            expect( foundStation.update ).toHaveBeenCalledWith( { in_use: null } );
+          })
+          .end( done );
+        });
+
+        it('should get associated plugs for station', function( done ) {
+          plugFind.resolve( foundPlug );
+          stationFind.resolve( foundStation );
+          disassociatePlug.resolve();
+          destroyPlug.resolve();
+          updateStation.resolve( foundStation );
+          getAssociatedPlugs.reject( new Error( 'Test' ) );
+          supertest.delete( route )
+          .set( 'Authorization', 'Bearer ' + token )
+          .expect(function( res ) {
+            expect( foundStation.getPlugs ).toHaveBeenCalled();
+            expect( foundStation.getPlugs ).toHaveBeenCalledWith();
+          })
+          .end( done );
+        });
+
+        it('should adjust plug.number_on_station downward for deleted plug', function( done ) {
+          plugFind.resolve( foundPlug );
+          stationFind.resolve( foundStation );
+          disassociatePlug.resolve();
+          destroyPlug.resolve();
+          updateStation.resolve( foundStation );
+          getAssociatedPlugs.resolve( [ plug1, plug3 ] );
+          decrementPlug.reject( new Error( 'Test' ) );
+
+          supertest.delete( route )
+          .set( 'Authorization', 'Bearer ' + token )
+          .expect(function( res ) {
+            expect( plug1.decrement ).not.toHaveBeenCalled();
+            expect( plug3.decrement ).toHaveBeenCalled();
+            expect( plug3.decrement ).toHaveBeenCalledWith( 'number_on_station' );
+          })
+          .end( done );
+        });
+
+        it('should not adjust number_on_station if no plugs', function( done ) {
+          plugFind.resolve( foundPlug );
+          stationFind.resolve( foundStation );
+          disassociatePlug.resolve();
+          destroyPlug.resolve();
+          updateStation.resolve( foundStation );
+          getAssociatedPlugs.resolve( [] );
+          spyOn( Q, 'all' );
+          supertest.delete( route )
+          .set( 'Authorization', 'Bearer ' + token )
+          .expect(function( res ) {
+            expect( Q.all ).not.toHaveBeenCalled();
+          })
+          .end( done );
+        });
+
+        it('should resolve 204 on success', function( done ) {
+          plugFind.resolve( foundPlug );
+          stationFind.resolve( foundStation );
+          disassociatePlug.resolve();
+          destroyPlug.resolve();
+          updateStation.resolve( foundStation );
+          getAssociatedPlugs.resolve( [] );
+
+          supertest.delete( route )
+          .set( 'Authorization', 'Bearer ' + token )
+          .expect( 204 )
+          .expect( '' )
           .end( done );
         });
       });

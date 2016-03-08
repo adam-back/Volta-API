@@ -110,18 +110,17 @@ module.exports = exports = {
   deletePlug: function(req,res) {
     var decrementAbove;
     // find the plug
-    plug.find( { where: { id: req.url.substring( 1 ) } } )
+    plug.findOne( { where: { id: Number( req.params.id ) } } )
     .then(function( foundPlug ) {
       // if the plug exists
       if( foundPlug ) {
         decrementAbove = foundPlug.number_on_station;
         // find its associated station
-        return station.find( { where: { id: foundPlug.station_id } } )
+        return station.findOne( { where: { id: foundPlug.station_id } } )
         .then(function( foundStation ) {
           // if you find the station
           if( foundStation ) {
             // disconnect association
-
             return foundStation.removePlug( foundPlug )
             .then(function() {
               // remove the plug from the db
@@ -140,7 +139,7 @@ module.exports = exports = {
               return foundStation.update( { in_use: inUse } );
             });
           } else {
-            throw 'There is no station association for plug';
+            throw new Error( 'There is no station association for plug ' + foundPlug.id );
           }
         });
         // station is done
@@ -154,9 +153,9 @@ module.exports = exports = {
     })
     .then(function( plugs ) {
       // all the plugs now associated with the station
-      if ( plugs ) {
+      if ( plugs.length > 0 ) {
         // fill with starting promise
-        var toUpdate = [ Q.when() ];
+        var toUpdate = [ Q() ];
         // for each plug
         for ( var i = 0; i < plugs.length; i++ ) {
           var onePlug = plugs[ i ];
@@ -172,14 +171,14 @@ module.exports = exports = {
 
       // no plugs anymore
       } else {
-        return Q.when( null );
+        return Q();
       }
     })
     .then(function() {
       res.status( 204 ).send();
     })
     .catch(function( error ) {
-      res.status( 500 ).send( error );
+      res.status( 500 ).send( error.message );
     });
   }
 };
