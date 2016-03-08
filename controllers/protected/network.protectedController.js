@@ -1,9 +1,7 @@
-var request = require( 'request' );
 var station = require( '../../models').station;
 var plug = require( '../../models').plug;
 var charge_event = require( '../../models').charge_event;
 var async = require( 'async' );
-var express = require( 'express' );
 var moment = require('moment');
 moment().format();
 
@@ -88,7 +86,7 @@ module.exports = exports = {
       });
     })
     .catch(function( error ) {
-      res.status( 500 ).send( error );
+      res.status( 500 ).send( error.message );
     });
   },
   getCumulativeData: function( req, res ) {
@@ -154,8 +152,7 @@ module.exports = exports = {
       res.json( data );
     })
     .catch(function( error ) {
-      console.log( error );
-      res.status( 500 ).send( error );
+      res.status( 500 ).send( error.message );
     });
   },
   getStationsByNetwork: function ( req, res ) {
@@ -178,7 +175,7 @@ module.exports = exports = {
       }
     })
     .catch(function( error ) {
-      res.status( 500 ).send( error );
+      res.status( 500 ).send( error.message );
     });
   }
 };
