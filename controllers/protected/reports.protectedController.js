@@ -413,79 +413,79 @@ module.exports = exports = {
   },
 
   // not complete
-  getOneStationAnalytics: function (req, res) {
-    var returnData = {
-      kin: null,
-      location: null,
-      address: null,
-      offset: 0,
-      gallons: 0,
-      trees: 0,
-      miles: 0,
-      lifetimeKilowatts: '',
-      firstChargeEvent: '',
-      totalChargeEventDays: '',
-      totalChargeEvents: '',
-      averageChargeEventsPerDay: '',
-      medianChargeEventsPerDay: '',
-      averageDurationOfEvent: '',
-      medianDurationOfEvent: '',
-      message: ''
-    };
+  // getOneStationAnalytics: function (req, res) {
+  //   var returnData = {
+  //     kin: null,
+  //     location: null,
+  //     address: null,
+  //     offset: 0,
+  //     gallons: 0,
+  //     trees: 0,
+  //     miles: 0,
+  //     lifetimeKilowatts: '',
+  //     firstChargeEvent: '',
+  //     totalChargeEventDays: '',
+  //     totalChargeEvents: '',
+  //     averageChargeEventsPerDay: '',
+  //     medianChargeEventsPerDay: '',
+  //     averageDurationOfEvent: '',
+  //     medianDurationOfEvent: '',
+  //     message: ''
+  //   };
 
-    // request has kin
-    // search stations for kin
-    station.findOne( { where: { kin: req.url.substring( 5 ) } } )
-    .then(function( station ) {
-      if ( typeof station === 'object' && station.dataValues ) {
-        // there is data to get
-        if ( station.cumulative_kwh ) {
-          // SELECT SUM( kwh ) FROM charge_events WHERE station_id = station.id AND deleted_at IS NULL AND time_stop IS NOT NULL;
-          return charge_event.count( { where: { station_id: station.id } } );
-        } else {
-          res.send( 'Unfortunately this station has no metrics :(' );
-        }
-      } else {
-        res.status( 404 ).send();
-      }
-    })
-    .then(function( count ) {
-      returnData.chargeCount = count;
+  //   // request has kin
+  //   // search stations for kin
+  //   station.findOne( { where: { kin: req.url.substring( 5 ) } } )
+  //   .then(function( station ) {
+  //     if ( typeof station === 'object' && station.dataValues ) {
+  //       // there is data to get
+  //       if ( station.cumulative_kwh ) {
+  //         // SELECT SUM( kwh ) FROM charge_events WHERE station_id = station.id AND deleted_at IS NULL AND time_stop IS NOT NULL;
+  //         return charge_event.count( { where: { station_id: station.id } } );
+  //       } else {
+  //         res.send( 'Unfortunately this station has no metrics :(' );
+  //       }
+  //     } else {
+  //       res.status( 404 ).send();
+  //     }
+  //   })
+  //   .then(function( count ) {
+  //     returnData.chargeCount = count;
 
-      return station.getPlugs();
-    })
-    .then(function( plugs ) {
-      var kwh = 0;
-      if ( Array.isArray( plugs ) && plugs.length > 0 ) {
-        async.each(plugs, function ( plug, cb ) {
-          ekm.makeGetRequestToApi("http://io.ekmpush.com/readMeter/v3/key/" + config.ekmApiKey + "/count/1/format/json/meters/" + plug.ekm_omnimeter_serial)
-          .then(function( data ) {
-            khw += data.readMeter.ReadSet[ 0 ].ReadData[ 0 ].kWh_Tot;
-            cb(null);
-          })
-          .catch(function( error ) {
-            cb(error);
-          });
-        }, function (error) {
-          if ( error ) {
-            throw error;
-          } else {
-            // based off of calculations from the EPA
-            // http://www.epa.gov/cleanenergy/energy-resources/calculator.html
-            returnData.offset = Math.round( 10 * ( kwh * 1.52 ) ) / 10;
-            returnData.gallons = Math.round( 10 * ( kwh * 0.0766666 ) ) / 10;
-            returnData.trees = Math.round( kwh * 0.01766666 );
-            // Avg. Nissan Leaf from http://insideevs.com/long-term-nissan-leaf-mileageusage-review-once-around-the-sun/
-            returnData.miles = Math.round( 10 * ( kwh * 5.44 ) ) / 10;
-            res.send( returnData );
-          }
-        });
-      } else {
-        res.status( 404 ).send();
-      }
-    })
-    .catch(function( error ) {
-      res.status( 500 ).send(error);
-    });
-  }
+  //     return station.getPlugs();
+  //   })
+  //   .then(function( plugs ) {
+  //     var kwh = 0;
+  //     if ( Array.isArray( plugs ) && plugs.length > 0 ) {
+  //       async.each(plugs, function ( plug, cb ) {
+  //         ekm.makeGetRequestToApi("http://io.ekmpush.com/readMeter/v3/key/" + config.ekmApiKey + "/count/1/format/json/meters/" + plug.ekm_omnimeter_serial)
+  //         .then(function( data ) {
+  //           khw += data.readMeter.ReadSet[ 0 ].ReadData[ 0 ].kWh_Tot;
+  //           cb(null);
+  //         })
+  //         .catch(function( error ) {
+  //           cb(error);
+  //         });
+  //       }, function (error) {
+  //         if ( error ) {
+  //           throw error;
+  //         } else {
+  //           // based off of calculations from the EPA
+  //           // http://www.epa.gov/cleanenergy/energy-resources/calculator.html
+  //           returnData.offset = Math.round( 10 * ( kwh * 1.52 ) ) / 10;
+  //           returnData.gallons = Math.round( 10 * ( kwh * 0.0766666 ) ) / 10;
+  //           returnData.trees = Math.round( kwh * 0.01766666 );
+  //           // Avg. Nissan Leaf from http://insideevs.com/long-term-nissan-leaf-mileageusage-review-once-around-the-sun/
+  //           returnData.miles = Math.round( 10 * ( kwh * 5.44 ) ) / 10;
+  //           res.send( returnData );
+  //         }
+  //       });
+  //     } else {
+  //       res.status( 404 ).send();
+  //     }
+  //   })
+  //   .catch(function( error ) {
+  //     res.status( 500 ).send(error);
+  //   });
+  // }
 };
