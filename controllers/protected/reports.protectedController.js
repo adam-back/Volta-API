@@ -52,19 +52,21 @@ module.exports = exports = {
     station.findAll( { where: { location_gps: null }, order: 'kin ASC' } )
     .then(function( stations ) {
       if ( type === 'Web' ) {
-        res.send( stations );
+        return Q( stations );
       } else if ( type === 'CSV' ) {
         var fields = [ 'kin', 'location', 'location_address', 'network' ];
         var fieldNames = [ 'KIN', 'Location', 'Address', 'Network' ];
 
-        return generateCSV( stations, fields, fieldNames );
+        return csv.generateCSV( stations, fields, fieldNames );
+      } else {
+        throw new Error( 'Output not supported: ' + type );
       }
     })
-    .then(function( csv ) {
-      res.send( csv );
+    .then(function( data ) {
+      res.send( data );
     })
     .catch(function( error ) {
-      res.status( 500 ).send( error );
+      res.status( 500 ).send( error.message );
     });
   },
   getMismatchedStationCoordinates: function( req, res ) {

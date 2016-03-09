@@ -53,9 +53,9 @@ module.exports = function() {
       });
     });
 
-    describe('OPS', function() {
+    ddescribe('OPS', function() {
       describe('reports/broken/:output', function() {
-        ddescribe('GET', function() {
+        describe('GET', function() {
           var route;
           var getBrokenPlugs, generateCSV;
 
@@ -199,19 +199,22 @@ module.exports = function() {
         });
       });
 
-      xdescribe('reports/withoutCoordinates/:output', function() {
-        var route = '/protected/reports/withoutCoordinates/:output';
-
+      describe('reports/withoutCoordinates/:output', function() {
         describe('GET', function() {
-          var getAll;
+          var route;
+          var findStations, generateCSV;
 
           beforeEach(function() {
-            getAll = Q.defer();
-            spyOn( media_slide, 'findAll' ).andReturn( getAll.promise );
+            route = '/protected/reports/withoutCoordinates/';
+            findStations = Q.defer();
+            generateCSV = Q.defer();
+            spyOn( models.station, 'findAll' ).andReturn( findStations.promise );
+            spyOn( csv, 'generateCSV' ).andReturn( generateCSV.promise );
           });
 
           it('should be a defined route (not 404)', function( done ) {
-            getAll.reject();
+            route += 'Web';
+            findStations.reject( new Error( 'Test' ) );
             supertest.get( route )
             .set( 'Authorization', 'Bearer ' + token )
             .expect(function( res ) {
@@ -220,16 +223,75 @@ module.exports = function() {
             .end( done );
           });
 
+          it('should find stations without GPS and order by kin', function( done ) {
+            route += 'CSV';
+            findStations.reject( new Error( 'Test' ) );
+            supertest.get( route )
+            .set( 'Authorization', 'Bearer ' + token )
+            .expect(function( res ) {
+              expect( models.station.findAll ).toHaveBeenCalled();
+              expect( models.station.findAll ).toHaveBeenCalledWith( { where: { location_gps: null }, order: 'kin ASC' } );
+            })
+            .end( done );
+          });
+
+          it('Web: send stations', function( done ) {
+            route += 'Web';
+            findStations.resolve( [ true ] );
+            supertest.get( route )
+            .set( 'Authorization', 'Bearer ' + token )
+            .expect( 200 )
+            .expect( 'Content-Type', /json/ )
+            .expect( [ true ] )
+            .expect(function( res ) {
+              expect( csv.generateCSV ).not.toHaveBeenCalled();
+            })
+            .end( done );
+          });
+
+          it('CSV: should generate CSV and resolve data', function( done ) {
+            var fields = [ 'kin', 'location', 'location_address', 'network' ];
+            var fieldNames = [ 'KIN', 'Location', 'Address', 'Network' ];
+            route += 'CSV';
+            findStations.resolve( [ true ] );
+            generateCSV.resolve( 'Test' );
+
+            supertest.get( route )
+            .set( 'Authorization', 'Bearer ' + token )
+            .expect( 200 )
+            .expect( 'Content-Type', /text/ )
+            .expect( 'Test' )
+            .expect(function( res ) {
+              expect( csv.generateCSV ).toHaveBeenCalled();
+              expect( csv.generateCSV ).toHaveBeenCalledWith( [ true ], fields, fieldNames );
+            })
+            .end( done );
+          });
+
+          it('should throw error for unsupported output', function( done ) {
+            route += 'Other';
+            findStations.resolve( [ true ] );
+            supertest.get( route )
+            .set( 'Authorization', 'Bearer ' + token )
+            .expect( 500 )
+            .expect( 'Content-Type', /text/ )
+            .expect( 'Output not supported: Other' )
+            .expect(function( res ) {
+              expect( csv.generateCSV ).not.toHaveBeenCalled();
+            })
+            .end( done );
+          });
+
           it('should return 500 failure for error', function( done ) {
-            getAll.reject( 'Test' );
+            route += 'Web';
+            findStations.reject( new Error( 'Test' ) );
             supertest.get( route )
             .set( 'Authorization', 'Bearer ' + token )
             .expect( 500 )
             .expect( 'Test' )
             .expect( 'Content-Type', /text/ )
             .expect(function( res ) {
-              expect( media_slide.findAll ).toHaveBeenCalled();
-              expect( media_slide.findAll ).toHaveBeenCalledWith();
+              expect( models.station.findAll ).toHaveBeenCalled();
             })
             .end( done );
           });
