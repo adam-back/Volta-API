@@ -37,7 +37,7 @@ router.route( '/wrongCoordinates/:output' )
 router.route( '/downloadStations/CSV' )
   .get( controller.exportStationDataAsCsv );
 
-// for http://www.baseurl.com/protected/reports/downloadStations/CSV
+// for http://www.baseurl.com/protected/reports/chargeEventsOverTime/CSV
 router.route( '/chargeEventsOverTime/CSV' )
   .get( controller.getChargeDataOverTime );
 

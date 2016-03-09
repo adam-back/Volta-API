@@ -1,7 +1,6 @@
 var station = require( '../../models').station;
 var plug = require( '../../models').plug;
 var charge_event = require( '../../models').charge_event;
-var express = require( 'express' );
 var async     = require( 'async' );
 var Q = require( 'q' );
 var env = process.env.NODE_ENV || 'development';
@@ -10,6 +9,7 @@ var ekm = require('../../factories/ekmFactory.js');
 var geocoder = require( 'node-geocoder' )( 'google', 'https', { apiKey: config.googleApiKey, formatter: null } );
 var greatCircleDistance = require( '../../factories/distanceFactory.js' ).getDistanceFromLatLonInMiles;
 var generateCSV = require( '../../factories/csvFactory' ).generateCSV;
+var csv = require( '../../factories/csvFactory' );
 var helper = require( '../../factories/reportHelpers' );
 var moment = require( 'moment' );
 moment().format();
@@ -29,19 +29,21 @@ module.exports = exports = {
           }
         });
 
-        return broken;
+        return Q( broken );
       } else if ( type === 'CSV' ) {
         var fields = [ 'kin', 'location', 'location_address', 'network', 'ekm_omnimeter_serial', 'ekm_push_mac', 'number_on_station', 'ekm_url' ];
         var fieldNames = [ 'KIN', 'Location', 'Address', 'Network', 'Omnimeter S/N', 'Push MAC', 'Plug #', 'EKM Url' ];
 
-        return generateCSV( broken, fields, fieldNames );
+        return csv.generateCSV( broken, fields, fieldNames );
+      } else {
+        throw new Error( 'Output not supported: ' + type );
       }
     })
     .then(function( formattedReturn ) {
       res.send( formattedReturn );
     })
     .catch(function( error ) {
-      res.status( 500 ).send( error );
+      res.status( 500 ).send( error.message );
     });
   },
   getStationsWithoutCoordinates: function( req, res ) {

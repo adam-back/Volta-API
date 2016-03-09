@@ -11,6 +11,7 @@ var mediaScheduleTests = require( './apiTests/mediaSchedule.protectedController.
 var appFavoritesTests = require( './apiTests/appFavorites.protectedController.spec.js' );
 var appUsersTests = require( './apiTests/appUsers.protectedController.spec.js' );
 var D3Tests = require( './apiTests/d3.protectedController.spec.js' );
+var reportTests = require( './apiTests/reports.protectedController.spec.js' );
 
 describe('Private API Routes - protected/', function() {
   var route = '/protected';
@@ -25,6 +26,7 @@ describe('Private API Routes - protected/', function() {
   plugTests();
   networkTests();
   D3Tests();
+  reportTests();
 
   describe('APP ROUTES', function() {
     appTests();
