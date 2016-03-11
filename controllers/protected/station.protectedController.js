@@ -14,7 +14,7 @@ module.exports = exports = {
       res.json( number );
     })
     .catch(function( error ) {
-      res.status( 500 ).send( error );
+      res.status( 500 ).send( error.message );
     });
   },
   getAllStations: function ( req, res ) {
@@ -25,7 +25,7 @@ module.exports = exports = {
       res.json( stations );
     })
     .catch(function( error ) {
-      res.status( 500 ).send( error );
+      res.status( 500 ).send( error.message );
     });
   },
   getOneStation: function( req, res ) {
@@ -40,7 +40,7 @@ module.exports = exports = {
       }
     })
     .catch(function( error ) {
-      res.status( 500 ).send( error );
+      res.status( 500 ).send( error.message );
     });
   },
   addStation: function( req, res ) {
@@ -70,7 +70,7 @@ module.exports = exports = {
         station.destroy( { where: { id: id }, force: true } );
       }
 
-      res.status( 500 ).send( error );
+      res.status( 500 ).send( error.message );
     });
   },
   editStation: function( req, res ) {
@@ -174,7 +174,7 @@ module.exports = exports = {
 
             return Q.all( destroyPlugs );
           } else {
-            return;
+            return Q();
           }
         })
         .then(function() {
@@ -189,7 +189,7 @@ module.exports = exports = {
       res.status( 204 ).send();
     })
     .catch(function( error ) {
-      res.status( 500 ).send( 'Error deleting station: ' + error );
+      res.status( 500 ).send( 'Error deleting station: ' + error.message );
     });
   }
 };

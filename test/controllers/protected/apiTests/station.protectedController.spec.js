@@ -27,7 +27,7 @@ module.exports = function() {
         });
 
         it('should be a defined route (not 404)', function( done ) {
-          stationFind.reject();
+          stationFind.reject( new Error( 'Test' ) );
           supertest.get( route )
           .set( 'Authorization', 'Bearer ' + token )
           .expect(function( res ) {
@@ -52,10 +52,11 @@ module.exports = function() {
         });
 
         it('should return 500 failure for error', function( done ) {
-          stationFind.reject( 'Test' );
+          stationFind.reject( new Error( 'Test' ) );
           supertest.get( route )
           .set( 'Authorization', 'Bearer ' + token )
           .expect( 500 )
+          .expect( 'Content-Type', /text/ )
           .expect( 'Test' )
           .expect(function( res ) {
             expect( station.findAll ).toHaveBeenCalled();
@@ -80,7 +81,7 @@ module.exports = function() {
         });
 
         it('should be a defined route (not 404)', function( done ) {
-          findOrCreateStation.reject();
+          findOrCreateStation.reject( new Error( 'Test' ) );
           supertest.post( route )
           .set( 'Authorization', 'Bearer ' + token )
           .expect(function( res ) {
@@ -90,12 +91,12 @@ module.exports = function() {
         });
 
         it('should findOrCreate a station', function( done ) {
-          findOrCreateStation.reject( 'Fake reject.' );
+          findOrCreateStation.reject( new Error( 'Test' ) );
           supertest.post( route )
           .set( 'Authorization', 'Bearer ' + token )
           .send( body )
           .expect( 500 )
-          .expect( 'Fake reject.' )
+          .expect( 'Test' )
           .expect(function( res ) {
             expect( station.findOrCreate ).toHaveBeenCalled();
             expect( station.findOrCreate ).toHaveBeenCalledWith( { where: { kin: '001-0001-001-01-K' }, defaults: body } );
@@ -139,12 +140,12 @@ module.exports = function() {
         it('should destroy station if error is thrown on associate', function( done ) {
           body.id = 1;
           findOrCreateStation.resolve( [ body, true ] );
-          associateStation.reject( 'Because I said so.' );
+          associateStation.reject( new Error( 'Test' ) );
           supertest.post( route )
           .set( 'Authorization', 'Bearer ' + token )
           .send( body )
           .expect( 500 )
-          .expect( 'Because I said so.' )
+          .expect( 'Test' )
           .expect(function( res ) {
             expect( appSponsorFactory.associateStationWithAppSponsors ).toHaveBeenCalled();
             expect( appSponsorFactory.associateStationWithAppSponsors ).toHaveBeenCalledWith( body );
@@ -377,7 +378,7 @@ module.exports = function() {
         });
 
         it('should be a defined route (not 404)', function( done ) {
-          countStations.reject();
+          countStations.reject( new Error( 'Test' ) );
           supertest.get( route )
           .set( 'Authorization', 'Bearer ' + token )
           .expect(function( res ) {
@@ -402,7 +403,7 @@ module.exports = function() {
         });
 
         it('should return 500 error for failure', function( done ) {
-          countStations.reject( 'Couldn\'t count all stations.' );
+          countStations.reject( new Error( 'Couldn\'t count all stations.' ) );
           supertest.get( route )
           .set( 'Authorization', 'Bearer ' + token )
           .expect( 500 )
@@ -428,7 +429,7 @@ module.exports = function() {
         });
 
         it('should be a defined route (not 404)', function( done ) {
-          findStation.reject();
+          findStation.reject( new Error( 'Test' ) );
           supertest.get( route )
           .set( 'Authorization', 'Bearer ' + token )
           .expect(function( res ) {
@@ -438,7 +439,7 @@ module.exports = function() {
         });
 
         it('should find one station by kin', function( done ) {
-          findStation.reject( 'Fake reject.' );
+          findStation.reject( new Error( 'Test' ) );
           supertest.get( route )
           .set( 'Authorization', 'Bearer ' + token )
           .expect(function( res ) {
@@ -458,7 +459,7 @@ module.exports = function() {
         });
 
         it('should return JSON of station', function( done ) {
-          var thatOneStation = [ { id: 1} ];
+          var thatOneStation = [ { id: 1 } ];
           findStation.resolve( thatOneStation );
           supertest.get( route )
           .set( 'Authorization', 'Bearer ' + token )
@@ -469,11 +470,12 @@ module.exports = function() {
         });
 
         it('should return 500 failure for error', function( done ) {
-          findStation.reject( 'Fake reject.' );
+          findStation.reject( new Error( 'Test' ) );
           supertest.get( route )
           .set( 'Authorization', 'Bearer ' + token )
           .expect( 500 )
-          .expect( 'Fake reject.' )
+          .expect( 'Content-Type', /text/ )
+          .expect( 'Test' )
           .end( done );
         });
       });
@@ -504,7 +506,7 @@ module.exports = function() {
         });
 
         it('should be a defined route (not 404)', function( done ) {
-          findOneStation.reject();
+          findOneStation.reject( new Error( 'Test' ) );
           supertest.get( route )
           .set( 'Authorization', 'Bearer ' + token )
           .expect(function( res ) {
@@ -514,7 +516,7 @@ module.exports = function() {
         });
 
         it('should find one station by kin', function( done ) {
-          findOneStation.reject( 'Fake reject.' );
+          findOneStation.reject( new Error( 'Test' ) );
           supertest.delete( route )
           .set( 'Authorization', 'Bearer ' + token )
           .expect(function( res ) {
@@ -526,7 +528,7 @@ module.exports = function() {
 
         it('should get all plugs for station', function( done ) {
           findOneStation.resolve( foundStation );
-          getStationsPlugs.reject( 'Fake test.' );
+          getStationsPlugs.reject( new Error( 'Test' ) );
           supertest.delete( route )
           .set( 'Authorization', 'Bearer ' + token )
           .expect(function( res ) {
@@ -541,7 +543,7 @@ module.exports = function() {
           getStationsPlugs.resolve( [ plug1, plug2 ] );
           plug1Destroy.resolve();
           plug2Destroy.resolve();
-          removeStationSponsor.reject( 'Fake reject.' );
+          removeStationSponsor.reject( new Error( 'Test' ) );
           supertest.delete( route )
           .set( 'Authorization', 'Bearer ' + token )
           .expect(function( res ) {
@@ -556,7 +558,7 @@ module.exports = function() {
         it('should skip destroying plugs if there aren\'t any', function( done ) {
           findOneStation.resolve( foundStation );
           getStationsPlugs.resolve( [] );
-          removeStationSponsor.reject( 'Fake reject.' );
+          removeStationSponsor.reject( new Error( 'Test' ) );
           supertest.delete( route )
           .set( 'Authorization', 'Bearer ' + token )
           .expect(function( res ) {
@@ -570,7 +572,7 @@ module.exports = function() {
           findOneStation.resolve( foundStation );
           getStationsPlugs.resolve( [] );
           removeStationSponsor.resolve( foundStation );
-          stationDestroy.reject( 'Fake reject.' );
+          stationDestroy.reject( new Error( 'Test' ) );
           supertest.delete( route )
           .set( 'Authorization', 'Bearer ' + token )
           .expect(function( res ) {
@@ -605,11 +607,12 @@ module.exports = function() {
         });
 
         it('should return 500 failure for error', function( done ) {
-          findOneStation.reject( 'Fake reject.' );
+          findOneStation.reject( new Error( 'Test' ) );
           supertest.delete( route )
           .set( 'Authorization', 'Bearer ' + token )
           .expect( 500 )
-          .expect( 'Error deleting station: Fake reject.' )
+          .expect( 'Content-Type', /text/ )
+          .expect( 'Error deleting station: Test' )
           .end( done );
         });
       });
