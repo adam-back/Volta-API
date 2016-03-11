@@ -422,19 +422,25 @@ module.exports = function() {
         });
       });
 
-      xdescribe('reports/withoutMeters/:output', function() {
-        var route = '/protected/reports/withoutMeters/:output';
+      describe('reports/withoutMeters/:output', function() {
+        var route;
 
         describe('GET', function() {
-          var getAll;
+          var findAllPlugs, findAllStations, generateCSV;
 
           beforeEach(function() {
-            getAll = Q.defer();
-            spyOn( media_slide, 'findAll' ).andReturn( getAll.promise );
+            route = '/protected/reports/withoutMeters/';
+            findAllPlugs = Q.defer();
+            findAllStations = Q.defer();
+            generateCSV = Q.defer();
+            spyOn( models.plug, 'findAll' ).andReturn( findAllPlugs.promise );
+            spyOn( models.station, 'findAll' ).andReturn( findAllStations.promise );
+            spyOn( csv, 'generateCSV' ).andReturn( generateCSV.promise );
           });
 
           it('should be a defined route (not 404)', function( done ) {
-            getAll.reject();
+            route += 'Web';
+            findAllPlugs.reject( new Error( 'Test' ) );
             supertest.get( route )
             .set( 'Authorization', 'Bearer ' + token )
             .expect(function( res ) {
@@ -443,16 +449,74 @@ module.exports = function() {
             .end( done );
           });
 
+          it('should find all plugs\' station_ids', function( done ) {
+            route += 'Web';
+            findAllPlugs.reject( new Error( 'Test' ) );
+            supertest.get( route )
+            .set( 'Authorization', 'Bearer ' + token )
+            .expect(function( res ) {
+              expect( models.plug.findAll ).toHaveBeenCalled();
+              expect( models.plug.findAll ).toHaveBeenCalledWith( { attributes: [ 'station_id' ], raw: true } );
+            })
+            .end( done );
+          });
+
+          it('should find all stations without attached plugs', function( done ) {
+            route += 'Web';
+            findAllPlugs.resolve( [ { station_id: 1 }, { station_id: 2 } ] );
+            findAllStations.reject( new Error( 'Test' ) );
+            supertest.get( route )
+            .set( 'Authorization', 'Bearer ' + token )
+            .expect(function( res ) {
+              expect( models.station.findAll ).toHaveBeenCalled();
+              expect( models.station.findAll ).toHaveBeenCalledWith( { where: { id: { $notIn: [ 1, 2 ] } }, raw: true, order: [ 'kin' ] } );
+            })
+            .end( done );
+          });
+
+          it('should generate CSV', function( done ) {
+            route += 'CSV';
+            var fields = [ 'kin', 'location', 'location_address', 'network' ];
+            var fieldNames = [ 'KIN', 'Location', 'Address', 'Network' ];
+            findAllPlugs.resolve( [ { station_id: 1 }, { station_id: 2 } ] );
+            findAllStations.resolve( [ 'true' ] );
+            generateCSV.reject( new Error( 'Test' ) );
+
+            supertest.get( route )
+            .set( 'Authorization', 'Bearer ' + token )
+            .expect(function( res ) {
+              expect( csv.generateCSV ).toHaveBeenCalled();
+              expect( csv.generateCSV ).toHaveBeenCalledWith( [ 'true' ], fields, fieldNames );
+            })
+            .end( done );
+          });
+
+          it('should resolve data', function( done ) {
+            route += 'Web';
+            findAllPlugs.resolve( [ { station_id: 1 }, { station_id: 2 } ] );
+            findAllStations.resolve( [ 'true' ] );
+
+            supertest.get( route )
+            .set( 'Authorization', 'Bearer ' + token )
+            .expect( 200 )
+            .expect( 'Content-Type', /json/ )
+            .expect( [ 'true' ] )
+            .expect(function( res ) {
+              expect( csv.generateCSV ).not.toHaveBeenCalled();
+            })
+            .end( done );
+          });
+
           it('should return 500 failure for error', function( done ) {
-            getAll.reject( 'Test' );
+            route += 'Web';
+            findAllPlugs.reject( new Error( 'Test' ) );
             supertest.get( route )
             .set( 'Authorization', 'Bearer ' + token )
             .expect( 500 )
             .expect( 'Test' )
             .expect( 'Content-Type', /text/ )
             .expect(function( res ) {
-              expect( media_slide.findAll ).toHaveBeenCalled();
-              expect( media_slide.findAll ).toHaveBeenCalledWith();
+              expect( models.plug.findAll ).toHaveBeenCalled();
             })
             .end( done );
           });

@@ -338,7 +338,7 @@ module.exports = exports = {
     var fields = [ 'kin', 'location', 'location_address', 'network' ];
     var fieldNames = [ 'KIN', 'Location', 'Address', 'Network' ];
 
-    plug.findAll( { raw: true } )
+    plug.findAll( { attributes: [ 'station_id' ], raw: true } )
     .then(function( plugs ) {
       var associatedStationIds = [];
       for ( var i = 0; i < plugs.length; i++ ) {
@@ -351,14 +351,14 @@ module.exports = exports = {
       if ( type === 'Web' ) {
         return Q.when( unmeteredStations );
       } else {
-        return generateCSV( unmeteredStations, fields, fieldNames );
+        return csv.generateCSV( unmeteredStations, fields, fieldNames );
       }
     })
     .then(function( formattedResponse ) {
       res.send( formattedResponse );
     })
     .catch(function( error ) {
-      res.status( 500 ).send( error );
+      res.status( 500 ).send( error.message );
     });
   },
   getChargeDataOverTime: function( req, res ) {
