@@ -930,7 +930,7 @@ module.exports = function() {
       });
     });
 
-    ddescribe('MEDIA SALES', function() {
+    describe('MEDIA SALES', function() {
       describe('reports/chargeEventsOverTime/CSV', function() {
         var route;
 
@@ -1018,19 +1018,24 @@ module.exports = function() {
         });
       });
 
-      xdescribe('reports/getLastThrirtyDays/CSV', function() {
-        var route = '/protected/reports/getLastThrirtyDays/CSV';
+      describe('reports/getLastThirtyDays/CSV', function() {
+        var route;
 
         describe('GET', function() {
-          var getAll;
+          var getAllStations, getChargesOverLastThirtyDaysForOneStation, generateCSV;
 
           beforeEach(function() {
-            getAll = Q.defer();
-            spyOn( media_slide, 'findAll' ).andReturn( getAll.promise );
+            route = '/protected/reports/getLastThirtyDays/CSV';
+            getAllStations = Q.defer();
+            getChargesOverLastThirtyDaysForOneStation = Q.defer();
+            generateCSV = Q.defer();
+            spyOn( models.station, 'findAll' ).andReturn( getAllStations.promise );
+            spyOn( helper, 'chargesOverLastThirtyDaysForOneStation' ).andReturn( getChargesOverLastThirtyDaysForOneStation.promise );
+            spyOn( csv, 'generateCSV' ).andReturn( generateCSV.promise );
           });
 
           it('should be a defined route (not 404)', function( done ) {
-            getAll.reject();
+            getAllStations.reject( new Error( 'Test' ) );
             supertest.get( route )
             .set( 'Authorization', 'Bearer ' + token )
             .expect(function( res ) {
@@ -1039,16 +1044,228 @@ module.exports = function() {
             .end( done );
           });
 
+          it('should 404 for Web endpoint', function( done ) {
+            route = route.slice( 0, -3 );
+            route += 'Web';
+
+            supertest.get( route )
+            .set( 'Authorization', 'Bearer ' + token )
+            .expect( 404 )
+            .end( done );
+          });
+
+          it('should find all stations', function( done ) {
+            getAllStations.reject( new Error( 'Test' ) );
+            supertest.get( route )
+            .set( 'Authorization', 'Bearer ' + token )
+            .expect(function( res ) {
+              expect( models.station.findAll ).toHaveBeenCalled();
+              expect( models.station.findAll ).toHaveBeenCalledWith( { raw: true } );
+            })
+            .end( done );
+          });
+
+          it('should map over stations, applying chargesOverLastThirtyDaysForOneStation to each', function( done ) {
+            getAllStations.resolve( [ 1, 2, 3 ] );
+            getChargesOverLastThirtyDaysForOneStation.reject( new Error( 'Test' ) );
+            spyOn( Q, 'all' ).andCallThrough();
+
+            supertest.get( route )
+            .set( 'Authorization', 'Bearer ' + token )
+            .expect(function( res ) {
+              expect( helper.chargesOverLastThirtyDaysForOneStation.callCount ).toBe( 3 );
+              expect( helper.chargesOverLastThirtyDaysForOneStation.calls[ 0 ].args[ 0 ] ).toBe( 1 );
+              expect( helper.chargesOverLastThirtyDaysForOneStation.calls[ 1 ].args[ 0 ] ).toBe( 2 );
+              expect( helper.chargesOverLastThirtyDaysForOneStation.calls[ 2 ].args[ 0 ] ).toBe( 3 );
+              expect( Q.all ).toHaveBeenCalled();
+            })
+            .end( done );
+          });
+
+          it('should order everything by kin', function( done ) {
+            getAllStations.resolve( [ 1, 2, 3 ] );
+            getChargesOverLastThirtyDaysForOneStation.resolve( true );
+            generateCSV.reject( new Error( 'Test' ) );
+            spyOn( helper, 'orderByKin' );
+
+            supertest.get( route )
+            .set( 'Authorization', 'Bearer ' + token )
+            .expect(function( res ) {
+              expect( helper.orderByKin ).toHaveBeenCalled();
+              expect( helper.orderByKin ).toHaveBeenCalledWith( [ true, true, true ] );
+            })
+            .end( done );
+          });
+
+          it('should generateCSV', function( done ) {
+            var fields = [
+              'kin',
+              'location',
+              'since',
+              // cumulative kWh
+              'kWh',
+              'carbon',
+              'miles',
+              'trees',
+              'gallons',
+              // charge events
+              'numberOfCharges',
+              'averageChargeEventsPerDay',
+              'medianChargeEventsPerDay',
+              'averageDurationOfEvent',
+              'medianDurationOfEvent',
+              // Average kwh per event
+              'averageKwhOfEvent',
+              'averageCarbonPerEvent',
+              'averageMilesPerEvent',
+              'averageTreesPerEvent',
+              'averageGallonsPerEvent',
+              // Median kwh per event
+              'medianKwhOfEvent',
+              'medianCarbonPerEvent',
+              'medianMilesPerEvent',
+              'medianTreesPerEvent',
+              'medianGallonsPerEvent'
+            ];
+            var fieldNames = [
+              'KIN',
+              'Location',
+              'Start of 30 Days',
+              // cumulative kWh
+              '30 Day kWh',
+              '30 Day Carbon Offset (lbs)',
+              '30 Day Miles',
+              '30 Day Trees',
+              '30 Day Gallons',
+              // charge events
+              'Total Charges Events',
+              'Average Charge Events/Day',
+              'Median Charge Events/Day',
+              'Average Duration Of Event',
+              'Median Duration Of Event',
+              // Average kwh per event
+              'Average kWh Per Event',
+              'Average Carbon Offset Per Event',
+              'Average Miles Per Event',
+              'Average Trees Per Event',
+              'Average Gallons Per Event',
+              // Median kwh per event
+              'Median kWh Of Event',
+              'Median Carbon Offset Per Event',
+              'Median Miles Per Event',
+              'Median Trees Per Event',
+              'Median Gallons Per Event'
+            ];
+            getAllStations.resolve( [ 1, 2, 3 ] );
+            getChargesOverLastThirtyDaysForOneStation.resolve( true );
+            generateCSV.reject( new Error( 'Test' ) );
+            spyOn( helper, 'orderByKin' ).andReturn( 'ordered by kin' );
+
+            supertest.get( route )
+            .set( 'Authorization', 'Bearer ' + token )
+            .expect(function( res ) {
+              expect( csv.generateCSV ).toHaveBeenCalled();
+              expect( csv.generateCSV ).toHaveBeenCalledWith( 'ordered by kin', fields, fieldNames );
+            })
+            .end( done );
+          });
+
+          it('should generateCSV', function( done ) {
+            var fields = [
+              'kin',
+              'location',
+              'since',
+              // cumulative kWh
+              'kWh',
+              'carbon',
+              'miles',
+              'trees',
+              'gallons',
+              // charge events
+              'numberOfCharges',
+              'averageChargeEventsPerDay',
+              'medianChargeEventsPerDay',
+              'averageDurationOfEvent',
+              'medianDurationOfEvent',
+              // Average kwh per event
+              'averageKwhOfEvent',
+              'averageCarbonPerEvent',
+              'averageMilesPerEvent',
+              'averageTreesPerEvent',
+              'averageGallonsPerEvent',
+              // Median kwh per event
+              'medianKwhOfEvent',
+              'medianCarbonPerEvent',
+              'medianMilesPerEvent',
+              'medianTreesPerEvent',
+              'medianGallonsPerEvent'
+            ];
+            var fieldNames = [
+              'KIN',
+              'Location',
+              'Start of 30 Days',
+              // cumulative kWh
+              '30 Day kWh',
+              '30 Day Carbon Offset (lbs)',
+              '30 Day Miles',
+              '30 Day Trees',
+              '30 Day Gallons',
+              // charge events
+              'Total Charges Events',
+              'Average Charge Events/Day',
+              'Median Charge Events/Day',
+              'Average Duration Of Event',
+              'Median Duration Of Event',
+              // Average kwh per event
+              'Average kWh Per Event',
+              'Average Carbon Offset Per Event',
+              'Average Miles Per Event',
+              'Average Trees Per Event',
+              'Average Gallons Per Event',
+              // Median kwh per event
+              'Median kWh Of Event',
+              'Median Carbon Offset Per Event',
+              'Median Miles Per Event',
+              'Median Trees Per Event',
+              'Median Gallons Per Event'
+            ];
+            getAllStations.resolve( [ 1, 2, 3 ] );
+            getChargesOverLastThirtyDaysForOneStation.resolve( true );
+            generateCSV.reject( new Error( 'Test' ) );
+            spyOn( helper, 'orderByKin' ).andReturn( 'ordered by kin' );
+
+            supertest.get( route )
+            .set( 'Authorization', 'Bearer ' + token )
+            .expect(function( res ) {
+              expect( csv.generateCSV ).toHaveBeenCalled();
+              expect( csv.generateCSV ).toHaveBeenCalledWith( 'ordered by kin', fields, fieldNames );
+            })
+            .end( done );
+          });
+
+          it('should send data', function( done ) {
+            getAllStations.resolve( [ 1, 2, 3 ] );
+            getChargesOverLastThirtyDaysForOneStation.resolve( true );
+            generateCSV.resolve( 'Data' );
+            spyOn( helper, 'orderByKin' );
+
+            supertest.get( route )
+            .set( 'Authorization', 'Bearer ' + token )
+            .expect( 200 )
+            .expect( 'Content-Type', /text/ )
+            .expect( 'Data' )
+            .end( done );
+          });
+
           it('should return 500 failure for error', function( done ) {
-            getAll.reject( 'Test' );
+            getAllStations.reject( new Error( 'Test' ) );
             supertest.get( route )
             .set( 'Authorization', 'Bearer ' + token )
             .expect( 500 )
             .expect( 'Test' )
             .expect( 'Content-Type', /text/ )
             .expect(function( res ) {
-              expect( media_slide.findAll ).toHaveBeenCalled();
-              expect( media_slide.findAll ).toHaveBeenCalledWith();
+              expect( models.station.findAll ).toHaveBeenCalled();
             })
             .end( done );
           });
