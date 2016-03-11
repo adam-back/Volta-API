@@ -930,7 +930,7 @@ module.exports = function() {
       });
     });
 
-    describe('MEDIA SALES', function() {
+    ddescribe('MEDIA SALES', function() {
       describe('reports/chargeEventsOverTime/CSV', function() {
         var route;
 
@@ -962,6 +962,44 @@ module.exports = function() {
             supertest.get( route )
             .set( 'Authorization', 'Bearer ' + token )
             .expect( 404 )
+            .end( done );
+          });
+
+          it('should get charge events by 30 minute interval', function( done ) {
+            getChargeEventsOverTime.reject( new Error( 'Test' ) );
+            supertest.get( route )
+            .set( 'Authorization', 'Bearer ' + token )
+            .expect(function( res ) {
+              expect( helper.chargeEventsOverTime ).toHaveBeenCalled();
+              expect( helper.chargeEventsOverTime ).toHaveBeenCalledWith( null, [ 30, 'minutes' ] );
+            })
+            .end( done );
+          });
+
+          it('should generate CSV data', function( done ) {
+            getChargeEventsOverTime.resolve( [ 'true' ] );
+            generateCSV.reject( new Error( 'Test' ) );
+            var fields = [ 'time', 'events', 'kwh' ];
+            var fieldNames = [ 'End Of Period', 'Number of Sessions', 'Cumulative kWh' ];
+
+            supertest.get( route )
+            .set( 'Authorization', 'Bearer ' + token )
+            .expect(function( res ) {
+              expect( csv.generateCSV ).toHaveBeenCalled();
+              expect( csv.generateCSV ).toHaveBeenCalledWith( [ 'true' ], fields, fieldNames );
+            })
+            .end( done );
+          });
+
+          it('should send data', function( done ) {
+            getChargeEventsOverTime.resolve( [ 'true' ] );
+            generateCSV.resolve( 'Data' );
+
+            supertest.get( route )
+            .set( 'Authorization', 'Bearer ' + token )
+            .expect( 200 )
+            .expect( 'Content-Type', /text/ )
+            .expect( 'Data' )
             .end( done );
           });
 
