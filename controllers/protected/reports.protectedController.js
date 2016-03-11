@@ -323,14 +323,14 @@ module.exports = exports = {
       if ( type === 'Web' ) {
         return Q.when( wallMounts );
       } else {
-        return generateCSV( wallMounts, fields, fieldNames );
+        return csv.generateCSV( wallMounts, fields, fieldNames );
       }
     })
     .then(function( formattedResponse ) {
       res.send( formattedResponse );
     })
     .catch(function( error ) {
-      res.status( 500 ).send( error );
+      res.status( 500 ).send( error.message );
     });
   },
   listStationsWhichNeedMeters: function( req, res ) {

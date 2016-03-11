@@ -459,19 +459,23 @@ module.exports = function() {
         });
       });
 
-      xdescribe('reports/wallmounts/:output', function() {
-        var route = '/protected/reports/wallmounts/:output';
+      describe('reports/wallmounts/:output', function() {
+        var route;
 
         describe('GET', function() {
-          var getAll;
+          var findAllStations, generateCSV;
 
           beforeEach(function() {
-            getAll = Q.defer();
-            spyOn( media_slide, 'findAll' ).andReturn( getAll.promise );
+            route = '/protected/reports/wallmounts/';
+            findAllStations = Q.defer();
+            generateCSV = Q.defer();
+            spyOn( models.station, 'findAll' ).andReturn( findAllStations.promise );
+            spyOn( csv, 'generateCSV' ).andReturn( generateCSV.promise );
           });
 
           it('should be a defined route (not 404)', function( done ) {
-            getAll.reject();
+            route += 'Web';
+            findAllStations.reject( new Error( 'Test' ) );
             supertest.get( route )
             .set( 'Authorization', 'Bearer ' + token )
             .expect(function( res ) {
@@ -480,16 +484,59 @@ module.exports = function() {
             .end( done );
           });
 
+          it('should find all stations', function( done ) {
+            route += 'Web';
+            findAllStations.reject( new Error( 'Test' ) );
+            supertest.get( route )
+            .set( 'Authorization', 'Bearer ' + token )
+            .expect(function( res ) {
+              expect( models.station.findAll ).toHaveBeenCalled();
+              expect( models.station.findAll ).toHaveBeenCalledWith( { where: { kin: { $like: '%-W' } }, raw: true, order: [ 'kin' ] } );
+            })
+            .end( done );
+          });
+
+          it('should generate CSV', function( done ) {
+            var fields = [ 'kin', 'location', 'location_address', 'network' ];
+            var fieldNames = [ 'KIN', 'Location', 'Address', 'Network' ];
+            route += 'CSV';
+            findAllStations.resolve( [ 'true' ] );
+            generateCSV.reject( new Error( 'Test' ) );
+
+            supertest.get( route )
+            .set( 'Authorization', 'Bearer ' + token )
+            .expect(function( res ) {
+              expect( csv.generateCSV ).toHaveBeenCalled();
+              expect( csv.generateCSV ).toHaveBeenCalledWith( [ 'true' ], fields, fieldNames );
+            })
+            .end( done );
+          });
+
+          it('should resolve data', function( done ) {
+            route += 'Web';
+            findAllStations.resolve( [ 'true' ] );
+
+            supertest.get( route )
+            .set( 'Authorization', 'Bearer ' + token )
+            .expect( 200 )
+            .expect( 'Content-Type', /json/ )
+            .expect( [ 'true' ] )
+            .expect(function( res ) {
+              expect( csv.generateCSV ).not.toHaveBeenCalled();
+            })
+            .end( done );
+          });
+
           it('should return 500 failure for error', function( done ) {
-            getAll.reject( 'Test' );
+            route += 'Web';
+            findAllStations.reject( new Error( 'Test' ) );
             supertest.get( route )
             .set( 'Authorization', 'Bearer ' + token )
             .expect( 500 )
             .expect( 'Test' )
             .expect( 'Content-Type', /text/ )
             .expect(function( res ) {
-              expect( media_slide.findAll ).toHaveBeenCalled();
-              expect( media_slide.findAll ).toHaveBeenCalledWith();
+              expect( models.station.findAll ).toHaveBeenCalled();
             })
             .end( done );
           });
