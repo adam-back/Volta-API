@@ -739,19 +739,21 @@ module.exports = function() {
         });
       });
 
-      xdescribe('reports/downloadStations/CSV', function() {
+      describe('reports/downloadStations/CSV', function() {
         var route = '/protected/reports/downloadStations/CSV';
 
         describe('GET', function() {
-          var getAll;
+          var findAllStations, generateCSV;
 
           beforeEach(function() {
-            getAll = Q.defer();
-            spyOn( media_slide, 'findAll' ).andReturn( getAll.promise );
+            findAllStations = Q.defer();
+            generateCSV = Q.defer();
+            spyOn( models.station, 'findAll' ).andReturn( findAllStations.promise );
+            spyOn( csv, 'generateCSV' ).andReturn( generateCSV.promise );
           });
 
           it('should be a defined route (not 404)', function( done ) {
-            getAll.reject();
+            findAllStations.reject( new Error( 'Test' ) );
             supertest.get( route )
             .set( 'Authorization', 'Bearer ' + token )
             .expect(function( res ) {
@@ -760,16 +762,56 @@ module.exports = function() {
             .end( done );
           });
 
+          it('should 404 for Web endpoint', function( done ) {
+            route = '/protected/reports/downloadStations/Web';
+            findAllStations.reject( new Error( 'Test' ) );
+            supertest.get( route )
+            .set( 'Authorization', 'Bearer ' + token )
+            .expect( 404 )
+            .expect(function( res ) {
+              route = '/protected/reports/downloadStations/CSV';
+            })
+            .end( done );
+          });
+
+          it('should generate CSV after manipulating data', function( done ) {
+            var fields = [ 'kin', 'location', 'location_address', 'location_gps', 'network', 'install_date', 'ekm_push_mac', 'sim_card', 'cumulative_kwh' ];
+            var fieldNames = [ 'KIN', 'Location', 'Address', 'GPS', 'Network', 'Install Date', 'Push MAC', 'SIM card', 'Meter Reading (kWh)' ];
+            var stations = [ { location_gps: [ 1, 2 ], location: null }, { location_gps: null, location: 'Home' } ];
+            findAllStations.resolve( stations );
+            generateCSV.reject( new Error( 'Test' ) );
+
+            supertest.get( route )
+            .set( 'Authorization', 'Bearer ' + token )
+            .expect(function( res ) {
+              expect( csv.generateCSV ).toHaveBeenCalled();
+              expect( csv.generateCSV ).toHaveBeenCalledWith( stations, fields, fieldNames );
+            })
+            .end( done );
+          });
+
+          it('should send CSV', function( done ) {
+            var stations = [ { location_gps: [ 1, 2 ], location: null }, { location_gps: null, location: 'Home' } ];
+            findAllStations.resolve( stations );
+            generateCSV.resolve( 'CSV' );
+
+            supertest.get( route )
+            .set( 'Authorization', 'Bearer ' + token )
+            .expect( 200 )
+            .expect( 'Content-Type', /text/ )
+            .expect( 'CSV' )
+            .end( done );
+          });
+
           it('should return 500 failure for error', function( done ) {
-            getAll.reject( 'Test' );
+            findAllStations.reject( new Error( 'Test' ) );
             supertest.get( route )
             .set( 'Authorization', 'Bearer ' + token )
             .expect( 500 )
             .expect( 'Test' )
             .expect( 'Content-Type', /text/ )
             .expect(function( res ) {
-              expect( media_slide.findAll ).toHaveBeenCalled();
-              expect( media_slide.findAll ).toHaveBeenCalledWith();
+              expect( models.station.findAll ).toHaveBeenCalled();
             })
             .end( done );
           });

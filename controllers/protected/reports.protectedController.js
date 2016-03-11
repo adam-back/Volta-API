@@ -304,13 +304,13 @@ module.exports = exports = {
           }
         }
       }
-      return generateCSV( stations, fields, fieldNames );
+      return csv.generateCSV( stations, fields, fieldNames );
     })
     .then(function( csv ) {
       res.send( csv );
     })
     .catch(function( error ) {
-      res.status( 500 ).send( error );
+      res.status( 500 ).send( error.message );
     });
   },
   generateListOfWallmounts: function( req, res ) {
