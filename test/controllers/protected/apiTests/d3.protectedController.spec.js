@@ -2,7 +2,7 @@ var supertest = require( 'supertest' );
 var app = require( '../../../../server.js' ).app;
 supertest = supertest( app );
 var createToken = require( '../../../jwtHelper' ).createToken;
-var token = createToken( 5 );
+var token = createToken();
 
 var moment = require( 'moment' );
 moment().format();

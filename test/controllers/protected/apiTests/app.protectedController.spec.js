@@ -10,7 +10,7 @@ var cache = require( '../../../../factories/geocodeCache.js' );
 var appFactory = require( '../../../../factories/appFactory.js' );
 var calculateDistance = require( '../../../../factories/distanceFactory.js' ).getDistanceFromLatLonInMiles;
 var createToken = require( '../../../jwtHelper' ).createToken;
-var token = createToken( 5 );
+var token = createToken();
 
 module.exports = function() {
   describe('APP', function() {

@@ -6,7 +6,7 @@ var Q = require( 'q' );
 var media_slide = require( '../../../../models' ).media_slide;
 var controller = require( '../../../../controllers/protected/mediaSlide.protectedController.js' );
 var createToken = require( '../../../jwtHelper' ).createToken;
-var token = createToken( 5 );
+var token = createToken();
 
 module.exports = function() {
   describe('SLIDES', function() {

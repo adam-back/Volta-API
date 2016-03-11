@@ -8,7 +8,7 @@ var models = require( '../../../../models' );
 var controller = require( '../../../../controllers/protected/appUsers.protectedController.js' );
 
 var createToken = require( '../../../jwtHelper' ).createToken;
-var token = createToken( 5 );
+var token = createToken();
 
 
 module.exports = function() {

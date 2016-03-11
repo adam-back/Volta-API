@@ -6,7 +6,7 @@ var Q = require( 'q' );
 var models = require( '../../../../models' );
 var mediaScheduleFactory = require( '../../../../factories/media/mediaScheduleFactory.js' );
 var createToken = require( '../../../jwtHelper' ).createToken;
-var token = createToken( 5 );
+var token = createToken();
 
 module.exports = function() {
   describe('SCHEDULES', function() {

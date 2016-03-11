@@ -12,7 +12,7 @@ var supertest = require( 'supertest' );
 var app = require( '../../../../server.js' ).app;
 supertest = supertest( app );
 var createToken = require( '../../../jwtHelper' ).createToken;
-var token = createToken( 5 );
+var token = createToken();
 var controller = require( '../../../../controllers/protected/reports.protectedController.js' );
 
 module.exports = function() {
@@ -931,19 +931,22 @@ module.exports = function() {
     });
 
     describe('MEDIA SALES', function() {
-      xdescribe('reports/chargeEventsOverTime/CSV', function() {
-        var route = '/protected/reports/chargeEventsOverTime/CSV';
+      describe('reports/chargeEventsOverTime/CSV', function() {
+        var route;
 
         describe('GET', function() {
-          var getAll;
+          var getChargeEventsOverTime, generateCSV;
 
           beforeEach(function() {
-            getAll = Q.defer();
-            spyOn( media_slide, 'findAll' ).andReturn( getAll.promise );
+            route = '/protected/reports/chargeEventsOverTime/CSV';
+            getChargeEventsOverTime = Q.defer();
+            generateCSV = Q.defer();
+            spyOn( helper, 'chargeEventsOverTime' ).andReturn( getChargeEventsOverTime.promise );
+            spyOn( csv, 'generateCSV' ).andReturn( generateCSV.promise );
           });
 
           it('should be a defined route (not 404)', function( done ) {
-            getAll.reject();
+            getChargeEventsOverTime.reject( new Error( 'Test' ) );
             supertest.get( route )
             .set( 'Authorization', 'Bearer ' + token )
             .expect(function( res ) {
@@ -952,16 +955,25 @@ module.exports = function() {
             .end( done );
           });
 
+          it('should 404 for Web endpoint', function( done ) {
+            route = route.slice( 0, -3 );
+            route += 'Web';
+
+            supertest.get( route )
+            .set( 'Authorization', 'Bearer ' + token )
+            .expect( 404 )
+            .end( done );
+          });
+
           it('should return 500 failure for error', function( done ) {
-            getAll.reject( 'Test' );
+            getChargeEventsOverTime.reject( new Error( 'Test' ) );
             supertest.get( route )
             .set( 'Authorization', 'Bearer ' + token )
             .expect( 500 )
             .expect( 'Test' )
             .expect( 'Content-Type', /text/ )
             .expect(function( res ) {
-              expect( media_slide.findAll ).toHaveBeenCalled();
-              expect( media_slide.findAll ).toHaveBeenCalledWith();
+              expect( helper.chargeEventsOverTime ).toHaveBeenCalled();
             })
             .end( done );
           });

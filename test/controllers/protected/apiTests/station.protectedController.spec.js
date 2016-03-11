@@ -10,7 +10,7 @@ var schedule = require( '../../../../models' ).media_schedule;
 var appSponsorFactory = require( '../../../../factories/appSponsorFactory' );
 var mediaScheduleFactory = require( '../../../../factories/media/mediaScheduleFactory.js' );
 var createToken = require( '../../../jwtHelper' ).createToken;
-var token = createToken( 5 );
+var token = createToken();
 
 module.exports = function() {
   describe('STATION ROUTES', function() {

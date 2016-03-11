@@ -7,7 +7,7 @@ supertest = supertest( app );
 var Q = require( 'q' );
 var createToken = require( '../../../jwtHelper' ).createToken;
 var controller = require( '../../../../controllers/protected/mediaPresentation.protectedController.js' );
-var token = createToken( 5 );
+var token = createToken();
 
 module.exports = function() {
   describe('PRESENTATIONS', function() {

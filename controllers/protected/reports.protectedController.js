@@ -366,13 +366,13 @@ module.exports = exports = {
     .then(function( collection ) {
       var fields = [ 'time', 'events', 'kwh' ];
       var fieldNames = [ 'End Of Period', 'Number of Sessions', 'Cumulative kWh' ];
-      return generateCSV( collection, fields, fieldNames );
+      return csv.generateCSV( collection, fields, fieldNames );
     })
     .then(function( csv ) {
       res.send( csv );
     })
     .catch(function( error ) {
-      res.status( 500 ).send( error );
+      res.status( 500 ).send( error.message );
     });
   },
   getLastThirtyDays: function( req, res ) {
