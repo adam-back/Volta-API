@@ -185,38 +185,72 @@ module.exports = exports = {
       brokenStations: []
     };
 
+    // cache
+    var plugs = {};
+    var stations = {};
+
     var saveData = function( key, total, subtract ) {
       data[ key ].data[ 0 ] = subtract;
       data[ key ].data[ 1 ] = total - subtract;
     };
 
-    plug.count()
-    .then(function( totalPlugs ) {
-      return plug.count( { where: { meter_status: 'error', ekm_omnimeter_serial: { $ne: null } } } )
-      .then(function( errorPlugs ) {
-        saveData( 'broken', totalPlugs, errorPlugs );
-        return plug.count( { where: { in_use: true } } );
-      })
-      .then(function( inUsePlugs ) {
-        saveData( 'currentUsage', totalPlugs, inUsePlugs );
-        return station.count();
-      });
+    plug.findAll( { raw: true } )
+    .then(function( allPlugs ) {
+      var numberOfPlugs = allPlugs.length;
+      var errorPlugs = 0;
+      var inUsePlugs = 0;
+
+      for ( var i = 0; i < numberOfPlugs; i++ ) {
+        var onePlug = allPlugs[ i ];
+        // add to cache
+        plugs[ onePlug.id ] = onePlug;
+
+        // broken and metered
+        if ( onePlug.meter_status === 'error' && onePlug.ekm_omnimeter_serial !== null ) {
+          errorPlugs++;
+        }
+
+        // in use
+        if ( onePlug.in_use === true ) {
+          inUsePlugs++;
+        }
+      }
+
+      saveData( 'broken', numberOfPlugs, errorPlugs );
+      saveData( 'currentUsage', numberOfPlugs, inUsePlugs );
+
+      return station.findAll( { raw: true } );
     })
-    .then(function( totalStations ) {
-      data.cumulative.numberOfStations = totalStations;
-      return station.count( { where: { in_use: null } } )
-      .then(function( numberOfUnmeteredStations ) {
-        saveData( 'needMeter', totalStations, numberOfUnmeteredStations );
-        return station.count( { where: { location_gps: null } } );
-      })
-      .then(function( stationsWithCoordinates ) {
-        saveData( 'needGPS', totalStations, stationsWithCoordinates );
-        return station.sum( 'cumulative_kwh' );
-      });
-    })
-    .then(function( summativeKwh ) {
+    .then(function( allStations ) {
+      data.cumulative.numberOfStations = allStations.length;
+      var numberOfUnmeteredStations = 0;
+      var stationsWithoutCoordinates = 0;
+      var summativeKwh = 0;
+
+      for ( var j = 0; j < data.cumulative.numberOfStations; j++ ) {
+        var oneStation = allStations[ j ];
+
+        stations[ oneStation.id ] = oneStation;
+
+        // unmetered station
+        if ( oneStation.in_use === null ) {
+          numberOfUnmeteredStations++;
+        }
+
+        // station without GPS coordinates
+        if ( oneStation.location_gps === null ) {
+          stationsWithoutCoordinates++;
+        }
+
+        // system kWh
+        summativeKwh += oneStation.cumulative_kwh;
+      }
+
+      saveData( 'needMeter', data.cumulative.numberOfStations, numberOfUnmeteredStations );
+      saveData( 'needGPS', data.cumulative.numberOfStations, stationsWithoutCoordinates );
       data.cumulative.total = summativeKwh;
       data.cumulative.calcs = helper.convertKwhToConsumerEquivalents( summativeKwh );
+
       return charge_event.count();
     })
     .then(function( numberOfChargeEvents ) {
@@ -225,42 +259,29 @@ module.exports = exports = {
     })
     .then(function( brokenStuff ) {
       data.brokenStations = brokenStuff;
-      return charge_event.findAll( { order: 'id DESC', limit: 10, attributes: [ 'time_start', 'id', 'station_id', 'plug_id' ] } );
+      return charge_event.findAll( { order: 'id DESC', limit: 10, attributes: [ 'time_start', 'id', 'station_id', 'plug_id' ], raw: true } );
     })
     .then(function( lastTenEvents ) {
-      async.each(lastTenEvents, function( charge, cb ) {
-        var plainCharge = charge.get( { plain: true } );
-        plainCharge.time_start = charge.time_start;
-        station.find( { where: { id: charge.station_id } } )
-        .then(function( station ) {
-          plainCharge.location = station.location;
-          plainCharge.kin = station.kin;
-          plainCharge.location_address = station.location_address;
-          return plug.find( { where: { id: charge.plug_id } } );
-        })
-        .then(function( plug ) {
-          plainCharge.ekm_omnimeter_serial = plug.ekm_omnimeter_serial;
-          plainCharge.ekm_link = ekm.makeMeterUrl( plug.ekm_omnimeter_serial );
-          data.recentCharges.push( plainCharge );
-          cb( null );
-        })
-        .catch(function( error ) {
-          cb( error );
-        });
-      }, function( error ) {
-        if ( error ) {
-          throw error;
-        } else {
-          data.recentCharges.sort(function( a, b ) {
-            return b.id - a.id;
-          });
+      // should be 10, but having it dynamic makes testing easier
+      var numberOfEvents = lastTenEvents.length;
+      for ( var k = 0; k < numberOfEvents; k++ ) {
+        var oneEvent = lastTenEvents[ k ];
 
-          res.send( data );
-        }
-      });
+        var stationForEvent = stations[ oneEvent.station_id ];
+        oneEvent.location = stationForEvent.location;
+        oneEvent.kin = stationForEvent.kin;
+        oneEvent.location_address = stationForEvent.location_address;
+
+        var plugForEvent = plugs[ oneEvent.plug_id ];
+        oneEvent.ekm_omnimeter_serial = plugForEvent.ekm_omnimeter_serial;
+        oneEvent.ekm_link = ekm.makeMeterUrl( plugForEvent.ekm_omnimeter_serial );
+        data.recentCharges.push( oneEvent );
+      }
+
+      res.send( data );
     })
     .catch(function( error ) {
-      res.status( 500 ).send( error );
+      res.status( 500 ).send( error.message );
     });
   },
   exportStationDataAsCsv: function( req, res ) {

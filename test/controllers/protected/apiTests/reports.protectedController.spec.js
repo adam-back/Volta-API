@@ -17,19 +17,31 @@ var controller = require( '../../../../controllers/protected/reports.protectedCo
 
 module.exports = function() {
   describe('REPORT ROUTES', function() {
-    xdescribe('reports/dashboard', function() {
+    describe('reports/dashboard', function() {
       var route = '/protected/reports/dashboard';
 
       describe('GET', function() {
-        var getAll;
+        var plugs, stations, chargeEvents;
+        var findAllPlugs, findAllStations, countAllChargeEvents, getBrokenPlugs, getLastTenChargeEvents;
 
         beforeEach(function() {
-          getAll = Q.defer();
-          spyOn( media_slide, 'findAll' ).andReturn( getAll.promise );
+          plugs = [ { id: 1, meter_status: 'error', ekm_omnimeter_serial: 'A', in_use: null }, { id: 2, meter_status: 'charging', ekm_omnimeter_serial: 'B', in_use: true }  ];
+          stations = [ { id: 1, kin: '001-0001-001-01-K', in_use: null, location_gps: null, cumulative_kwh: 2.5, location: 'Main', location_address: '123 Main' }, { id: 2, kin: '001-0001-001-02-K', in_use: true, location_gps: [ 1, 2 ], cumulative_kwh: 1.5, location: 'Volta', location_address: '123 Volta' } ];
+          chargeEvents = [ { id: 1, station_id: 1, plug_id: 1 }, { id: 2, station_id: 2, plug_id: 2 }, { id: 3, station_id: 1, plug_id: 1 } ];
+          findAllPlugs = Q.defer();
+          findAllStations = Q.defer();
+          countAllChargeEvents = Q.defer();
+          getBrokenPlugs = Q.defer();
+          getLastTenChargeEvents = Q.defer();
+          spyOn( models.plug, 'findAll' ).andReturn( findAllPlugs.promise );
+          spyOn( models.station, 'findAll' ).andReturn( findAllStations.promise );
+          spyOn( models.charge_event, 'count' ).andReturn( countAllChargeEvents.promise );
+          spyOn( helper, 'getBrokenPlugs' ).andReturn( getBrokenPlugs.promise );
+          spyOn( models.charge_event, 'findAll' ).andReturn( getLastTenChargeEvents.promise );
         });
 
         it('should be a defined route (not 404)', function( done ) {
-          getAll.reject();
+          findAllPlugs.reject( new Error( 'Test' ) );
           supertest.get( route )
           .set( 'Authorization', 'Bearer ' + token )
           .expect(function( res ) {
@@ -38,16 +50,127 @@ module.exports = function() {
           .end( done );
         });
 
+        it('should find all plugs', function( done ) {
+          findAllPlugs.reject( new Error( 'Test' ) );
+          supertest.get( route )
+          .set( 'Authorization', 'Bearer ' + token )
+          .expect(function( res ) {
+            expect( models.plug.findAll ).toHaveBeenCalled();
+            expect( models.plug.findAll ).toHaveBeenCalledWith( { raw: true } );
+          })
+          .end( done );
+        });
+
+        it('should find all stations', function( done ) {
+          findAllPlugs.resolve( plugs );
+          findAllStations.reject( new Error( 'Test' ) );
+          supertest.get( route )
+          .set( 'Authorization', 'Bearer ' + token )
+          .expect(function( res ) {
+            expect( models.plug.findAll ).toHaveBeenCalled();
+            expect( models.plug.findAll ).toHaveBeenCalledWith( { raw: true } );
+          })
+          .end( done );
+        });
+
+        it('should count the total number of charge events', function( done ) {
+          findAllPlugs.resolve( plugs );
+          findAllStations.resolve( stations );
+          countAllChargeEvents.reject( new Error( 'Test' ) );
+          supertest.get( route )
+          .set( 'Authorization', 'Bearer ' + token )
+          .expect(function( res ) {
+            expect( models.charge_event.count ).toHaveBeenCalled();
+            expect( models.charge_event.count ).toHaveBeenCalledWith();
+          })
+          .end( done );
+        });
+
+        it('should get broken plugs', function( done ) {
+          findAllPlugs.resolve( plugs );
+          findAllStations.resolve( stations );
+          countAllChargeEvents.resolve( 15 );
+          getBrokenPlugs.reject( new Error( 'Test' ) );
+          supertest.get( route )
+          .set( 'Authorization', 'Bearer ' + token )
+          .expect(function( res ) {
+            expect( helper.getBrokenPlugs ).toHaveBeenCalled();
+            expect( helper.getBrokenPlugs ).toHaveBeenCalledWith();
+          })
+          .end( done );
+        });
+
+        it('should get last ten charge events', function( done ) {
+          findAllPlugs.resolve( plugs );
+          findAllStations.resolve( stations );
+          countAllChargeEvents.resolve( 15 );
+          getBrokenPlugs.resolve( [ 'broken stuff' ] );
+          getLastTenChargeEvents.reject( new Error( 'Test' ) );
+          supertest.get( route )
+          .set( 'Authorization', 'Bearer ' + token )
+          .expect(function( res ) {
+            expect( models.charge_event.findAll ).toHaveBeenCalled();
+            expect( models.charge_event.findAll ).toHaveBeenCalledWith( { order: 'id DESC', limit: 10, attributes: [ 'time_start', 'id', 'station_id', 'plug_id' ], raw: true } );
+          })
+          .end( done );
+        });
+
+        it('should return 200 with an object of dashboard data', function( done ) {
+          var expectedData = {
+            broken: {
+              labels: [ 'Error', 'OK' ],
+              data: [ 1, 1 ]
+            },
+            currentUsage: {
+              labels: [ 'In Use', 'Available' ],
+              data: [ 1, 1 ]
+            },
+            needMeter: {
+              labels: [ 'Needs Meter', 'Metered' ],
+              data: [ 1, 1 ]
+            },
+            needGPS: {
+              labels: [ 'Needs Coordinates', 'Has Coordinates' ],
+              data: [ 1, 1 ]
+            },
+            cumulative: {
+              numberOfStations: 2,
+              total: 4,
+              calcs: {
+                offset: 6.1 ,
+                gallons: 0.3,
+                trees: 0.1,
+                miles: 14,
+                events: 15
+              }
+            },
+            recentCharges: chargeEvents,
+            brokenStations: [ 'broken stuff' ]
+          };
+          findAllPlugs.resolve( plugs );
+          findAllStations.resolve( stations );
+          countAllChargeEvents.resolve( 15 );
+          getBrokenPlugs.resolve( [ 'broken stuff' ] );
+          getLastTenChargeEvents.resolve( chargeEvents );
+          supertest.get( route )
+          .set( 'Authorization', 'Bearer ' + token )
+          .expect( 200 )
+          .expect( 'Content-Type', /json/ )
+          .expect(function( res ) {
+            expect( res.body ).toEqual( expectedData );
+          })
+          .end( done );
+        });
+
         it('should return 500 failure for error', function( done ) {
-          getAll.reject( 'Test' );
+          findAllPlugs.reject( new Error( 'Test' ) );
           supertest.get( route )
           .set( 'Authorization', 'Bearer ' + token )
           .expect( 500 )
           .expect( 'Test' )
           .expect( 'Content-Type', /text/ )
           .expect(function( res ) {
-            expect( media_slide.findAll ).toHaveBeenCalled();
-            expect( media_slide.findAll ).toHaveBeenCalledWith();
+            expect( models.plug.findAll ).toHaveBeenCalled();
           })
           .end( done );
         });
