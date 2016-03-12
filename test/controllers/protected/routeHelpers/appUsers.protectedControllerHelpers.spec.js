@@ -5,7 +5,7 @@ var models = require( '../../../../models' );
 var controller = rewire( '../../../../controllers/protected/appUsers.protectedController.js' );
 var bcrypt = require( 'bcrypt' );
 var createToken = require( '../../../jwtHelper' ).createToken;
-var token = createToken( 5 );
+var token = createToken();
 
 module.exports = function() {
   describe('USERS', function() {

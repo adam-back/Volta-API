@@ -8,7 +8,7 @@ var app = require( '../../../../server.js' ).app;
 supertest = supertest( app );
 
 var createToken = require( '../../../jwtHelper' ).createToken;
-var token = createToken( 5 );
+var token = createToken();
 
 module.exports = function() {
   describe('NETWORK ROUTES', function() {

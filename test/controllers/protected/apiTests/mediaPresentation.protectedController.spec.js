@@ -7,7 +7,7 @@ supertest = supertest( app );
 var Q = require( 'q' );
 var createToken = require( '../../../jwtHelper' ).createToken;
 var controller = require( '../../../../controllers/protected/mediaPresentation.protectedController.js' );
-var token = createToken( 5 );
+var token = createToken();
 
 module.exports = function() {
   describe('PRESENTATIONS', function() {
@@ -23,7 +23,7 @@ module.exports = function() {
         });
 
         it('should be a defined route (not 404)', function( done ) {
-          getPresentations.reject();
+          getPresentations.reject( new Error( 'Test' ) );
           supertest.get( route )
           .set( 'Authorization', 'Bearer ' + token )
           .expect(function( res ) {
@@ -33,7 +33,7 @@ module.exports = function() {
         });
 
         it('should get all media presentations', function( done ) {
-          getPresentations.reject();
+          getPresentations.reject( new Error( 'Test' ) );
           supertest.get( route )
           .set( 'Authorization', 'Bearer ' + token )
           .expect(function( res ) {
@@ -54,10 +54,11 @@ module.exports = function() {
         });
 
         it('should return 500 failure for error', function( done ) {
-          getPresentations.reject( 'Test' );
+          getPresentations.reject( new Error( 'Test' ) );
           supertest.get( route )
           .set( 'Authorization', 'Bearer ' + token )
           .expect( 500 )
+          .expect( 'Content-Type', /text/ )
           .expect( 'Test' )
           .expect(function( res ) {
             expect( controller.getMediaPresentations ).toHaveBeenCalled();
@@ -83,7 +84,7 @@ module.exports = function() {
         });
 
         it('should be a defined route (not 404)', function( done ) {
-          createPresentation.reject();
+          createPresentation.reject( new Error( 'Test' ) );
           supertest.post( route )
           .set( 'Authorization', 'Bearer ' + token )
           .send( body )
@@ -94,7 +95,7 @@ module.exports = function() {
         });
 
         it('should find or create presentation', function( done ) {
-          createPresentation.reject();
+          createPresentation.reject( new Error( 'Test' ) );
           supertest.post( route )
           .set( 'Authorization', 'Bearer ' + token )
           .send( body )
@@ -107,7 +108,7 @@ module.exports = function() {
 
         it('should add media slides if presentation was created', function( done ) {
           createPresentation.resolve( [ newPresentation, true ] );
-          addSlides.reject();
+          addSlides.reject( new Error( 'Test' ) );
           supertest.post( route )
           .set( 'Authorization', 'Bearer ' + token )
           .send( body )
@@ -145,11 +146,12 @@ module.exports = function() {
         });
 
         it('should return 500 failure for error', function( done ) {
-          createPresentation.reject( 'Test' );
+          createPresentation.reject( new Error( 'Test' ) );
           supertest.post( route )
           .set( 'Authorization', 'Bearer ' + token )
           .send( body )
           .expect( 500 )
+          .expect( 'Content-Type', /text/ )
           .expect( 'Test' )
           .expect(function( res ) {
             expect( models.media_presentation.findOrCreate ).toHaveBeenCalled();
@@ -211,8 +213,9 @@ module.exports = function() {
           supertest.get( route )
           .set( 'Authorization', 'Bearer ' + token )
           .expect( 500 )
+          .expect( 'Content-Type', /text/ )
+          .expect( 'Test' )
           .expect(function( res ) {
-            expect( res.text ).toBe( 'Test' );
             expect( controller.getMediaPresentations ).toHaveBeenCalled();
           })
           .end( done );
@@ -291,8 +294,9 @@ module.exports = function() {
           supertest.delete( route )
           .set( 'Authorization', 'Bearer ' + token )
           .expect( 500 )
+          .expect( 'Content-Type', /text/ )
+          .expect( 'Test' )
           .expect(function( res ) {
-            expect( res.text ).toBe( 'Test' );
             expect( models.media_presentation.destroy ).toHaveBeenCalled();
           })
           .end( done );

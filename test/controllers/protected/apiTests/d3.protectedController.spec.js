@@ -2,7 +2,7 @@ var supertest = require( 'supertest' );
 var app = require( '../../../../server.js' ).app;
 supertest = supertest( app );
 var createToken = require( '../../../jwtHelper' ).createToken;
-var token = createToken( 5 );
+var token = createToken();
 
 var moment = require( 'moment' );
 moment().format();
@@ -48,7 +48,7 @@ module.exports = function() {
         });
 
         it('should be a defined route (not 404)', function( done ) {
-          findStations.reject();
+          findStations.reject( new Error( 'Test' ) );
           supertest.get( route )
           .set( 'Authorization', 'Bearer ' + token )
           .expect(function( res ) {
@@ -81,7 +81,7 @@ module.exports = function() {
         });
 
         it('should find all stations', function( done ) {
-          findStations.reject();
+          findStations.reject( new Error( 'Test' ) );
           supertest.get( route )
           .set( 'Authorization', 'Bearer ' + token )
           .expect(function( res ) {
@@ -206,11 +206,12 @@ module.exports = function() {
         });
 
         it('should catch and send errors', function( done ) {
-          findStations.reject( 'error' );
+          findStations.reject( new Error( 'Test' ) );
           supertest.get( route )
           .set( 'Authorization', 'Bearer ' + token )
           .expect( 500 )
-          .expect( 'error' )
+          .expect( 'Content-Type', /text/ )
+          .expect( 'Test' )
           .end( done );
         });
       });
@@ -228,7 +229,7 @@ module.exports = function() {
         });
 
         it('should be a defined route (not 404)', function( done ) {
-          formatKin.reject();
+          formatKin.reject( new Error( 'Test' ) );
           supertest.get( route )
           .set( 'Authorization', 'Bearer ' + token )
           .expect(function( res ) {
@@ -261,7 +262,7 @@ module.exports = function() {
         });
 
         it('should call formatKinsWithNetworks', function( done ) {
-          formatKin.reject();
+          formatKin.reject( new Error( 'Test' ) );
           supertest.get( route )
           .set( 'Authorization', 'Bearer ' + token )
           .expect(function( res ) {
@@ -286,11 +287,12 @@ module.exports = function() {
         });
 
         it('should catch and send errors', function( done ) {
-          formatKin.reject( 'error' );
+          formatKin.reject( new Error( 'Test' ) );
           supertest.get( route )
           .set( 'Authorization', 'Bearer ' + token )
           .expect( 500 )
-          .expect( 'error' )
+          .expect( 'Content-Type', /text/ )
+          .expect( 'Test' )
           .end( done );
         });
       });
@@ -308,7 +310,7 @@ module.exports = function() {
         });
 
         it('should be a defined route (not 404)', function( done ) {
-          kwhGrowth.reject();
+          kwhGrowth.reject( new Error( 'Test' ) );
           supertest.get( route )
           .set( 'Authorization', 'Bearer ' + token )
           .expect(function( res ) {
@@ -341,7 +343,7 @@ module.exports = function() {
         });
 
         it('should call kwhGrowthOverTime', function( done ) {
-          kwhGrowth.reject();
+          kwhGrowth.reject( new Error( 'Test' ) );
           supertest.get( route )
           .set( 'Authorization', 'Bearer ' + token )
           .expect(function( res ) {
@@ -366,11 +368,12 @@ module.exports = function() {
         });
 
         it('should catch and send errors', function( done ) {
-          kwhGrowth.reject( 'error' );
+          kwhGrowth.reject( new Error( 'Test' ) );
           supertest.get( route )
           .set( 'Authorization', 'Bearer ' + token )
           .expect( 500 )
-          .expect( 'error' )
+          .expect( 'Content-Type', /text/ )
+          .expect( 'Test' )
           .end( done );
         });
       });
@@ -388,7 +391,7 @@ module.exports = function() {
         });
 
         it('should be a defined route (not 404)', function( done ) {
-          get30Days.reject();
+          get30Days.reject( new Error( 'Test' ) );
           supertest.get( route )
           .set( 'Authorization', 'Bearer ' + token )
           .expect(function( res ) {
@@ -421,7 +424,7 @@ module.exports = function() {
         });
 
         it('should call dataOverThirtyDays', function( done ) {
-          get30Days.reject();
+          get30Days.reject( new Error( 'Test' ) );
           supertest.get( route )
           .set( 'Authorization', 'Bearer ' + token )
           .expect(function( res ) {
@@ -446,11 +449,12 @@ module.exports = function() {
         });
 
         it('should catch and send errors', function( done ) {
-          get30Days.reject( 'error' );
+          get30Days.reject( new Error( 'Test' ) );
           supertest.get( route )
           .set( 'Authorization', 'Bearer ' + token )
           .expect( 500 )
-          .expect( 'error' )
+          .expect( 'Content-Type', /text/ )
+          .expect( 'Test' )
           .end( done );
         });
       });

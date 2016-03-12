@@ -13,7 +13,7 @@ module.exports = exports = {
       res.json( formattedStations );
     })
     .catch(function( error ) {
-      res.status( 500 ).send( error );
+      res.status( 500 ).send( error.message );
     });
   },
   saveReport: function ( req, res ) {
@@ -22,7 +22,7 @@ module.exports = exports = {
       res.status( 204 ).send(); // needs to be this for iOS app
     })
     .catch(function( error ) {
-      res.status( 500 ).send( error );
+      res.status( 500 ).send( error.message );
     });
   },
   getAppSponsors: function ( req, res ) {
@@ -51,7 +51,7 @@ module.exports = exports = {
       res.send( sponsors );
     })
     .catch(function( error ) {
-      res.status( 500 ).send( error );
+      res.status( 500 ).send( error.message );
     });
   }
 };

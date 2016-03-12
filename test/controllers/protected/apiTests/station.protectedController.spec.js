@@ -10,7 +10,8 @@ var schedule = require( '../../../../models' ).media_schedule;
 var appSponsorFactory = require( '../../../../factories/appSponsorFactory' );
 var mediaScheduleFactory = require( '../../../../factories/media/mediaScheduleFactory.js' );
 var createToken = require( '../../../jwtHelper' ).createToken;
-var token = createToken( 5 );
+var token = createToken();
+var Sequelize = require( 'sequelize' );
 
 module.exports = function() {
   describe('STATION ROUTES', function() {
@@ -26,7 +27,7 @@ module.exports = function() {
         });
 
         it('should be a defined route (not 404)', function( done ) {
-          stationFind.reject();
+          stationFind.reject( new Error( 'Test' ) );
           supertest.get( route )
           .set( 'Authorization', 'Bearer ' + token )
           .expect(function( res ) {
@@ -51,10 +52,11 @@ module.exports = function() {
         });
 
         it('should return 500 failure for error', function( done ) {
-          stationFind.reject( 'Test' );
+          stationFind.reject( new Error( 'Test' ) );
           supertest.get( route )
           .set( 'Authorization', 'Bearer ' + token )
           .expect( 500 )
+          .expect( 'Content-Type', /text/ )
           .expect( 'Test' )
           .expect(function( res ) {
             expect( station.findAll ).toHaveBeenCalled();
@@ -79,7 +81,7 @@ module.exports = function() {
         });
 
         it('should be a defined route (not 404)', function( done ) {
-          findOrCreateStation.reject();
+          findOrCreateStation.reject( new Error( 'Test' ) );
           supertest.post( route )
           .set( 'Authorization', 'Bearer ' + token )
           .expect(function( res ) {
@@ -89,12 +91,12 @@ module.exports = function() {
         });
 
         it('should findOrCreate a station', function( done ) {
-          findOrCreateStation.reject( 'Fake reject.' );
+          findOrCreateStation.reject( new Error( 'Test' ) );
           supertest.post( route )
           .set( 'Authorization', 'Bearer ' + token )
           .send( body )
           .expect( 500 )
-          .expect( 'Fake reject.' )
+          .expect( 'Test' )
           .expect(function( res ) {
             expect( station.findOrCreate ).toHaveBeenCalled();
             expect( station.findOrCreate ).toHaveBeenCalledWith( { where: { kin: '001-0001-001-01-K' }, defaults: body } );
@@ -138,12 +140,12 @@ module.exports = function() {
         it('should destroy station if error is thrown on associate', function( done ) {
           body.id = 1;
           findOrCreateStation.resolve( [ body, true ] );
-          associateStation.reject( 'Because I said so.' );
+          associateStation.reject( new Error( 'Test' ) );
           supertest.post( route )
           .set( 'Authorization', 'Bearer ' + token )
           .send( body )
           .expect( 500 )
-          .expect( 'Because I said so.' )
+          .expect( 'Test' )
           .expect(function( res ) {
             expect( appSponsorFactory.associateStationWithAppSponsors ).toHaveBeenCalled();
             expect( appSponsorFactory.associateStationWithAppSponsors ).toHaveBeenCalledWith( body );
@@ -155,26 +157,33 @@ module.exports = function() {
       });
 
       describe('PATCH', function() {
-        var body, findStation, stationToUpdate, stationSave, getMediaSchedule, replaceMediaSchedule;
+        var body, findStation, stationToUpdate, stationSave, getMediaSchedule, replaceMediaSchedule, findValidationErrorStation;
 
         beforeEach(function() {
           body = {
             kin: '001-0001-001-01-K',
-            changes: [ [ 'location', 'Volta', 'home' ] ]
+            changes: [ [ 'location', 'Volta', 'home' ], [ 'kin', '001-0001-001-01-K', '001-0001-001-02-K' ] ]
           };
           findStation = Q.defer();
-          stationToUpdate = station.build( { id: 1, location: 'Volta', 'front_display_pc_serial_number': 1 } );
+          stationToUpdate = station.build( { id: 1, kin: '001-0001-001-01-K', location: 'Volta', 'front_display_pc_serial_number': 1 } );
           stationSave = Q.defer();
           getMediaSchedule = Q.defer();
           replaceMediaSchedule = Q.defer();
-          spyOn( station, 'find' ).andReturn( findStation.promise );
+          findValidationErrorStation = Q.defer();
+          spyOn( station, 'find' ).andCallFake(function( query ) {
+            if ( query.hasOwnProperty( 'raw' ) ) {
+              return findValidationErrorStation.promise;
+            } else {
+              return findStation.promise;
+            }
+          });
           spyOn( stationToUpdate, 'save' ).andReturn( stationSave.promise );
           spyOn( mediaScheduleFactory, 'getMediaScheduleByKinLocal' ).andReturn( getMediaSchedule.promise );
           spyOn( mediaScheduleFactory, 'replaceMediaScheduleLocal' ).andReturn( replaceMediaSchedule.promise );
         });
 
         it('should be a defined route (not 404)', function( done ) {
-          findStation.reject( 'Test' );
+          findStation.reject( new Error( 'Test' ) );
           supertest.patch( route )
           .set( 'Authorization', 'Bearer ' + token )
           .expect(function( res ) {
@@ -184,7 +193,7 @@ module.exports = function() {
         });
 
         it('should find a station by kin', function( done ) {
-          findStation.reject( 'Test' );
+          findStation.reject( new Error( 'Test' ) );
           supertest.patch( route )
           .set( 'Authorization', 'Bearer ' + token )
           .send( body )
@@ -197,7 +206,7 @@ module.exports = function() {
 
         it('should update a station', function( done ) {
           findStation.resolve( stationToUpdate );
-          stationSave.reject( 'Test' );
+          stationSave.reject( new Error( 'Test' ) );
           supertest.patch( route )
           .set( 'Authorization', 'Bearer ' + token )
           .send( body )
@@ -229,14 +238,14 @@ module.exports = function() {
         });
 
         describe('need to update media schedule', function() {
-          beforeEach(function(  ) {
+          beforeEach(function() {
             body.changes.push( [ 'front_display_pc_serial_number', '1', 'A' ] );
           });
 
           it('should get the media schedule', function( done ) {
             findStation.resolve( stationToUpdate );
             stationSave.resolve( stationToUpdate );
-            getMediaSchedule.reject( 'Test' );
+            getMediaSchedule.reject( new Error( 'Test' ) );
             supertest.patch( route )
             .set( 'Authorization', 'Bearer ' + token )
             .send( body )
@@ -291,16 +300,68 @@ module.exports = function() {
         });
 
         it('should handle non-conflict-based errors', function( done ) {
-          findStation.reject( 'Fake reject.' );
+          findStation.reject( new Error( 'Test' ) );
           supertest.patch( route )
           .set( 'Authorization', 'Bearer ' + token )
           .send( body )
           .expect( 500 )
-          .expect( 'Fake reject.' )
+          .expect( 'Test' )
           .expect(function( res ) {
             expect( station.find ).toHaveBeenCalled();
             expect( station.find ).toHaveBeenCalledWith( { where: { kin: '001-0001-001-01-K' } } );
           })
+          .end( done );
+        });
+
+        it('should handle Sequelize validation errors', function( done ) {
+          findStation.resolve( stationToUpdate );
+          var errorOptions = {
+            message: 'Validation error',
+            errors:
+              [ { message: 'kin must be unique',
+                type: 'unique violation',
+                path: 'kin',
+                value: '001-0001-001-02-K' }
+              ],
+            parent: true,
+            fields: { kin: '001-0001-001-02-K' }
+          };
+          stationSave.reject( new Sequelize.UniqueConstraintError( errorOptions ) );
+          findValidationErrorStation.resolve( { id: 2, kin: '001-0001-001-02-K' } );
+          supertest.patch( route )
+          .set( 'Authorization', 'Bearer ' + token )
+          .send( body )
+          .expect( 409 )
+          .expect( 'Content-Type', /json/ )
+          .expect(function( res ) {
+            var errorCopy = new Sequelize.UniqueConstraintError( errorOptions );
+            errorCopy.duplicateStation = { id: 2, kin: '001-0001-001-02-K' };
+            expect( res.body ).toEqual( JSON.parse( JSON.stringify( errorCopy ) ) );
+          })
+          .end( done );
+        });
+
+        it('should catch error when trying to find duplicate station', function( done ) {
+          findStation.resolve( stationToUpdate );
+          var errorOptions = {
+            message: 'Validation error',
+            errors:
+              [ { message: 'kin must be unique',
+                type: 'unique violation',
+                path: 'kin',
+                value: '001-0001-001-02-K' }
+              ],
+            parent: true,
+            fields: { kin: '001-0001-001-02-K' }
+          };
+          stationSave.reject( new Sequelize.UniqueConstraintError( errorOptions ) );
+          findValidationErrorStation.reject( new Error( 'Test' ) );
+          supertest.patch( route )
+          .set( 'Authorization', 'Bearer ' + token )
+          .send( body )
+          .expect( 500 )
+          .expect( 'Content-Type', /text/ )
+          .expect( 'Test' )
           .end( done );
         });
       });
@@ -317,7 +378,7 @@ module.exports = function() {
         });
 
         it('should be a defined route (not 404)', function( done ) {
-          countStations.reject();
+          countStations.reject( new Error( 'Test' ) );
           supertest.get( route )
           .set( 'Authorization', 'Bearer ' + token )
           .expect(function( res ) {
@@ -342,7 +403,7 @@ module.exports = function() {
         });
 
         it('should return 500 error for failure', function( done ) {
-          countStations.reject( 'Couldn\'t count all stations.' );
+          countStations.reject( new Error( 'Couldn\'t count all stations.' ) );
           supertest.get( route )
           .set( 'Authorization', 'Bearer ' + token )
           .expect( 500 )
@@ -368,7 +429,7 @@ module.exports = function() {
         });
 
         it('should be a defined route (not 404)', function( done ) {
-          findStation.reject();
+          findStation.reject( new Error( 'Test' ) );
           supertest.get( route )
           .set( 'Authorization', 'Bearer ' + token )
           .expect(function( res ) {
@@ -378,7 +439,7 @@ module.exports = function() {
         });
 
         it('should find one station by kin', function( done ) {
-          findStation.reject( 'Fake reject.' );
+          findStation.reject( new Error( 'Test' ) );
           supertest.get( route )
           .set( 'Authorization', 'Bearer ' + token )
           .expect(function( res ) {
@@ -398,7 +459,7 @@ module.exports = function() {
         });
 
         it('should return JSON of station', function( done ) {
-          var thatOneStation = [ { id: 1} ];
+          var thatOneStation = [ { id: 1 } ];
           findStation.resolve( thatOneStation );
           supertest.get( route )
           .set( 'Authorization', 'Bearer ' + token )
@@ -409,11 +470,12 @@ module.exports = function() {
         });
 
         it('should return 500 failure for error', function( done ) {
-          findStation.reject( 'Fake reject.' );
+          findStation.reject( new Error( 'Test' ) );
           supertest.get( route )
           .set( 'Authorization', 'Bearer ' + token )
           .expect( 500 )
-          .expect( 'Fake reject.' )
+          .expect( 'Content-Type', /text/ )
+          .expect( 'Test' )
           .end( done );
         });
       });
@@ -444,7 +506,7 @@ module.exports = function() {
         });
 
         it('should be a defined route (not 404)', function( done ) {
-          findOneStation.reject();
+          findOneStation.reject( new Error( 'Test' ) );
           supertest.get( route )
           .set( 'Authorization', 'Bearer ' + token )
           .expect(function( res ) {
@@ -454,7 +516,7 @@ module.exports = function() {
         });
 
         it('should find one station by kin', function( done ) {
-          findOneStation.reject( 'Fake reject.' );
+          findOneStation.reject( new Error( 'Test' ) );
           supertest.delete( route )
           .set( 'Authorization', 'Bearer ' + token )
           .expect(function( res ) {
@@ -466,7 +528,7 @@ module.exports = function() {
 
         it('should get all plugs for station', function( done ) {
           findOneStation.resolve( foundStation );
-          getStationsPlugs.reject( 'Fake test.' );
+          getStationsPlugs.reject( new Error( 'Test' ) );
           supertest.delete( route )
           .set( 'Authorization', 'Bearer ' + token )
           .expect(function( res ) {
@@ -481,7 +543,7 @@ module.exports = function() {
           getStationsPlugs.resolve( [ plug1, plug2 ] );
           plug1Destroy.resolve();
           plug2Destroy.resolve();
-          removeStationSponsor.reject( 'Fake reject.' );
+          removeStationSponsor.reject( new Error( 'Test' ) );
           supertest.delete( route )
           .set( 'Authorization', 'Bearer ' + token )
           .expect(function( res ) {
@@ -496,7 +558,7 @@ module.exports = function() {
         it('should skip destroying plugs if there aren\'t any', function( done ) {
           findOneStation.resolve( foundStation );
           getStationsPlugs.resolve( [] );
-          removeStationSponsor.reject( 'Fake reject.' );
+          removeStationSponsor.reject( new Error( 'Test' ) );
           supertest.delete( route )
           .set( 'Authorization', 'Bearer ' + token )
           .expect(function( res ) {
@@ -510,7 +572,7 @@ module.exports = function() {
           findOneStation.resolve( foundStation );
           getStationsPlugs.resolve( [] );
           removeStationSponsor.resolve( foundStation );
-          stationDestroy.reject( 'Fake reject.' );
+          stationDestroy.reject( new Error( 'Test' ) );
           supertest.delete( route )
           .set( 'Authorization', 'Bearer ' + token )
           .expect(function( res ) {
@@ -545,11 +607,12 @@ module.exports = function() {
         });
 
         it('should return 500 failure for error', function( done ) {
-          findOneStation.reject( 'Fake reject.' );
+          findOneStation.reject( new Error( 'Test' ) );
           supertest.delete( route )
           .set( 'Authorization', 'Bearer ' + token )
           .expect( 500 )
-          .expect( 'Error deleting station: Fake reject.' )
+          .expect( 'Content-Type', /text/ )
+          .expect( 'Error deleting station: Test' )
           .end( done );
         });
       });

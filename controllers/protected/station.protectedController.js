@@ -5,7 +5,7 @@ var express = require( 'express' );
 var async     = require( 'async' );
 var appSponsorFactory = require( '../../factories/appSponsorFactory' );
 var mediaScheduleFactory = require( '../../factories/media/mediaScheduleFactory.js' );
-var q = require( 'q' );
+var Q = require( 'q' );
 
 module.exports = exports = {
   countStations: function ( req, res ) {
@@ -14,7 +14,7 @@ module.exports = exports = {
       res.json( number );
     })
     .catch(function( error ) {
-      res.status( 500 ).send( error );
+      res.status( 500 ).send( error.message );
     });
   },
   getAllStations: function ( req, res ) {
@@ -25,7 +25,7 @@ module.exports = exports = {
       res.json( stations );
     })
     .catch(function( error ) {
-      res.status( 500 ).send( error );
+      res.status( 500 ).send( error.message );
     });
   },
   getOneStation: function( req, res ) {
@@ -40,7 +40,7 @@ module.exports = exports = {
       }
     })
     .catch(function( error ) {
-      res.status( 500 ).send( error );
+      res.status( 500 ).send( error.message );
     });
   },
   addStation: function( req, res ) {
@@ -70,7 +70,7 @@ module.exports = exports = {
         station.destroy( { where: { id: id }, force: true } );
       }
 
-      res.status( 500 ).send( error );
+      res.status( 500 ).send( error.message );
     });
   },
   editStation: function( req, res ) {
@@ -100,7 +100,7 @@ module.exports = exports = {
           return mediaScheduleFactory.getMediaScheduleByKinLocal( req.body.kin )
           .then( function( schedules ) {
             if( schedules.length === 0 ) {
-              return;
+              return Q();
             } else {
               var oldMediaSchedule = schedules[ 0 ];
 
@@ -115,13 +115,13 @@ module.exports = exports = {
             }
           })
           .then( function() {
-            return successStation;
+            return Q( successStation );
           })
           .catch( function( error ) {
-            throw new Error( 'Failed to replace media schedule on station pc serial number change:', error );
+            throw new Error( 'Failed to replace media schedule on station pc serial number change: ' + error.message );
           });
         } else {
-          return successStation;
+          return Q( successStation );
         }
       });
     })
@@ -129,9 +129,7 @@ module.exports = exports = {
       res.json( finalResult );
     })
     .catch(function( error ) {
-      // this part is confusing
-      // need to trigger error to in order to mock error
-      if ( error.hasOwnProperty( 'fields' ) && error.hasOwnProperty( 'fields' ).length > 0 ) {
+      if ( error.hasOwnProperty( 'fields' ) ) {
         var query = {};
         // get the title that of the colum that errored
         var errorColumn = Object.keys( error.fields );
@@ -140,17 +138,18 @@ module.exports = exports = {
         query[ errorColumn ] = duplicateValue;
 
         // where conflicting key, value
-        station.find( { where: query } )
+        // for example { where: { kin: '001-0001-001-01-K' } }
+        station.find( { where: query, raw: true } )
         .then(function( duplicateStation ) {
           error.duplicateStation = duplicateStation;
           // 409 = conflict
           res.status( 409 ).send( error );
         })
         .catch(function( error ) {
-          res.status( 500 ).send( error );
+          res.status( 500 ).send( error.message );
         });
       } else {
-        res.status( 500 ).send( error );
+        res.status( 500 ).send( error.message );
       }
     });
   },
@@ -175,7 +174,7 @@ module.exports = exports = {
 
             return Q.all( destroyPlugs );
           } else {
-            return;
+            return Q();
           }
         })
         .then(function() {
@@ -190,7 +189,7 @@ module.exports = exports = {
       res.status( 204 ).send();
     })
     .catch(function( error ) {
-      res.status( 500 ).send( 'Error deleting station: ' + error );
+      res.status( 500 ).send( 'Error deleting station: ' + error.message );
     });
   }
 };

@@ -5,7 +5,7 @@ module.exports = function(grunt) {
     jasmine_node: {
       task_name: {
         options: {
-          coverage: {},
+          coverage: { excludes: [ 'server.js' ] },
           forceExit: false,
           showColors: true,
           match: '.',
