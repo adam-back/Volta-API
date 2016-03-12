@@ -30,7 +30,7 @@ module.exports = function() {
         });
 
         it('should be a defined route (not 404)', function( done ) {
-          formatStations.reject();
+          formatStations.reject( new Error( 'Test' ) );
           supertest.get( route )
           .set( 'Authorization', 'Bearer ' + token )
           .expect(function( res ) {
@@ -40,7 +40,7 @@ module.exports = function() {
         });
 
         it('should call appFactory.formatStationsForApp', function( done ) {
-          formatStations.reject();
+          formatStations.reject( new Error( 'Test' ) );
           supertest.get( route )
           .set( 'Authorization', 'Bearer ' + token )
           .expect(function( res ) {
@@ -50,7 +50,7 @@ module.exports = function() {
         });
 
         it('should call factory for every station', function( done ) {
-          formatStations.reject();
+          formatStations.reject( new Error( 'Test' ) );
           supertest.get( route )
           .set( 'Authorization', 'Bearer ' + token )
           .expect(function( res ) {
@@ -60,7 +60,7 @@ module.exports = function() {
         });
 
         it('should call factory with user id and coords', function( done ) {
-          formatStations.reject();
+          formatStations.reject( new Error( 'Test' ) );
           route += '?id=1';
           route += '&userCoords[]=5&userCoords[]=6';
           supertest.get( route )
@@ -83,7 +83,7 @@ module.exports = function() {
         });
 
         it('should return 500 failure for error', function( done ) {
-          formatStations.reject( 'Test' );
+          formatStations.reject( new Error( 'Test' ) );
           supertest.get( route )
           .set( 'Authorization', 'Bearer ' + token )
           .expect( 500 )
@@ -110,7 +110,7 @@ module.exports = function() {
         });
 
         it('should be a defined route (not 404)', function( done ) {
-          createReport.reject();
+          createReport.reject( new Error( 'Test' ) );
           supertest.post( route )
           .set( 'Authorization', 'Bearer ' + token )
           .expect(function( res ) {
@@ -142,7 +142,7 @@ module.exports = function() {
         });
 
         it('should return 500 failure for error', function( done ) {
-          createReport.reject( 'Test' );
+          createReport.reject( new Error( 'Test' ) );
           supertest.post( route )
           .set( 'Authorization', 'Bearer ' + token )
           .send( body )
@@ -170,7 +170,7 @@ module.exports = function() {
         });
 
         it('should be a defined route (not 404)', function( done ) {
-          findAllSponsors.reject();
+          findAllSponsors.reject( new Error( 'Test' ) );
           supertest.get( route )
           .set( 'Authorization', 'Bearer ' + token )
           .expect(function( res ) {
@@ -195,7 +195,7 @@ module.exports = function() {
         });
 
         it('should return 500 failure for error', function( done ) {
-          findAllSponsors.reject( 'Test' );
+          findAllSponsors.reject( new Error( 'Test' ) );
           supertest.get( route )
           .set( 'Authorization', 'Bearer ' + token )
           .expect( 500 )

@@ -130,8 +130,8 @@ module.exports = exports = {
         res.send( treeData[ 0 ] );
       })
       .catch(function( error ) {
-        res.status( 500 ).send( error );
-      })
+        res.status( 500 ).send( error.message );
+      });
     } else {
       res.send( exports.memoizedData.sunburst.data );
     }
@@ -145,7 +145,7 @@ module.exports = exports = {
         res.send( csv );
       })
       .catch(function( error ) {
-        res.status( 500 ).send( error );
+        res.status( 500 ).send( error.message );
       });
     } else {
       res.send( exports.memoizedData.kinNetworks.data );
@@ -160,7 +160,7 @@ module.exports = exports = {
         res.send( csv );
       })
       .catch(function( error ) {
-        res.status( 500 ).send( error );
+        res.status( 500 ).send( error.message );
       });
     } else {
       res.send( exports.memoizedData.kwhGrowth.data );
@@ -175,7 +175,7 @@ module.exports = exports = {
         res.send( csv );
       })
       .catch(function ( error ) {
-        res.status( 500 ).send( error );
+        res.status( 500 ).send( error.message );
       });
     } else {
       res.send( exports.memoizedData.thirtyDays.data );

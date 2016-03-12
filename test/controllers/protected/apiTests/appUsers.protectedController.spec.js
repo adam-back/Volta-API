@@ -35,7 +35,7 @@ module.exports = function() {
         });
 
         it('should be a defined route (not 404)', function( done ) {
-          findUser.reject( 'Test' );
+          findUser.reject( new Error( 'Test' ) );
           supertest.post( route )
           .set( 'Authorization', 'Bearer ' + token )
           .send( body )
@@ -46,7 +46,7 @@ module.exports = function() {
         });
 
         it('should search for user by email', function( done ) {
-          findUser.reject( 'Test' );
+          findUser.reject( new Error( 'Test' ) );
           supertest.post( route )
           .set( 'Authorization', 'Bearer ' + token )
           .send( body )
@@ -59,7 +59,7 @@ module.exports = function() {
 
         it('should force email to lowercase', function( done ) {
           body.email = 'A@gmail.com';
-          findUser.reject( 'Test' );
+          findUser.reject( new Error( 'Test' ) );
           supertest.post( route )
           .set( 'Authorization', 'Bearer ' + token )
           .send( body )
@@ -86,7 +86,7 @@ module.exports = function() {
 
         it('should hash and salt password', function( done ) {
           findUser.resolve();
-          hashPw.reject( 'Test' );
+          hashPw.reject( new Error( 'Test' ) );
           supertest.post( route )
           .set( 'Authorization', 'Bearer ' + token )
           .send( body )
@@ -100,7 +100,7 @@ module.exports = function() {
         it('should create a user', function( done ) {
           findUser.resolve();
           hashPw.resolve( '%$!' );
-          createUser.reject( 'Test' );
+          createUser.reject( new Error( 'Test' ) );
           supertest.post( route )
           .set( 'Authorization', 'Bearer ' + token )
           .send( body )
@@ -116,7 +116,7 @@ module.exports = function() {
           findUser.resolve();
           hashPw.resolve( '%$!' );
           createUser.resolve( 'User' );
-          newJWT.reject( 'Test' );
+          newJWT.reject( new Error( 'Test' ) );
           supertest.post( route )
           .set( 'Authorization', 'Bearer ' + token )
           .send( body )
@@ -141,7 +141,7 @@ module.exports = function() {
         });
 
         it('should return 500 failure for error', function( done ) {
-          findUser.reject( 'Test' );
+          findUser.reject( new Error( 'Test' ) );
           supertest.post( route )
           .set( 'Authorization', 'Bearer ' + token )
           .send( body )
@@ -177,7 +177,7 @@ module.exports = function() {
         });
 
         it('should be a defined route (not 404)', function( done ) {
-          findUser.reject( 'Test' );
+          findUser.reject( new Error( 'Test' ) );
           supertest.post( route )
           .set( 'Authorization', 'Bearer ' + token )
           .send( body )
@@ -188,7 +188,7 @@ module.exports = function() {
         });
 
         it('should search for user by email', function( done ) {
-          findUser.reject( 'Test' );
+          findUser.reject( new Error( 'Test' ) );
           supertest.post( route )
           .set( 'Authorization', 'Bearer ' + token )
           .send( body )
@@ -201,7 +201,7 @@ module.exports = function() {
 
         it('should force email to lowercase', function( done ) {
           body.email = 'A@gmail.com';
-          findUser.reject( 'Test' );
+          findUser.reject( new Error( 'Test' ) );
           supertest.post( route )
           .set( 'Authorization', 'Bearer ' + token )
           .send( body )
@@ -228,7 +228,7 @@ module.exports = function() {
 
         it('should check password if email on file', function( done ) {
           findUser.resolve( { password: 'ABC' } );
-          comparePassword.reject( 'Test' );
+          comparePassword.reject( new Error( 'Test' ) );
           supertest.post( route )
           .set( 'Authorization', 'Bearer ' + token )
           .send( body )
@@ -254,7 +254,7 @@ module.exports = function() {
         it('should create token if passwords match', function( done ) {
           findUser.resolve( { id: 1, password: 'password' } );
           comparePassword.resolve( true );
-          makeToken.reject( 'Test' );
+          makeToken.reject( new Error( 'Test' ) );
           supertest.post( route )
           .set( 'Authorization', 'Bearer ' + token )
           .send( body )
@@ -278,7 +278,7 @@ module.exports = function() {
         });
 
         it('should return 500 failure for error', function( done ) {
-          findUser.reject( 'Test' );
+          findUser.reject( new Error( 'Test' ) );
           supertest.post( route )
           .set( 'Authorization', 'Bearer ' + token )
           .send( body )
@@ -308,7 +308,7 @@ module.exports = function() {
         });
 
         it('should be a defined route (not 404)', function( done ) {
-          findUser.reject( 'Test' );
+          findUser.reject( new Error( 'Test' ) );
           supertest.post( route )
           .set( 'Authorization', 'Bearer ' + token )
           .send( body )
@@ -319,7 +319,7 @@ module.exports = function() {
         });
 
         it('search search for user by email', function( done ) {
-          findUser.reject( 'Test' );
+          findUser.reject( new Error( 'Test' ) );
           supertest.post( route )
           .set( 'Authorization', 'Bearer ' + token )
           .send( body )
@@ -332,7 +332,7 @@ module.exports = function() {
 
         it('should force email to lowercase', function( done ) {
           body.email = 'A@gmail.com';
-          findUser.reject( 'Test' );
+          findUser.reject( new Error( 'Test' ) );
           supertest.post( route )
           .set( 'Authorization', 'Bearer ' + token )
           .send( body )
@@ -364,7 +364,7 @@ module.exports = function() {
         });
 
         it('should return 500 failure for error', function( done ) {
-          findUser.reject( 'Test' );
+          findUser.reject( new Error( 'Test' ) );
           supertest.post( route )
           .set( 'Authorization', 'Bearer ' + token )
           .send( body )
@@ -400,7 +400,7 @@ module.exports = function() {
         });
 
         it('should be a defined route (not 404)', function( done ) {
-          findUser.reject( 'Test' );
+          findUser.reject( new Error( 'Test' ) );
           supertest.patch( route )
           .set( 'Authorization', 'Bearer ' + token )
           .send( body )
@@ -411,7 +411,7 @@ module.exports = function() {
         });
 
         it('should search for user by email', function( done ) {
-          findUser.reject( 'Test' );
+          findUser.reject( new Error( 'Test' ) );
           supertest.patch( route )
           .set( 'Authorization', 'Bearer ' + token )
           .send( body )
@@ -428,13 +428,14 @@ module.exports = function() {
           .set( 'Authorization', 'Bearer ' + token )
           .send( body )
           .expect( 500 )
+          .expect( 'Content-Type', /text/ )
           .expect( 'No user found.' )
           .end( done );
         });
 
         it('should salt and hash new password', function( done ) {
           findUser.resolve( foundUser );
-          createNewPw.reject( 'Test' );
+          createNewPw.reject( new Error( 'Test' ) );
           supertest.patch( route )
           .set( 'Authorization', 'Bearer ' + token )
           .send( body )
@@ -448,7 +449,7 @@ module.exports = function() {
         it('should update user\'s password in DB', function( done ) {
           findUser.resolve( foundUser );
           createNewPw.resolve( 'hashed password' );
-          saveUser.reject( 'Test' );
+          saveUser.reject( new Error( 'Test' ) );
           supertest.patch( route )
           .set( 'Authorization', 'Bearer ' + token )
           .send( body )
@@ -472,7 +473,7 @@ module.exports = function() {
         });
 
         it('should return 500 failure for error', function( done ) {
-          findUser.reject( 'Test' );
+          findUser.reject( new Error( 'Test' ) );
           supertest.patch( route )
           .set( 'Authorization', 'Bearer ' + token )
           .send( body )

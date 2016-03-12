@@ -20,7 +20,7 @@ module.exports = exports = {
         res.json( formattedStations );
       })
       .catch(function( error ) {
-        res.status( 500 ).send( error );
+        res.status( 500 ).send( error.message );
       });
     } else {
       res.status( 500 ).send( 'No user id sent.' );
@@ -46,7 +46,7 @@ module.exports = exports = {
       res.send();
     })
     .catch(function( error ) {
-      res.status( 500 ).send( error );
+      res.status( 500 ).send( error.message );
     });
   },
   removeFavoriteStation: function( req, res ) {
@@ -72,7 +72,7 @@ module.exports = exports = {
       res.send();
     })
     .catch(function( error ) {
-      res.status( 500 ).send( error );
+      res.status( 500 ).send( error.message );
     });
   }
 };
