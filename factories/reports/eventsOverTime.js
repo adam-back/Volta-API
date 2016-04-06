@@ -101,7 +101,7 @@ exports.dataOverThirtyDays = function() {
   var totalData = {};
   var elseifcounter = 0;
 
-  return station.findAll()
+  return station.findAll( { raw: true })
   .then(function( stations ) {
 
     var numberOfStations = stations.length;
