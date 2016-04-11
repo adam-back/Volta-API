@@ -42,7 +42,8 @@ module.exports = function() {
           kinNetworks: true,
           kwhGrowth: true,
           thirtyDays: true,
-          sunburst: true
+          sunburst: true,
+          medianData: true
         };
 
         for ( var key in memoizedData ) {

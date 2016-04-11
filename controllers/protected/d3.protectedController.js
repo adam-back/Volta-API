@@ -24,7 +24,11 @@ module.exports = exports = {
     sunburst: {
       data: null,
       lastFetch: null
-    }
+    },
+    medianData: {
+      data: null,
+      lastFetch: null
+    },
   },
   isOld: function( dataName ) {
     var midnightLastNight = moment().startOf( 'day' );
@@ -179,6 +183,21 @@ module.exports = exports = {
       });
     } else {
       res.send( exports.memoizedData.thirtyDays.data );
+    }
+  },
+    getMedianData: function ( req, res ) {
+    if (memoizedData.medianData.data === null || isOld('medianData')) {
+      time.medianDataOverThirtyDays()
+        .then(function ( csv ) {
+          memoizedData.medianData.data = csv;
+          memoizedData.medianData.lastFetch = moment();
+          res.send( csv );
+      })
+      .catch(function ( error ) {
+        res.status( 500 ).send( error );
+      });
+    } else {
+      res.send( memoizedData.medianData.data );
     }
   }
 };

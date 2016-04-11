@@ -32,6 +32,10 @@ module.exports = function() {
         sunburst: {
           data: null,
           lastFetch: null
+        },
+        medianData: {
+          data: null,
+          lastFetch: null
         }
       };
     });

@@ -1,3 +1,4 @@
+
 var charge_event = require( '../../models' ).charge_event;
 var station = require( '../../models' ).station;
 var moment = require( 'moment' );
@@ -35,6 +36,8 @@ exports.kwhByDay = function( station ) {
   // FROM charge_events
   // WHERE station_id={ station.id } AND kwh<100 AND time_stop IS NOT NULL
   // ORDER BY time_start;
+
+  console.log('STATION', station[0])
   var query = { where: { station_id: station.id, kwh: { $lt: 100 }, time_stop: { $ne: null } }, order: 'time_start', raw: true };
   var cumulativekWh = 0;
   var timeline = { location: station.location, kin: station.kin };
@@ -99,9 +102,13 @@ exports.dataOverThirtyDays = function() {
   var thirtyDaysAgo = moment().subtract( 30, 'days' );
   var id = null;
   var totalData = {};
+  var elseifcounter = 0;
 
-  return station.findAll( { raw: true } )
+  return station.findAll( { raw: true })
   .then(function( stations ) {
+
+    console.log('!!! STATIONS !!!!', stations.length)
+
     var numberOfStations = stations.length;
     // create hash of station info
     for (var i = 0; i < numberOfStations; i ++) {
@@ -114,17 +121,88 @@ exports.dataOverThirtyDays = function() {
         location: stations[ i ].location,
         kwh: 0,
         events: 0,
-        time_spent_charging: 0
+        time_spent_charging: 0,
+        median_charge_events_per_day: 0,
+        median_session_length: 0,
+        charge_event_counter: 0,
+        current_session_day: null,
+        session_lengths: [],
+        charge_events: []
       };
     }
 
+    console.log('TOTAL DATA', totalData);
+
     // get all closed charge events from the last 30 days
-    return charge_event.findAll( { where: { time_start: { $gt: thirtyDaysAgo.toDate() } , time_stop: { $ne: null } }, raw: true } );
+    return charge_event.findAll( { where: { time_start: { $gt: thirtyDaysAgo.toDate() } , time_stop: { $ne: null } }, order: 'time_start', raw: true } );
   })
   .then(function ( chargeEvents ) {
+
     var numberOfChargeEvents = chargeEvents.length;
+    var allMedianChargeEvents = [];
+    var allMedianSessionLengths = [];
+    var medianChargeEvents = 0;
+    var medianSessionLengths = 0;
+    var networkMedians = {
+      'Hawaii' : {
+        chargeEvents: null,
+        sessionLengths: null,
+        chargeEventCollection: [],
+        sessionLengthCollection: []
+      },
+      'SD' : {
+        chargeEvents: null,
+        sessionLengths: null,
+        chargeEventCollection: [],
+        sessionLengthCollection: []
+      },
+      'LA' : {
+        chargeEvents: null,
+        sessionLengths: null,
+        chargeEventCollection: [],
+        sessionLengthCollection: []
+      },
+      'NoCal' : {
+        chargeEvents: null,
+        sessionLengths: null,
+        chargeEventCollection: [],
+        sessionLengthCollection: []
+      },
+      'Chicago' : {
+        chargeEvents: null,
+        sessionLengths: null,
+        chargeEventCollection: [],
+        sessionLengthCollection: []
+      },
+      'Arizona' : {
+        chargeEvents: null,
+        sessionLengths: null,
+        chargeEventCollection: [],
+        sessionLengthCollection: []
+      }
+    }
+
+    var isEven = function (num) {
+      return num % 2 === 0;
+    }
+
+    var getMedianFromArray = function (arr) {
+      var length = arr.length;
+      var median;
+      var leftIndex = Math.floor(length / 2);
+      var rightIndex = Math.ceil(length / 2);
+
+      if (isEven(length)) {
+        median = (arr[leftIndex] + arr[rightIndex]) / 2;
+      } else {
+        median = arr[leftIndex];
+      }
+
+      return median;
+    }
+
     for (var j = 0; j < numberOfChargeEvents; j ++) {
-      var stationId =  chargeEvents[ j ].station_id;
+      var stationId = chargeEvents[ j ].station_id;
       // if we have a record of that station
       if ( totalData[ stationId ] ) {
         // add to the accumulator
@@ -133,8 +211,20 @@ exports.dataOverThirtyDays = function() {
         var start = moment( chargeEvents[ j ].time_start );
         var stop = moment( chargeEvents[ j ].time_stop );
         totalData[ stationId ].time_spent_charging += stop.diff( start, 'minutes' );
-      } else {
-        continue;
+
+        var medianSessions = Math.round((chargeEvents[j].time_stop - chargeEvents[j].time_start) / 1000 / 60);
+        totalData[ stationId ].session_lengths.push(medianSessions);
+
+        if ( !totalData[stationId].current_session_day ) {
+          totalData[stationId].current_session_day = chargeEvents[ j ].created_at;
+          totalData[stationId].charge_event_counter++;
+        } else if ( !moment(totalData[stationId].current_session_day).isSame(chargeEvents[ j ].created_at, 'day') ) {
+          totalData[stationId].charge_events.push(totalData[stationId].charge_event_counter);
+          totalData[stationId].charge_event_counter = 1;
+          totalData[stationId].current_session_day = chargeEvents[ j ].created_at;
+        } else {
+          totalData[stationId].charge_event_counter++;
+        }
       }
     }
 
@@ -144,6 +234,105 @@ exports.dataOverThirtyDays = function() {
         delete totalData[ id ];
       }
     }
+
+
+    for (var key in totalData) {
+        // Pushes extra 0s into the array in case there are charge events missing, this gives an accurate median
+
+      if (totalData[key].charge_events.length < 30) {
+        var difference = 30 - totalData[key].charge_events.length;
+        var sessionsArrayLength = totalData[key].session_lengths.length;
+
+        // console.log("SESSIONS ARRAY LENGTH", sessionsArrayLength)
+
+        for (var i = 0; i < difference; i ++) {
+          totalData[key].charge_events.push(0);
+        }
+       };
+
+       totalData[key].session_lengths.sort(function (a, b) {
+         return a - b;
+       })
+
+       totalData[key].charge_events.sort(function (a, b) {
+         return a - b;
+       })
+       //Find the median values for sessions, take the average of the 2 middle values if even, otherwise take the middle value
+       if (isEven(sessionsArrayLength)) {
+        // console.log('inside true block');
+        var leftIndex = Math.floor(totalData[key].session_lengths.length / 2);
+        var rightIndex = Math.ceil(totalData[key].session_lengths.length / 2);
+        totalData[key].median_session_length = (totalData[key].session_lengths[leftIndex] + totalData[key].session_lengths[rightIndex]) / 2;
+       } else {
+        // console.log('inside false block');
+        var rightIndex = Math.ceil(totalData[key].session_lengths.length / 2);
+        totalData[key].median_session_length = totalData[key].session_lengths[rightIndex];
+       }
+
+       //Find the median value for charge_events
+       totalData[key].median_charge_events_per_day = getMedianFromArray(totalData[key].charge_events);
+    }
+
+    //Loop through entire totalData collection and group up the global median data and the data by network
+    for (var key in totalData) {
+      allMedianChargeEvents.push(totalData[key].median_charge_events_per_day);
+      allMedianSessionLengths.push(totalData[key].median_session_length);
+      //Special condition for stations grouped under 'LA' but labeled as 'OC' and 'SB'
+      if (totalData[key].network === 'OC' || totalData[key].network === 'SB') {
+        networkMedians['LA'].chargeEventCollection.push(totalData[key].median_charge_events_per_day);
+        networkMedians['LA'].sessionLengthCollection.push(totalData[key].median_session_length);
+      };
+      //Puts median data into collections grouped by network
+      if (networkMedians[totalData[key].network]) {
+
+        var currentNetwork = networkMedians[totalData[key].network];
+
+        currentNetwork.chargeEventCollection.push(totalData[key].median_charge_events_per_day);
+        currentNetwork.sessionLengthCollection.push(totalData[key].median_session_length);
+      };
+    }
+
+    //Sort all of the median values per network so we can grab the total median
+    for (var key in networkMedians) {
+      networkMedians[key].chargeEventCollection.sort(function (a, b) {
+        return a - b;
+      })
+      networkMedians[key].sessionLengthCollection.sort(function (a, b) {
+        return a - b;
+      })
+      networkMedians[key].chargeEvents = getMedianFromArray(networkMedians[key].chargeEventCollection);
+      networkMedians[key].sessionLengths = getMedianFromArray(networkMedians[key].sessionLengthCollection);
+    }
+
+    allMedianChargeEvents.sort(function (a, b) {
+      return a - b;
+    })
+
+    allMedianSessionLengths.sort(function (a, b) {
+      return a - b;
+    })
+
+    if (!isEven(allMedianChargeEvents)) {
+      var middleIndex = Math.floor(allMedianChargeEvents.length / 2);
+      medianChargeEvents = allMedianChargeEvents[ middleIndex ];
+    } else {
+      var leftIndex = Math.floor(allMedianChargeEvents.length / 2);
+      var rightIndex = Math.ceil(allMedianChargeEvents.length / 2);
+      medianChargeEvents = ((allMedianChargeEvents[leftIndex] + allMedianChargeEvents[rightIndex]) / 2 );
+    }
+
+    if (!isEven(allMedianSessionLengths)) {
+      var middleIndex = Math.floor(allMedianSessionLengths.length / 2);
+      medianSessions = allMedianSessionLengths[ middleIndex ];
+    } else {
+      var leftIndex = Math.floor(allMedianSessionLengths.length / 2);
+      var rightIndex = Math.ceil(allMedianSessionLengths.length / 2);
+      medianSessions = ((allMedianSessionLengths[leftIndex] + allMedianChargeEvents[rightIndex]) / 2 );
+    }
+
+    totalData.medianChargeEvents = medianChargeEvents;
+    totalData.medianSessionLengths = medianSessions;
+    totalData.networkMedians = networkMedians;
 
     return totalData;
   });
