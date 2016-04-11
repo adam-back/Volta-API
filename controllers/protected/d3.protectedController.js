@@ -26,8 +26,8 @@ module.exports = exports = {
       lastFetch: null
     },
     medianData: {
-    data: null,
-    lastFetch: null
+      data: null,
+      lastFetch: null
     },
   },
   isOld: function( dataName ) {

@@ -1,3 +1,4 @@
+
 var charge_event = require( '../../models' ).charge_event;
 var station = require( '../../models' ).station;
 var moment = require( 'moment' );
@@ -35,6 +36,8 @@ exports.kwhByDay = function( station ) {
   // FROM charge_events
   // WHERE station_id={ station.id } AND kwh<100 AND time_stop IS NOT NULL
   // ORDER BY time_start;
+
+  console.log('STATION', station[0])
   var query = { where: { station_id: station.id, kwh: { $lt: 100 }, time_stop: { $ne: null } }, order: 'time_start', raw: true };
   var cumulativekWh = 0;
   var timeline = { location: station.location, kin: station.kin };
@@ -104,6 +107,8 @@ exports.dataOverThirtyDays = function() {
   return station.findAll( { raw: true })
   .then(function( stations ) {
 
+    console.log('!!! STATIONS !!!!', stations.length)
+
     var numberOfStations = stations.length;
     // create hash of station info
     for (var i = 0; i < numberOfStations; i ++) {
@@ -125,6 +130,8 @@ exports.dataOverThirtyDays = function() {
         charge_events: []
       };
     }
+
+    console.log('TOTAL DATA', totalData);
 
     // get all closed charge events from the last 30 days
     return charge_event.findAll( { where: { time_start: { $gt: thirtyDaysAgo.toDate() } , time_stop: { $ne: null } }, order: 'time_start', raw: true } );
