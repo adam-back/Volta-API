@@ -1,7 +1,9 @@
+var request = require( 'request' );
 var station = require( '../../models').station;
 var plug = require( '../../models').plug;
 var charge_event = require( '../../models').charge_event;
 var async = require( 'async' );
+var express = require( 'express' );
 var moment = require('moment');
 moment().format();
 
@@ -31,7 +33,7 @@ module.exports = exports = {
           stationsAndPlugs.events[ order ].cumulative_kwh = station.cumulative_kwh;
           var sevenDaysAgo = moment().subtract( 7, 'days' );
           sevenDaysAgo.startOf( 'day' );
-          return charge_event.findAll( { where: { station_id: station.id, time_stop: { $ne: null }, time_start: { $gt: sevenDaysAgo.toDate() } }, order: 'time_start', raw: true } );
+          return charge_event.findAll( { where: { station_id: station.id, time_stop: { $ne: null }, time_start: { $gt: sevenDaysAgo.toDate() } }, order: 'time_start' } );
         })
         .then(function( charges ) {
           // create a data set for the graph
@@ -56,7 +58,7 @@ module.exports = exports = {
             // new day
             } else {
               currentDay = moment( charges[ i ].time_start );
-              days.push( moment( charges[ i ].time_start ).format( 'M[/]D') );
+              days.push( moment( charges[ i ].time_start ).format( 'MMM[/]D') );
               dayIndex++;
               plugIns.push( 1 );
               kwhGiven.push( +charges[ i ].kwh );
@@ -79,14 +81,14 @@ module.exports = exports = {
         });
       }, function( error ) {
         if ( error ) {
-          res.status( 500 ).send( error.message );
+          throw error;
         } else {
           res.json( stationsAndPlugs );
         }
       });
     })
     .catch(function( error ) {
-      res.status( 500 ).send( error.message );
+      res.status( 500 ).send( error );
     });
   },
   getCumulativeData: function( req, res ) {
@@ -134,7 +136,7 @@ module.exports = exports = {
         // new day
         } else {
           currentDay = moment( charges[ i ].time_start );
-          days.push( moment( charges[ i ].time_start ).format( 'M[/]D') );
+          days.push( moment( charges[ i ].time_start ).format( 'MMM[/]D') );
           dayIndex++;
           plugIns.push( 1 );
           kwhGiven.push( +charges[ i ].kwh );
@@ -152,7 +154,8 @@ module.exports = exports = {
       res.json( data );
     })
     .catch(function( error ) {
-      res.status( 500 ).send( error.message );
+      console.log( error );
+      res.status( 500 ).send( error );
     });
   },
   getStationsByNetwork: function ( req, res ) {
@@ -175,7 +178,7 @@ module.exports = exports = {
       }
     })
     .catch(function( error ) {
-      res.status( 500 ).send( error.message );
+      res.status( 500 ).send( error );
     });
   }
 };

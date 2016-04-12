@@ -6,7 +6,7 @@ var plug = require( '../models').plug;
 var charge_event = require( '../models').charge_event;
 var async     = require( 'async' );
 var ekm = require( './ekmFactory.js' );
-var csv = require( './csvFactory');
+var csv = require( './csvFactory')
 
 exports.orderByKin = function( collection ) {
   collection.sort(function( a, b ) {
@@ -27,12 +27,10 @@ exports.findMedian = function( collection ) {
 
   var half = Math.floor( collection.length / 2 );
 
-  // if odd numbered length
   if( collection.length % 2 ) {
     return collection[ half ];
-  // even numbered
   } else {
-    return ( collection[ half - 1 ] + collection[ half ] ) / 2;
+    return ( collection[ half - 1 ] + collection[ half ] ) / 2.0;
   }
 };
 
@@ -122,9 +120,9 @@ exports.countChargesAndDuration = function( chargeEvents ) {
   // median duration of charge event
   data.medianDurationOfEvent = Math.round( exports.findMedian( chargeDurations ) );
   // average kWh of charge event
-  data.averageKwhOfEvent = Number( ( totalKwh / chargeKwh.length ).toFixed( 1 ) );
+  data.averageKwhOfEvent = Math.round( totalKwh / chargeKwh.length );
   // median kWh of charge event
-  data.medianKwhOfEvent = Number( exports.findMedian( chargeKwh ).toFixed( 1 ) );
+  data.medianKwhOfEvent = Math.round( exports.findMedian( chargeKwh ) );
 
   return data;
 };
@@ -134,7 +132,7 @@ exports.getBrokenPlugs = function () {
   var broken = [];
 
   // find all the plugs where there is an omnimeter and the meter status is error
-  plug.findAll( { where: { meter_status: 'error', ekm_omnimeter_serial: { $ne: null } }, raw: true } )
+  plug.findAll( { where: { meter_status: 'error', ekm_omnimeter_serial: { $ne: null } } } )
   .then(function( plugs ) {
     //for each one of the plugs
     async.each(plugs, function( plug, cb ) {
@@ -149,28 +147,24 @@ exports.getBrokenPlugs = function () {
         ekm_url: null
       };
       // get the station
-      station.findOne( { where: { id: plug.station_id }, raw: true } )
+      station.find( { where: { id: plug.station_id } } )
       .then(function( stationAssociatedWithPlug ) {
-        if ( stationAssociatedWithPlug ) {
-          data.kin = stationAssociatedWithPlug.kin;
-          data.location = stationAssociatedWithPlug.location;
-          data.location_address = stationAssociatedWithPlug.location_address;
-          data.network = stationAssociatedWithPlug.network;
-          data.ekm_push_mac = stationAssociatedWithPlug.ekm_push_mac;
-          data.ekm_url = ekm.makeMeterUrl( plug.ekm_omnimeter_serial );
+        data.kin = stationAssociatedWithPlug.kin;
+        data.location = stationAssociatedWithPlug.location;
+        data.location_address = stationAssociatedWithPlug.location_address;
+        data.network = stationAssociatedWithPlug.network;
+        data.ekm_push_mac = stationAssociatedWithPlug.ekm_push_mac;
+        data.ekm_url = ekm.makeMeterUrl( plug.ekm_omnimeter_serial );
 
-          broken.push( data );
-          cb( null );
-        } else {
-          throw new Error( 'No station for plug id ' + plug.id );
-        }
+        broken.push( data );
+        cb( null );
       })
       .catch(function( error ) {
         cb( error );
       });
     }, function( error ) {
       if ( error ) {
-        deferred.reject( error );
+        throw error;
       } else {
         deferred.resolve( broken );
       }
@@ -184,11 +178,9 @@ exports.getBrokenPlugs = function () {
 };
 
 exports.chargeEventsOverTime = function( where, timePeriod ) {
-  // doesn't fill in for dates without charge events
-  // fe.[ 1, 'days' ]
   var timeNum = timePeriod[ 0 ];
   var timeUnit = timePeriod[ 1 ];
-  var query = where || { where: { time_stop: { $ne: null } }, order: 'id', raw: true };
+  var query = where || { where: {}, order: 'id', raw: true };
   query.order = 'id';
   query.raw = true;
   query.where.time_stop = { $ne: null };
@@ -214,9 +206,11 @@ exports.chargeEventsOverTime = function( where, timePeriod ) {
         // toFixed returns string
         collector.kwh = Number( collector.kwh.toFixed( 1 ) );
         // save
-        periods.push( { time: currentPeriod.clone().toDate(), events: collector.totalEvents, kwh: collector.kwh } );
+
+        periods.push( { time: currentPeriod, events: collector.totalEvents, kwh: collector.kwh } );
+
         // set new period
-        currentPeriod = currentPeriod.clone().add( timeNum, timeUnit );
+        currentPeriod = moment( currentPeriod.add( timeNum, timeUnit ) );
       }
 
       // always add
@@ -225,8 +219,8 @@ exports.chargeEventsOverTime = function( where, timePeriod ) {
     }
 
     // don't forget the last period
-    currentPeriod = currentPeriod.clone().add( timeNum, timeUnit );
-    periods.push( { time: currentPeriod.clone().toDate(), events: collector.totalEvents, kwh: Number( collector.kwh.toFixed( 1 ) ) } );
+    currentPeriod = moment( currentPeriod.add( timeNum, timeUnit ) );
+    periods.push( { time: currentPeriod, events: collector.totalEvents, kwh: collector.kwh.toFixed( 1 ) } );
     return periods;
   });
 };

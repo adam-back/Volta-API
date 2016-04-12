@@ -9,7 +9,7 @@ module.exports = exports = {
       res.json( Slides );
     })
     .catch(function( error ) {
-      res.status( 500 ).send( error.message );
+      res.status( 500 ).send( error );
     });
   },
 
@@ -22,7 +22,7 @@ module.exports = exports = {
       res.json( Slide );
     })
     .catch(function( error ) {
-      res.status( 500 ).send( error.message );
+      res.status( 500 ).send( error );
     });
   },
 
@@ -33,7 +33,7 @@ module.exports = exports = {
       res.json( slide );
     })
     .catch( function( error ) {
-      res.status( 500 ).send( error.message );
+      res.status( 500 ).send( error );
     });
   },
 };

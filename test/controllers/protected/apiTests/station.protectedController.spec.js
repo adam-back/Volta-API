@@ -8,10 +8,9 @@ var station = require( '../../../../models' ).station;
 var plug = require( '../../../../models' ).plug;
 var schedule = require( '../../../../models' ).media_schedule;
 var appSponsorFactory = require( '../../../../factories/appSponsorFactory' );
-var mediaScheduleFactory = require( '../../../../factories/media/mediaScheduleFactory.js' );
+var mediaSchedule = require( '../../../../controllers/protected/mediaSchedule.protectedController.js' );
 var createToken = require( '../../../jwtHelper' ).createToken;
-var token = createToken();
-var Sequelize = require( 'sequelize' );
+var token = createToken( 5 );
 
 module.exports = function() {
   describe('STATION ROUTES', function() {
@@ -27,7 +26,7 @@ module.exports = function() {
         });
 
         it('should be a defined route (not 404)', function( done ) {
-          stationFind.reject( new Error( 'Test' ) );
+          stationFind.reject();
           supertest.get( route )
           .set( 'Authorization', 'Bearer ' + token )
           .expect(function( res ) {
@@ -52,11 +51,10 @@ module.exports = function() {
         });
 
         it('should return 500 failure for error', function( done ) {
-          stationFind.reject( new Error( 'Test' ) );
+          stationFind.reject( 'Test' );
           supertest.get( route )
           .set( 'Authorization', 'Bearer ' + token )
           .expect( 500 )
-          .expect( 'Content-Type', /text/ )
           .expect( 'Test' )
           .expect(function( res ) {
             expect( station.findAll ).toHaveBeenCalled();
@@ -81,7 +79,7 @@ module.exports = function() {
         });
 
         it('should be a defined route (not 404)', function( done ) {
-          findOrCreateStation.reject( new Error( 'Test' ) );
+          findOrCreateStation.reject();
           supertest.post( route )
           .set( 'Authorization', 'Bearer ' + token )
           .expect(function( res ) {
@@ -91,12 +89,12 @@ module.exports = function() {
         });
 
         it('should findOrCreate a station', function( done ) {
-          findOrCreateStation.reject( new Error( 'Test' ) );
+          findOrCreateStation.reject( 'Fake reject.' );
           supertest.post( route )
           .set( 'Authorization', 'Bearer ' + token )
           .send( body )
           .expect( 500 )
-          .expect( 'Test' )
+          .expect( 'Fake reject.' )
           .expect(function( res ) {
             expect( station.findOrCreate ).toHaveBeenCalled();
             expect( station.findOrCreate ).toHaveBeenCalledWith( { where: { kin: '001-0001-001-01-K' }, defaults: body } );
@@ -140,12 +138,12 @@ module.exports = function() {
         it('should destroy station if error is thrown on associate', function( done ) {
           body.id = 1;
           findOrCreateStation.resolve( [ body, true ] );
-          associateStation.reject( new Error( 'Test' ) );
+          associateStation.reject( 'Because I said so.' );
           supertest.post( route )
           .set( 'Authorization', 'Bearer ' + token )
           .send( body )
           .expect( 500 )
-          .expect( 'Test' )
+          .expect( 'Because I said so.' )
           .expect(function( res ) {
             expect( appSponsorFactory.associateStationWithAppSponsors ).toHaveBeenCalled();
             expect( appSponsorFactory.associateStationWithAppSponsors ).toHaveBeenCalledWith( body );
@@ -157,33 +155,26 @@ module.exports = function() {
       });
 
       describe('PATCH', function() {
-        var body, findStation, stationToUpdate, stationSave, getMediaSchedule, replaceMediaSchedule, findValidationErrorStation;
+        var body, findStation, stationToUpdate, stationSave, getMediaSchedule, replaceMediaSchedule;
 
         beforeEach(function() {
           body = {
             kin: '001-0001-001-01-K',
-            changes: [ [ 'location', 'Volta', 'home' ], [ 'kin', '001-0001-001-01-K', '001-0001-001-02-K' ] ]
+            changes: [ [ 'location', 'Volta', 'home' ] ]
           };
           findStation = Q.defer();
-          stationToUpdate = station.build( { id: 1, kin: '001-0001-001-01-K', location: 'Volta', 'front_display_pc_serial_number': 1 } );
+          stationToUpdate = station.build( { id: 1, location: 'Volta', 'front_display_pc_serial_number': 1 } );
           stationSave = Q.defer();
           getMediaSchedule = Q.defer();
           replaceMediaSchedule = Q.defer();
-          findValidationErrorStation = Q.defer();
-          spyOn( station, 'find' ).andCallFake(function( query ) {
-            if ( query.hasOwnProperty( 'raw' ) ) {
-              return findValidationErrorStation.promise;
-            } else {
-              return findStation.promise;
-            }
-          });
+          spyOn( station, 'find' ).andReturn( findStation.promise );
           spyOn( stationToUpdate, 'save' ).andReturn( stationSave.promise );
-          spyOn( mediaScheduleFactory, 'getMediaScheduleByKinLocal' ).andReturn( getMediaSchedule.promise );
-          spyOn( mediaScheduleFactory, 'replaceMediaScheduleLocal' ).andReturn( replaceMediaSchedule.promise );
+          spyOn( mediaSchedule, 'getMediaScheduleByKinLocal' ).andReturn( getMediaSchedule.promise );
+          spyOn( mediaSchedule, 'replaceMediaScheduleLocal' ).andReturn( replaceMediaSchedule.promise );
         });
 
         it('should be a defined route (not 404)', function( done ) {
-          findStation.reject( new Error( 'Test' ) );
+          findStation.reject( 'Test' );
           supertest.patch( route )
           .set( 'Authorization', 'Bearer ' + token )
           .expect(function( res ) {
@@ -193,7 +184,7 @@ module.exports = function() {
         });
 
         it('should find a station by kin', function( done ) {
-          findStation.reject( new Error( 'Test' ) );
+          findStation.reject( 'Test' );
           supertest.patch( route )
           .set( 'Authorization', 'Bearer ' + token )
           .send( body )
@@ -206,7 +197,7 @@ module.exports = function() {
 
         it('should update a station', function( done ) {
           findStation.resolve( stationToUpdate );
-          stationSave.reject( new Error( 'Test' ) );
+          stationSave.reject( 'Test' );
           supertest.patch( route )
           .set( 'Authorization', 'Bearer ' + token )
           .send( body )
@@ -230,28 +221,28 @@ module.exports = function() {
             .expect(function( res ) {
               stationToUpdate.location = 'home';
               expect( res.body ).toEqual( stationToUpdate.get( { plain: true } ) );
-              expect( mediaScheduleFactory.getMediaScheduleByKinLocal ).not.toHaveBeenCalled();
-              expect( mediaScheduleFactory.replaceMediaScheduleLocal ).not.toHaveBeenCalled();
+              expect( mediaSchedule.getMediaScheduleByKinLocal ).not.toHaveBeenCalled();
+              expect( mediaSchedule.replaceMediaScheduleLocal ).not.toHaveBeenCalled();
             })
             .end( done );
           });
         });
 
         describe('need to update media schedule', function() {
-          beforeEach(function() {
+          beforeEach(function(  ) {
             body.changes.push( [ 'front_display_pc_serial_number', '1', 'A' ] );
           });
 
           it('should get the media schedule', function( done ) {
             findStation.resolve( stationToUpdate );
             stationSave.resolve( stationToUpdate );
-            getMediaSchedule.reject( new Error( 'Test' ) );
+            getMediaSchedule.reject( 'Test' );
             supertest.patch( route )
             .set( 'Authorization', 'Bearer ' + token )
             .send( body )
             .expect(function( res ) {
-              expect( mediaScheduleFactory.getMediaScheduleByKinLocal ).toHaveBeenCalled();
-              expect( mediaScheduleFactory.getMediaScheduleByKinLocal ).toHaveBeenCalledWith( '001-0001-001-01-K' );
+              expect( mediaSchedule.getMediaScheduleByKinLocal ).toHaveBeenCalled();
+              expect( mediaSchedule.getMediaScheduleByKinLocal ).toHaveBeenCalledWith( '001-0001-001-01-K' );
             })
             .end( done );
           });
@@ -269,7 +260,7 @@ module.exports = function() {
               stationToUpdate.location = 'home';
               stationToUpdate.front_display_pc_serial_number = 'A';
               expect( res.body ).toEqual( stationToUpdate.get( { plain: true } ) );
-              expect( mediaScheduleFactory.replaceMediaScheduleLocal ).not.toHaveBeenCalled();
+              expect( mediaSchedule.replaceMediaScheduleLocal ).not.toHaveBeenCalled();
             })
             .end( done );
           });
@@ -286,11 +277,11 @@ module.exports = function() {
             .expect( 200 )
             .expect( 'Content-Type', /json/ )
             .expect(function( res ) {
-              expect( mediaScheduleFactory.replaceMediaScheduleLocal ).toHaveBeenCalled();
+              expect( mediaSchedule.replaceMediaScheduleLocal ).toHaveBeenCalled();
               // instead of toHaveBeenCalledWith()
-              expect( mediaScheduleFactory.replaceMediaScheduleLocal.calls[ 0 ].args[ 0 ].hasOwnProperty( 'id' ) ).toBe( false );
-              expect( mediaScheduleFactory.replaceMediaScheduleLocal.calls[ 0 ].args[ 0 ].hasOwnProperty( 'deleted_at' ) ).toBe( false );
-              expect( mediaScheduleFactory.replaceMediaScheduleLocal.calls[ 0 ].args[ 0 ].serial_number ).toBe( 'A' );
+              expect( mediaSchedule.replaceMediaScheduleLocal.calls[ 0 ].args[ 0 ].hasOwnProperty( 'id' ) ).toBe( false );
+              expect( mediaSchedule.replaceMediaScheduleLocal.calls[ 0 ].args[ 0 ].hasOwnProperty( 'deleted_at' ) ).toBe( false );
+              expect( mediaSchedule.replaceMediaScheduleLocal.calls[ 0 ].args[ 0 ].serial_number ).toBe( 'A' );
               stationToUpdate.location = 'home';
               stationToUpdate.front_display_pc_serial_number = 'A';
               expect( res.body ).toEqual( stationToUpdate.get( { plain: true } ) );
@@ -300,68 +291,16 @@ module.exports = function() {
         });
 
         it('should handle non-conflict-based errors', function( done ) {
-          findStation.reject( new Error( 'Test' ) );
+          findStation.reject( 'Fake reject.' );
           supertest.patch( route )
           .set( 'Authorization', 'Bearer ' + token )
           .send( body )
           .expect( 500 )
-          .expect( 'Test' )
+          .expect( 'Fake reject.' )
           .expect(function( res ) {
             expect( station.find ).toHaveBeenCalled();
             expect( station.find ).toHaveBeenCalledWith( { where: { kin: '001-0001-001-01-K' } } );
           })
-          .end( done );
-        });
-
-        it('should handle Sequelize validation errors', function( done ) {
-          findStation.resolve( stationToUpdate );
-          var errorOptions = {
-            message: 'Validation error',
-            errors:
-              [ { message: 'kin must be unique',
-                type: 'unique violation',
-                path: 'kin',
-                value: '001-0001-001-02-K' }
-              ],
-            parent: true,
-            fields: { kin: '001-0001-001-02-K' }
-          };
-          stationSave.reject( new Sequelize.UniqueConstraintError( errorOptions ) );
-          findValidationErrorStation.resolve( { id: 2, kin: '001-0001-001-02-K' } );
-          supertest.patch( route )
-          .set( 'Authorization', 'Bearer ' + token )
-          .send( body )
-          .expect( 409 )
-          .expect( 'Content-Type', /json/ )
-          .expect(function( res ) {
-            var errorCopy = new Sequelize.UniqueConstraintError( errorOptions );
-            errorCopy.duplicateStation = { id: 2, kin: '001-0001-001-02-K' };
-            expect( res.body ).toEqual( JSON.parse( JSON.stringify( errorCopy ) ) );
-          })
-          .end( done );
-        });
-
-        it('should catch error when trying to find duplicate station', function( done ) {
-          findStation.resolve( stationToUpdate );
-          var errorOptions = {
-            message: 'Validation error',
-            errors:
-              [ { message: 'kin must be unique',
-                type: 'unique violation',
-                path: 'kin',
-                value: '001-0001-001-02-K' }
-              ],
-            parent: true,
-            fields: { kin: '001-0001-001-02-K' }
-          };
-          stationSave.reject( new Sequelize.UniqueConstraintError( errorOptions ) );
-          findValidationErrorStation.reject( new Error( 'Test' ) );
-          supertest.patch( route )
-          .set( 'Authorization', 'Bearer ' + token )
-          .send( body )
-          .expect( 500 )
-          .expect( 'Content-Type', /text/ )
-          .expect( 'Test' )
           .end( done );
         });
       });
@@ -378,7 +317,7 @@ module.exports = function() {
         });
 
         it('should be a defined route (not 404)', function( done ) {
-          countStations.reject( new Error( 'Test' ) );
+          countStations.reject();
           supertest.get( route )
           .set( 'Authorization', 'Bearer ' + token )
           .expect(function( res ) {
@@ -403,7 +342,7 @@ module.exports = function() {
         });
 
         it('should return 500 error for failure', function( done ) {
-          countStations.reject( new Error( 'Couldn\'t count all stations.' ) );
+          countStations.reject( 'Couldn\'t count all stations.' );
           supertest.get( route )
           .set( 'Authorization', 'Bearer ' + token )
           .expect( 500 )
@@ -429,7 +368,7 @@ module.exports = function() {
         });
 
         it('should be a defined route (not 404)', function( done ) {
-          findStation.reject( new Error( 'Test' ) );
+          findStation.reject();
           supertest.get( route )
           .set( 'Authorization', 'Bearer ' + token )
           .expect(function( res ) {
@@ -439,7 +378,7 @@ module.exports = function() {
         });
 
         it('should find one station by kin', function( done ) {
-          findStation.reject( new Error( 'Test' ) );
+          findStation.reject( 'Fake reject.' );
           supertest.get( route )
           .set( 'Authorization', 'Bearer ' + token )
           .expect(function( res ) {
@@ -459,7 +398,7 @@ module.exports = function() {
         });
 
         it('should return JSON of station', function( done ) {
-          var thatOneStation = [ { id: 1 } ];
+          var thatOneStation = [ { id: 1} ];
           findStation.resolve( thatOneStation );
           supertest.get( route )
           .set( 'Authorization', 'Bearer ' + token )
@@ -470,12 +409,11 @@ module.exports = function() {
         });
 
         it('should return 500 failure for error', function( done ) {
-          findStation.reject( new Error( 'Test' ) );
+          findStation.reject( 'Fake reject.' );
           supertest.get( route )
           .set( 'Authorization', 'Bearer ' + token )
           .expect( 500 )
-          .expect( 'Content-Type', /text/ )
-          .expect( 'Test' )
+          .expect( 'Fake reject.' )
           .end( done );
         });
       });
@@ -506,7 +444,7 @@ module.exports = function() {
         });
 
         it('should be a defined route (not 404)', function( done ) {
-          findOneStation.reject( new Error( 'Test' ) );
+          findOneStation.reject();
           supertest.get( route )
           .set( 'Authorization', 'Bearer ' + token )
           .expect(function( res ) {
@@ -516,7 +454,7 @@ module.exports = function() {
         });
 
         it('should find one station by kin', function( done ) {
-          findOneStation.reject( new Error( 'Test' ) );
+          findOneStation.reject( 'Fake reject.' );
           supertest.delete( route )
           .set( 'Authorization', 'Bearer ' + token )
           .expect(function( res ) {
@@ -528,7 +466,7 @@ module.exports = function() {
 
         it('should get all plugs for station', function( done ) {
           findOneStation.resolve( foundStation );
-          getStationsPlugs.reject( new Error( 'Test' ) );
+          getStationsPlugs.reject( 'Fake test.' );
           supertest.delete( route )
           .set( 'Authorization', 'Bearer ' + token )
           .expect(function( res ) {
@@ -543,7 +481,7 @@ module.exports = function() {
           getStationsPlugs.resolve( [ plug1, plug2 ] );
           plug1Destroy.resolve();
           plug2Destroy.resolve();
-          removeStationSponsor.reject( new Error( 'Test' ) );
+          removeStationSponsor.reject( 'Fake reject.' );
           supertest.delete( route )
           .set( 'Authorization', 'Bearer ' + token )
           .expect(function( res ) {
@@ -558,7 +496,7 @@ module.exports = function() {
         it('should skip destroying plugs if there aren\'t any', function( done ) {
           findOneStation.resolve( foundStation );
           getStationsPlugs.resolve( [] );
-          removeStationSponsor.reject( new Error( 'Test' ) );
+          removeStationSponsor.reject( 'Fake reject.' );
           supertest.delete( route )
           .set( 'Authorization', 'Bearer ' + token )
           .expect(function( res ) {
@@ -572,7 +510,7 @@ module.exports = function() {
           findOneStation.resolve( foundStation );
           getStationsPlugs.resolve( [] );
           removeStationSponsor.resolve( foundStation );
-          stationDestroy.reject( new Error( 'Test' ) );
+          stationDestroy.reject( 'Fake reject.' );
           supertest.delete( route )
           .set( 'Authorization', 'Bearer ' + token )
           .expect(function( res ) {
@@ -607,12 +545,11 @@ module.exports = function() {
         });
 
         it('should return 500 failure for error', function( done ) {
-          findOneStation.reject( new Error( 'Test' ) );
+          findOneStation.reject( 'Fake reject.' );
           supertest.delete( route )
           .set( 'Authorization', 'Bearer ' + token )
           .expect( 500 )
-          .expect( 'Content-Type', /text/ )
-          .expect( 'Error deleting station: Test' )
+          .expect( 'Error deleting station: Fake reject.' )
           .end( done );
         });
       });

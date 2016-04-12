@@ -11,8 +11,8 @@ router.route( '/broken/:output' )
   .get( controller.getBrokenPlugs );
 
 // for http://www.baseurl.com/protected/reports/one/123-1234-123-01-k
-// router.route( '/one/:kin' )
-//   .get( controller.getOneStationAnalytics );
+router.route( '/one/:kin' )
+  .get( controller.getOneStationAnalytics );
 
 // for http://www.baseurl.com/protected/reports/withoutCoordinates/csv
 router.route( '/withoutCoordinates/:output' )
@@ -37,7 +37,7 @@ router.route( '/wrongCoordinates/:output' )
 router.route( '/downloadStations/CSV' )
   .get( controller.exportStationDataAsCsv );
 
-// for http://www.baseurl.com/protected/reports/chargeEventsOverTime/CSV
+// for http://www.baseurl.com/protected/reports/downloadStations/CSV
 router.route( '/chargeEventsOverTime/CSV' )
   .get( controller.getChargeDataOverTime );
 

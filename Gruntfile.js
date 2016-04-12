@@ -5,7 +5,7 @@ module.exports = function(grunt) {
     jasmine_node: {
       task_name: {
         options: {
-          coverage: { excludes: [ 'server.js' ] },
+          coverage: {},
           forceExit: false,
           showColors: true,
           match: '.',
@@ -25,7 +25,7 @@ module.exports = function(grunt) {
       }
     },
     watch: {
-      files: [ '*.js', 'controllers/**/*.js', 'factories/**/*.js', 'test/**/*.spec.js' ],
+      files: [ '*.js', 'controllers/**/*.js', 'factories/*.js', 'test/**/*.spec.js' ],
       tasks: 'test'
     }
   });

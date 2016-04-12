@@ -6,11 +6,11 @@ var Q = require( 'q' );
 var media_slide = require( '../../../../models' ).media_slide;
 var controller = require( '../../../../controllers/protected/mediaSlide.protectedController.js' );
 var createToken = require( '../../../jwtHelper' ).createToken;
-var token = createToken();
+var token = createToken( 5 );
 
 module.exports = function() {
-  describe('SLIDES', function() {
-    describe('mediaSlide/', function() {
+  describe('MEDIA SLIDE ROUTES', function() {
+    describe('mediaSlide', function() {
       var route = '/protected/mediaSlide';
 
       describe('GET', function() {
@@ -22,7 +22,7 @@ module.exports = function() {
         });
 
         it('should be a defined route (not 404)', function( done ) {
-          getAll.reject( new Error( 'Test' ) );
+          getAll.reject();
           supertest.get( route )
           .set( 'Authorization', 'Bearer ' + token )
           .expect(function( res ) {
@@ -43,7 +43,7 @@ module.exports = function() {
         });
 
         it('should return 500 failure for error', function( done ) {
-          getAll.reject( new Error( 'Test' ) );
+          getAll.reject( 'Test' );
           supertest.get( route )
           .set( 'Authorization', 'Bearer ' + token )
           .expect( 500 )
@@ -67,7 +67,7 @@ module.exports = function() {
         });
 
         it('should be a defined route (not 404)', function( done ) {
-          create.reject( new Error( 'Test' ) );
+          create.reject();
           supertest.post( route )
           .set( 'Authorization', 'Bearer ' + token )
           .send( slideBody )
@@ -110,7 +110,7 @@ module.exports = function() {
         });
 
         it('should return 500 failure for error', function( done ) {
-          create.reject( new Error( 'Test' ) );
+          create.reject( 'Test' );
           supertest.post( route )
           .set( 'Authorization', 'Bearer ' + token )
           .send( slideBody )
@@ -137,7 +137,7 @@ module.exports = function() {
         });
 
         it('should be a defined route (not 404)', function( done ) {
-          destroySlide.reject( new Error( 'Test' ) );
+          destroySlide.reject();
           supertest.delete( route )
           .set( 'Authorization', 'Bearer ' + token )
           .expect(function( res ) {
@@ -171,7 +171,7 @@ module.exports = function() {
         });
 
         it('should return 500 failure for error', function( done ) {
-          destroySlide.reject( new Error( 'Test' ) );
+          destroySlide.reject( 'Test' );
           supertest.delete( route )
           .set( 'Authorization', 'Bearer ' + token )
           .expect( 500 )

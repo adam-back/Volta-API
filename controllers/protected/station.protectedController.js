@@ -4,8 +4,8 @@ var app_sponsor = require( '../../models' ).app_sponsor;
 var express = require( 'express' );
 var async     = require( 'async' );
 var appSponsorFactory = require( '../../factories/appSponsorFactory' );
-var mediaScheduleFactory = require( '../../factories/media/mediaScheduleFactory.js' );
-var Q = require( 'q' );
+var mediaSchedule = require( './mediaSchedule.protectedController.js' );
+var q = require( 'q' );
 
 module.exports = exports = {
   countStations: function ( req, res ) {
@@ -14,7 +14,7 @@ module.exports = exports = {
       res.json( number );
     })
     .catch(function( error ) {
-      res.status( 500 ).send( error.message );
+      res.status( 500 ).send( error );
     });
   },
   getAllStations: function ( req, res ) {
@@ -25,7 +25,7 @@ module.exports = exports = {
       res.json( stations );
     })
     .catch(function( error ) {
-      res.status( 500 ).send( error.message );
+      res.status( 500 ).send( error );
     });
   },
   getOneStation: function( req, res ) {
@@ -40,7 +40,7 @@ module.exports = exports = {
       }
     })
     .catch(function( error ) {
-      res.status( 500 ).send( error.message );
+      res.status( 500 ).send( error );
     });
   },
   addStation: function( req, res ) {
@@ -70,7 +70,7 @@ module.exports = exports = {
         station.destroy( { where: { id: id }, force: true } );
       }
 
-      res.status( 500 ).send( error.message );
+      res.status( 500 ).send( error );
     });
   },
   editStation: function( req, res ) {
@@ -97,10 +97,10 @@ module.exports = exports = {
         var oldMediaSchedule = {};
         // new
         if( needToUpdateMediaSchedule ) {
-          return mediaScheduleFactory.getMediaScheduleByKinLocal( req.body.kin )
+          return mediaSchedule.getMediaScheduleByKinLocal( req.body.kin )
           .then( function( schedules ) {
             if( schedules.length === 0 ) {
-              return Q();
+              return;
             } else {
               var oldMediaSchedule = schedules[ 0 ];
 
@@ -111,17 +111,17 @@ module.exports = exports = {
               // update front_display_pc_serial_number
               newMediaSchedule.serial_number = stationToUpdate.front_display_pc_serial_number;
 
-              return mediaScheduleFactory.replaceMediaScheduleLocal( newMediaSchedule );
+              return mediaSchedule.replaceMediaScheduleLocal( newMediaSchedule );
             }
           })
           .then( function() {
-            return Q( successStation );
+            return successStation;
           })
           .catch( function( error ) {
-            throw new Error( 'Failed to replace media schedule on station pc serial number change: ' + error.message );
+            throw new Error( 'Failed to replace media schedule on station pc serial number change:', error );
           });
         } else {
-          return Q( successStation );
+          return successStation;
         }
       });
     })
@@ -129,7 +129,9 @@ module.exports = exports = {
       res.json( finalResult );
     })
     .catch(function( error ) {
-      if ( error.hasOwnProperty( 'fields' ) ) {
+      // this part is confusing
+      // need to trigger error to in order to mock error
+      if ( error.hasOwnProperty( 'fields' ) && error.hasOwnProperty( 'fields' ).length > 0 ) {
         var query = {};
         // get the title that of the colum that errored
         var errorColumn = Object.keys( error.fields );
@@ -138,18 +140,17 @@ module.exports = exports = {
         query[ errorColumn ] = duplicateValue;
 
         // where conflicting key, value
-        // for example { where: { kin: '001-0001-001-01-K' } }
-        station.find( { where: query, raw: true } )
+        station.find( { where: query } )
         .then(function( duplicateStation ) {
           error.duplicateStation = duplicateStation;
           // 409 = conflict
           res.status( 409 ).send( error );
         })
         .catch(function( error ) {
-          res.status( 500 ).send( error.message );
+          res.status( 500 ).send( error );
         });
       } else {
-        res.status( 500 ).send( error.message );
+        res.status( 500 ).send( error );
       }
     });
   },
@@ -174,7 +175,7 @@ module.exports = exports = {
 
             return Q.all( destroyPlugs );
           } else {
-            return Q();
+            return;
           }
         })
         .then(function() {
@@ -189,7 +190,7 @@ module.exports = exports = {
       res.status( 204 ).send();
     })
     .catch(function( error ) {
-      res.status( 500 ).send( 'Error deleting station: ' + error.message );
+      res.status( 500 ).send( 'Error deleting station: ' + error );
     });
   }
 };

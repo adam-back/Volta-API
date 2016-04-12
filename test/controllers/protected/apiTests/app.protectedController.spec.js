@@ -10,7 +10,7 @@ var cache = require( '../../../../factories/geocodeCache.js' );
 var appFactory = require( '../../../../factories/appFactory.js' );
 var calculateDistance = require( '../../../../factories/distanceFactory.js' ).getDistanceFromLatLonInMiles;
 var createToken = require( '../../../jwtHelper' ).createToken;
-var token = createToken();
+var token = createToken( 5 );
 
 module.exports = function() {
   describe('APP', function() {
@@ -30,7 +30,7 @@ module.exports = function() {
         });
 
         it('should be a defined route (not 404)', function( done ) {
-          formatStations.reject( new Error( 'Test' ) );
+          formatStations.reject();
           supertest.get( route )
           .set( 'Authorization', 'Bearer ' + token )
           .expect(function( res ) {
@@ -40,7 +40,7 @@ module.exports = function() {
         });
 
         it('should call appFactory.formatStationsForApp', function( done ) {
-          formatStations.reject( new Error( 'Test' ) );
+          formatStations.reject();
           supertest.get( route )
           .set( 'Authorization', 'Bearer ' + token )
           .expect(function( res ) {
@@ -50,7 +50,7 @@ module.exports = function() {
         });
 
         it('should call factory for every station', function( done ) {
-          formatStations.reject( new Error( 'Test' ) );
+          formatStations.reject();
           supertest.get( route )
           .set( 'Authorization', 'Bearer ' + token )
           .expect(function( res ) {
@@ -60,7 +60,7 @@ module.exports = function() {
         });
 
         it('should call factory with user id and coords', function( done ) {
-          formatStations.reject( new Error( 'Test' ) );
+          formatStations.reject();
           route += '?id=1';
           route += '&userCoords[]=5&userCoords[]=6';
           supertest.get( route )
@@ -83,7 +83,7 @@ module.exports = function() {
         });
 
         it('should return 500 failure for error', function( done ) {
-          formatStations.reject( new Error( 'Test' ) );
+          formatStations.reject( 'Test' );
           supertest.get( route )
           .set( 'Authorization', 'Bearer ' + token )
           .expect( 500 )
@@ -110,7 +110,7 @@ module.exports = function() {
         });
 
         it('should be a defined route (not 404)', function( done ) {
-          createReport.reject( new Error( 'Test' ) );
+          createReport.reject();
           supertest.post( route )
           .set( 'Authorization', 'Bearer ' + token )
           .expect(function( res ) {
@@ -142,7 +142,7 @@ module.exports = function() {
         });
 
         it('should return 500 failure for error', function( done ) {
-          createReport.reject( new Error( 'Test' ) );
+          createReport.reject( 'Test' );
           supertest.post( route )
           .set( 'Authorization', 'Bearer ' + token )
           .send( body )
@@ -170,7 +170,7 @@ module.exports = function() {
         });
 
         it('should be a defined route (not 404)', function( done ) {
-          findAllSponsors.reject( new Error( 'Test' ) );
+          findAllSponsors.reject();
           supertest.get( route )
           .set( 'Authorization', 'Bearer ' + token )
           .expect(function( res ) {
@@ -195,7 +195,7 @@ module.exports = function() {
         });
 
         it('should return 500 failure for error', function( done ) {
-          findAllSponsors.reject( new Error( 'Test' ) );
+          findAllSponsors.reject( 'Test' );
           supertest.get( route )
           .set( 'Authorization', 'Bearer ' + token )
           .expect( 500 )
