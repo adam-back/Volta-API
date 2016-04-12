@@ -41,7 +41,7 @@ module.exports = exports = {
       if ( error.message === 'This email address is already registered with Volta.' ) {
         res.status( 409 ).send( error.message );
       } else {
-        res.status( 500 ).send( error );
+        res.status( 500 ).send( error.message );
       }
     });
   },
@@ -75,7 +75,7 @@ module.exports = exports = {
       if ( error.message === '401' ) {
         res.status( 401 ).send( 'Please check your email and password.' );
       } else {
-        res.status( 500 ).send( error );
+        res.status( 500 ).send( error.message );
       }
     });
   },
@@ -100,7 +100,7 @@ module.exports = exports = {
       }
     })
     .catch(function( error ) {
-      res.status( 500 ).send( error );
+      res.status( 500 ).send( error.message );
     });
   },
   updatePassword: function( req, res ) {
@@ -132,7 +132,7 @@ module.exports = exports = {
       if ( error.message === 'No user found.' ) {
         res.status( 500 ).send( error.message );
       } else {
-        res.status( 500 ).send( error );
+        res.status( 500 ).send( error.message );
       }
     });
   }

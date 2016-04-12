@@ -7,7 +7,7 @@ var models = require( '../../../../models' );
 var controller = require( '../../../../controllers/protected/appFavorites.protectedController.js' );
 var appFactory = require( '../../../../factories/appFactory.js' );
 var createToken = require( '../../../jwtHelper' ).createToken;
-var token = createToken( 5 );
+var token = createToken();
 
 module.exports = function() {
   describe('FAVORITES', function() {
@@ -30,7 +30,7 @@ module.exports = function() {
         });
 
         it('should be a defined route (not 404)', function( done ) {
-          findUser.reject();
+          findUser.reject( new Error( 'Test' ) );
           supertest.get( route )
           .set( 'Authorization', 'Bearer ' + token )
           .expect(function( res ) {
@@ -40,7 +40,7 @@ module.exports = function() {
         });
 
         it('should find one user', function( done ) {
-          findUser.reject();
+          findUser.reject( new Error( 'Test' ) );
           supertest.get( route )
           .set( 'Authorization', 'Bearer ' + token )
           .expect(function( res ) {
@@ -65,7 +65,7 @@ module.exports = function() {
 
         it('should format favorites for app', function( done ) {
           findUser.resolve( { id: 42, favorite_stations: [ 1, 2 ] } );
-          formatStations.reject();
+          formatStations.reject( new Error( 'Test' ) );
           supertest.get( route )
           .set( 'Authorization', 'Bearer ' + token )
           .expect(function( res ) {
@@ -77,7 +77,7 @@ module.exports = function() {
 
         it('should call formatStationsForApp with WHERE clause', function( done ) {
           findUser.resolve( { id: 42, favorite_stations: [ 1, 2 ] } );
-          formatStations.reject();
+          formatStations.reject( new Error( 'Test' ) );
           supertest.get( route )
           .set( 'Authorization', 'Bearer ' + token )
           .expect(function( res ) {
@@ -89,7 +89,7 @@ module.exports = function() {
 
         it('should call formatStationsForApp with user id', function( done ) {
           findUser.resolve( { id: 42, favorite_stations: [ 1, 2 ] } );
-          formatStations.reject();
+          formatStations.reject( new Error( 'Test' ) );
           supertest.get( route )
           .set( 'Authorization', 'Bearer ' + token )
           .expect(function( res ) {
@@ -102,7 +102,7 @@ module.exports = function() {
         it('should call formatStationsForApp with user coords', function( done ) {
           findUser.resolve( { id: 42, favorite_stations: [ 1, 2 ] } );
           route += '&userCoords[]=5&userCoords[]=6';
-          formatStations.reject();
+          formatStations.reject( new Error( 'Test' ) );
           supertest.get( route )
           .set( 'Authorization', 'Bearer ' + token )
           .expect(function( res ) {
@@ -144,7 +144,7 @@ module.exports = function() {
         });
 
         it('should be a defined route (not 404)', function( done ) {
-          findAllStations.reject();
+          findAllStations.reject( new Error( 'Test' ) );
           supertest.post( route )
           .set( 'Authorization', 'Bearer ' + token )
           .send( body )
@@ -155,7 +155,7 @@ module.exports = function() {
         });
 
         it('should find all stations', function( done ) {
-          findAllStations.reject();
+          findAllStations.reject( new Error( 'Test' ) );
           supertest.post( route )
           .set( 'Authorization', 'Bearer ' + token )
           .send( body )
@@ -168,7 +168,7 @@ module.exports = function() {
 
         it('find the user', function( done ) {
           findAllStations.resolve();
-          findUser.reject();
+          findUser.reject( new Error( 'Test' ) );
           supertest.post( route )
           .set( 'Authorization', 'Bearer ' + token )
           .send( body )
@@ -182,7 +182,7 @@ module.exports = function() {
         it('should update user\'s favorite stations', function( done ) {
           findAllStations.resolve( [ { id: 1 }, { id: 2 } ] );
           findUser.resolve( User );
-          updateUser.reject();
+          updateUser.reject( new Error( 'Test' ) );
           supertest.post( route )
           .set( 'Authorization', 'Bearer ' + token )
           .send( body )
@@ -197,7 +197,7 @@ module.exports = function() {
           findAllStations.resolve( [ { id: 1 }, { id: 2 } ] );
           User.favorite_stations = null;
           findUser.resolve( User );
-          updateUser.reject();
+          updateUser.reject( new Error( 'Test' ) );
           supertest.post( route )
           .set( 'Authorization', 'Bearer ' + token )
           .send( body )
@@ -222,7 +222,7 @@ module.exports = function() {
         });
 
         it('should return 500 failure for error', function( done ) {
-          findAllStations.reject( 'Test' );
+          findAllStations.reject( new Error( 'Test' ) );
           supertest.post( route )
           .set( 'Authorization', 'Bearer ' + token )
           .send( body )
@@ -253,7 +253,7 @@ module.exports = function() {
         });
 
         it('should be a defined route (not 404)', function( done ) {
-          findUser.reject();
+          findUser.reject( new Error( 'Test' ) );
           supertest.patch( route )
           .set( 'Authorization', 'Bearer ' + token )
           .send( body )
@@ -264,7 +264,7 @@ module.exports = function() {
         });
 
         it('find the user', function( done ) {
-          findUser.reject();
+          findUser.reject( new Error( 'Test' ) );
           supertest.patch( route )
           .set( 'Authorization', 'Bearer ' + token )
           .send( body )
@@ -277,7 +277,7 @@ module.exports = function() {
 
         it('should remove stations from user\'s favorites and update DB', function( done ) {
           findUser.resolve( User );
-          updateUser.reject();
+          updateUser.reject( new Error( 'Test' ) );
           supertest.patch( route )
           .set( 'Authorization', 'Bearer ' + token )
           .send( body )
@@ -301,7 +301,7 @@ module.exports = function() {
         });
 
         it('should return 500 failure for error', function( done ) {
-          findUser.reject( 'Test' );
+          findUser.reject( new Error( 'Test' ) );
           supertest.patch( route )
           .set( 'Authorization', 'Bearer ' + token )
           .send( body )
