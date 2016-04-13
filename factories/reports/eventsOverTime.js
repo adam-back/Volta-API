@@ -37,7 +37,6 @@ exports.kwhByDay = function( station ) {
   // WHERE station_id={ station.id } AND kwh<100 AND time_stop IS NOT NULL
   // ORDER BY time_start;
 
-  console.log('STATION', station[0])
   var query = { where: { station_id: station.id, kwh: { $lt: 100 }, time_stop: { $ne: null } }, order: 'time_start', raw: true };
   var cumulativekWh = 0;
   var timeline = { location: station.location, kin: station.kin };
@@ -99,6 +98,7 @@ exports.kwhByDay = function( station ) {
 
 exports.dataOverThirtyDays = function() {
   var current = moment();
+  //changed to 90 days for testing purposes
   var thirtyDaysAgo = moment().subtract( 30, 'days' );
   var id = null;
   var totalData = {};
@@ -106,8 +106,6 @@ exports.dataOverThirtyDays = function() {
 
   return station.findAll( { raw: true })
   .then(function( stations ) {
-
-    console.log('!!! STATIONS !!!!', stations.length)
 
     var numberOfStations = stations.length;
     // create hash of station info
@@ -131,12 +129,14 @@ exports.dataOverThirtyDays = function() {
       };
     }
 
-    console.log('TOTAL DATA', totalData);
-
     // get all closed charge events from the last 30 days
     return charge_event.findAll( { where: { time_start: { $gt: thirtyDaysAgo.toDate() } , time_stop: { $ne: null } }, order: 'time_start', raw: true } );
+
+    //  { where: { time_start: { $gt: thirtyDaysAgo.toDate() } , time_stop: { $ne: null } }, order: 'time_start', raw: true } 
   })
   .then(function ( chargeEvents ) {
+
+    console.log('CHARGEEVENTS', chargeEvents);
 
     var numberOfChargeEvents = chargeEvents.length;
     var allMedianChargeEvents = [];
@@ -234,7 +234,6 @@ exports.dataOverThirtyDays = function() {
         delete totalData[ id ];
       }
     }
-
 
     for (var key in totalData) {
         // Pushes extra 0s into the array in case there are charge events missing, this gives an accurate median
