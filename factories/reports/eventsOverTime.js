@@ -98,7 +98,6 @@ exports.kwhByDay = function( station ) {
 
 exports.dataOverThirtyDays = function() {
   var current = moment();
-  //changed to 90 days for testing purposes
   var thirtyDaysAgo = moment().subtract( 30, 'days' );
   var id = null;
   var totalData = {};
@@ -131,12 +130,8 @@ exports.dataOverThirtyDays = function() {
 
     // get all closed charge events from the last 30 days
     return charge_event.findAll( { where: { time_start: { $gt: thirtyDaysAgo.toDate() } , time_stop: { $ne: null } }, order: 'time_start', raw: true } );
-
-    //  { where: { time_start: { $gt: thirtyDaysAgo.toDate() } , time_stop: { $ne: null } }, order: 'time_start', raw: true } 
   })
   .then(function ( chargeEvents ) {
-
-    console.log('CHARGEEVENTS', chargeEvents);
 
     var numberOfChargeEvents = chargeEvents.length;
     var allMedianChargeEvents = [];
@@ -197,7 +192,6 @@ exports.dataOverThirtyDays = function() {
       } else {
         median = arr[leftIndex];
       }
-
       return median;
     }
 
@@ -242,7 +236,6 @@ exports.dataOverThirtyDays = function() {
         var difference = 30 - totalData[key].charge_events.length;
         var sessionsArrayLength = totalData[key].session_lengths.length;
 
-        // console.log("SESSIONS ARRAY LENGTH", sessionsArrayLength)
 
         for (var i = 0; i < difference; i ++) {
           totalData[key].charge_events.push(0);
@@ -258,12 +251,10 @@ exports.dataOverThirtyDays = function() {
        })
        //Find the median values for sessions, take the average of the 2 middle values if even, otherwise take the middle value
        if (isEven(sessionsArrayLength)) {
-        // console.log('inside true block');
         var leftIndex = Math.floor(totalData[key].session_lengths.length / 2);
         var rightIndex = Math.ceil(totalData[key].session_lengths.length / 2);
         totalData[key].median_session_length = (totalData[key].session_lengths[leftIndex] + totalData[key].session_lengths[rightIndex]) / 2;
        } else {
-        // console.log('inside false block');
         var rightIndex = Math.ceil(totalData[key].session_lengths.length / 2);
         totalData[key].median_session_length = totalData[key].session_lengths[rightIndex];
        }
