@@ -178,24 +178,6 @@ exports.dataOverThirtyDays = function() {
       }
     };
 
-    var isEven = function (num) {
-      return num % 2 === 0;
-    };
-
-    var getMedianFromArray = function (arr) {
-      var length = arr.length;
-      var median;
-      var leftIndex = Math.floor(length / 2);
-      var rightIndex = Math.ceil(length / 2);
-
-      if (isEven(length)) {
-        median = (arr[leftIndex] + arr[rightIndex]) / 2;
-      } else {
-        median = arr[leftIndex];
-      }
-      return median;
-    };
-
     for (var j = 0; j < numberOfChargeEvents; j ++) {
       var stationId = chargeEvents[ j ].station_id;
       // if we have a record of that station
@@ -257,40 +239,14 @@ exports.dataOverThirtyDays = function() {
       }
     }
 
-    // median for each network
+    // median for each networkMedians
     for (var network in networkMedians) {
       networkMedians[ network ].chargeEvents = helper.findMedian( networkMedians[ network ].chargeEventCollection );
       networkMedians[ network ].sessionLengths = helper.findMedian( networkMedians[ network ].sessionLengthCollection );
     }
 
-    allMedianChargeEvents.sort(function (a, b) {
-      return a - b;
-    })
-
-    allMedianSessionLengths.sort(function (a, b) {
-      return a - b;
-    })
-
-    if (!isEven(allMedianChargeEvents)) {
-      var middleIndex = Math.floor(allMedianChargeEvents.length / 2);
-      medianChargeEvents = allMedianChargeEvents[ middleIndex ];
-    } else {
-      var leftIndex = Math.floor(allMedianChargeEvents.length / 2);
-      var rightIndex = Math.ceil(allMedianChargeEvents.length / 2);
-      medianChargeEvents = ((allMedianChargeEvents[leftIndex] + allMedianChargeEvents[rightIndex]) / 2 );
-    }
-
-    if (!isEven(allMedianSessionLengths)) {
-      var middleIndex = Math.floor(allMedianSessionLengths.length / 2);
-      medianSessions = allMedianSessionLengths[ middleIndex ];
-    } else {
-      var leftIndex = Math.floor(allMedianSessionLengths.length / 2);
-      var rightIndex = Math.ceil(allMedianSessionLengths.length / 2);
-      medianSessions = ((allMedianSessionLengths[leftIndex] + allMedianChargeEvents[rightIndex]) / 2 );
-    }
-
-    totalData.medianChargeEvents = medianChargeEvents;
-    totalData.medianSessionLengths = medianSessions;
+    totalData.medianChargeEvents = helper.findMedian( allMedianChargeEvents );
+    totalData.medianSessionLengths = helper.findMedian( allMedianSessionLengths );
     totalData.networkMedians = networkMedians;
 
     return totalData;
