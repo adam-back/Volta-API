@@ -240,27 +240,21 @@ exports.dataOverThirtyDays = function() {
         }
       }
 
-     totalData[ key ].median_session_length = helper.findMedian( totalData[ key ].session_lengths );
-     totalData[ key ].median_charge_events_per_day = helper.findMedian( totalData[ key ].charge_events );
-    }
+      totalData[ key ].median_session_length = helper.findMedian( totalData[ key ].session_lengths );
+      totalData[ key ].median_charge_events_per_day = helper.findMedian( totalData[ key ].charge_events );
 
-    //Loop through entire totalData collection and group up the global median data and the data by network
-    for (var key in totalData) {
-      allMedianChargeEvents.push(totalData[key].median_charge_events_per_day);
-      allMedianSessionLengths.push(totalData[key].median_session_length);
-      //Special condition for stations grouped under 'LA' but labeled as 'OC' and 'SB'
-      if (totalData[key].network === 'OC' || totalData[key].network === 'SB') {
-        networkMedians['LA'].chargeEventCollection.push(totalData[key].median_charge_events_per_day);
-        networkMedians['LA'].sessionLengthCollection.push(totalData[key].median_session_length);
-      };
-      //Puts median data into collections grouped by network
-      if (networkMedians[totalData[key].network]) {
+      // global median data
+      allMedianSessionLengths.push( totalData[ key ].median_session_length );
+      allMedianChargeEvents.push( totalData[ key ].median_charge_events_per_day );
 
-        var currentNetwork = networkMedians[totalData[key].network];
-
-        currentNetwork.chargeEventCollection.push(totalData[key].median_charge_events_per_day);
-        currentNetwork.sessionLengthCollection.push(totalData[key].median_session_length);
-      };
+      // network median data
+      if ( networkMedians[ totalData[ key ].network ] ) {
+        var currentNetwork = networkMedians[ totalData[ key ].network ];
+        currentNetwork.chargeEventCollection.push( totalData[ key ].median_charge_events_per_day );
+        currentNetwork.sessionLengthCollection.push( totalData[ key ].median_session_length );
+      } else {
+        throw new Error( 'Network not found in global median data object, eventOverTime.dataOverThirtyDays.' );
+      }
     }
 
     //Sort all of the median values per network so we can grab the total median
