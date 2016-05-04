@@ -3,6 +3,7 @@ var charge_event = require( '../../models' ).charge_event;
 var station = require( '../../models' ).station;
 var moment = require( 'moment' );
 moment().format();
+var helper = require( '../reportHelpers' );
 
 exports.countNumberOfDaysWithoutData = function( firstDayWithCharge, nextDayWithCharge, kwh ) {
   var nulls = {};
@@ -175,7 +176,7 @@ exports.dataOverThirtyDays = function() {
         chargeEventCollection: [],
         sessionLengthCollection: []
       }
-    }
+    };
 
     var isEven = function (num) {
       return num % 2 === 0;
@@ -207,7 +208,7 @@ exports.dataOverThirtyDays = function() {
         totalData[ stationId ].time_spent_charging += stop.diff( start, 'minutes' );
 
         var medianSessions = Math.round((chargeEvents[j].time_stop - chargeEvents[j].time_start) / 1000 / 60);
-        totalData[ stationId ].session_lengths.push(medianSessions);
+        totalData[ stationId ].session_lengths.push( medianSessions );
 
         if ( !totalData[stationId].current_session_day ) {
           totalData[stationId].current_session_day = chargeEvents[ j ].created_at;
@@ -229,38 +230,18 @@ exports.dataOverThirtyDays = function() {
       }
     }
 
-    for (var key in totalData) {
+    for ( var key in totalData ) {
+      if ( totalData[ key ].charge_events.length < 30 ) {
         // Pushes extra 0s into the array in case there are charge events missing, this gives an accurate median
+        var difference = 30 - totalData[key ].charge_events.length;
 
-      if (totalData[key].charge_events.length < 30) {
-        var difference = 30 - totalData[key].charge_events.length;
-        var sessionsArrayLength = totalData[key].session_lengths.length;
-
-
-        for (var i = 0; i < difference; i ++) {
-          totalData[key].charge_events.push(0);
+        for ( var i = 0; i < difference; i++ ) {
+          totalData[ key ].charge_events.push( 0 );
         }
-       };
+      }
 
-       totalData[key].session_lengths.sort(function (a, b) {
-         return a - b;
-       })
-
-       totalData[key].charge_events.sort(function (a, b) {
-         return a - b;
-       })
-       //Find the median values for sessions, take the average of the 2 middle values if even, otherwise take the middle value
-       if (isEven(sessionsArrayLength)) {
-        var leftIndex = Math.floor(totalData[key].session_lengths.length / 2);
-        var rightIndex = Math.ceil(totalData[key].session_lengths.length / 2);
-        totalData[key].median_session_length = (totalData[key].session_lengths[leftIndex] + totalData[key].session_lengths[rightIndex]) / 2;
-       } else {
-        var rightIndex = Math.ceil(totalData[key].session_lengths.length / 2);
-        totalData[key].median_session_length = totalData[key].session_lengths[rightIndex];
-       }
-
-       //Find the median value for charge_events
-       totalData[key].median_charge_events_per_day = getMedianFromArray(totalData[key].charge_events);
+     totalData[ key ].median_session_length = helper.findMedian( totalData[ key ].session_lengths );
+     totalData[ key ].median_charge_events_per_day = helper.findMedian( totalData[ key ].charge_events );
     }
 
     //Loop through entire totalData collection and group up the global median data and the data by network
