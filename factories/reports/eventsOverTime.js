@@ -180,7 +180,7 @@ exports.dataOverThirtyDays = function() {
 
     var isEven = function (num) {
       return num % 2 === 0;
-    }
+    };
 
     var getMedianFromArray = function (arr) {
       var length = arr.length;
@@ -194,7 +194,7 @@ exports.dataOverThirtyDays = function() {
         median = arr[leftIndex];
       }
       return median;
-    }
+    };
 
     for (var j = 0; j < numberOfChargeEvents; j ++) {
       var stationId = chargeEvents[ j ].station_id;
@@ -257,16 +257,10 @@ exports.dataOverThirtyDays = function() {
       }
     }
 
-    //Sort all of the median values per network so we can grab the total median
-    for (var key in networkMedians) {
-      networkMedians[key].chargeEventCollection.sort(function (a, b) {
-        return a - b;
-      })
-      networkMedians[key].sessionLengthCollection.sort(function (a, b) {
-        return a - b;
-      })
-      networkMedians[key].chargeEvents = getMedianFromArray(networkMedians[key].chargeEventCollection);
-      networkMedians[key].sessionLengths = getMedianFromArray(networkMedians[key].sessionLengthCollection);
+    // median for each network
+    for (var network in networkMedians) {
+      networkMedians[ network ].chargeEvents = helper.findMedian( networkMedians[ network ].chargeEventCollection );
+      networkMedians[ network ].sessionLengths = helper.findMedian( networkMedians[ network ].sessionLengthCollection );
     }
 
     allMedianChargeEvents.sort(function (a, b) {
