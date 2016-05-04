@@ -17,18 +17,10 @@ module.exports = exports = {
       data: null,
       lastFetch: null
     },
-    thirtyDays: {
-      data: null,
-      lastFetch: null
-    },
     sunburst: {
       data: null,
       lastFetch: null
-    },
-    medianData: {
-      data: null,
-      lastFetch: null
-    },
+    }
   },
   isOld: function( dataName ) {
     var midnightLastNight = moment().startOf( 'day' );
@@ -171,33 +163,21 @@ module.exports = exports = {
     }
   },
   get30DaysData: function ( req, res ) {
-    if ( exports.memoizedData.thirtyDays.data === null || exports.isOld( 'thirtyDays' ) ) {
-      time.dataOverThirtyDays()
-      .then(function ( csv ) {
-        exports.memoizedData.thirtyDays.data = csv;
-        exports.memoizedData.thirtyDays.lastFetch = moment();
-        res.send( csv );
-      })
-      .catch(function ( error ) {
-        res.status( 500 ).send( error.message );
-      });
-    } else {
-      res.send( exports.memoizedData.thirtyDays.data );
-    }
+    time.dataOverThirtyDays()
+    .then(function ( csv ) {
+      res.send( csv );
+    })
+    .catch(function ( error ) {
+      res.status( 500 ).send( error.message );
+    });
   },
-    getMedianData: function ( req, res ) {
-    if (memoizedData.medianData.data === null || isOld('medianData')) {
-      time.medianDataOverThirtyDays()
-        .then(function ( csv ) {
-          memoizedData.medianData.data = csv;
-          memoizedData.medianData.lastFetch = moment();
-          res.send( csv );
-      })
-      .catch(function ( error ) {
-        res.status( 500 ).send( error );
-      });
-    } else {
-      res.send( memoizedData.medianData.data );
-    }
+  getMedianData: function ( req, res ) {
+    time.medianDataOverThirtyDays()
+    .then(function ( csv ) {
+      res.send( csv );
+    })
+    .catch(function ( error ) {
+      res.status( 500 ).send( error );
+    });
   }
 };
