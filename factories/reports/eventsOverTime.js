@@ -187,20 +187,30 @@ exports.dataOverThirtyDays = function() {
         totalData[ stationId ].events++;
         var start = moment( chargeEvents[ j ].time_start );
         var stop = moment( chargeEvents[ j ].time_stop );
-        totalData[ stationId ].time_spent_charging += stop.diff( start, 'minutes' );
+        var chargeDuration = stop.diff( start, 'minutes' );
+        totalData[ stationId ].time_spent_charging += chargeDuration;
+        totalData[ stationId ].session_lengths.push( chargeDuration );
 
-        var medianSessions = Math.round((chargeEvents[j].time_stop - chargeEvents[j].time_start) / 1000 / 60);
-        totalData[ stationId ].session_lengths.push( medianSessions );
+        // count number of days with charge events
 
-        if ( !totalData[stationId].current_session_day ) {
-          totalData[stationId].current_session_day = chargeEvents[ j ].created_at;
-          totalData[stationId].charge_event_counter++;
-        } else if ( !moment(totalData[stationId].current_session_day).isSame(chargeEvents[ j ].created_at, 'day') ) {
-          totalData[stationId].charge_events.push(totalData[stationId].charge_event_counter);
-          totalData[stationId].charge_event_counter = 1;
-          totalData[stationId].current_session_day = chargeEvents[ j ].created_at;
+        // no current day yet
+        if ( !totalData[ stationId ].current_session_day ) {
+          // start
+          totalData[ stationId ].current_session_day = moment( chargeEvents[ j ].created_at );
+          totalData[ stationId ].charge_event_counter++;
+
+        // different day
+        } else if ( totalData[ stationId ].current_session_day.isSame( chargeEvents[ j ].created_at, 'day' ) === false ) {
+          // add number of events during the last day to the median collector
+          totalData[ stationId ].charge_events.push( totalData[ stationId ].charge_event_counter );
+          // reset counter
+          totalData[ stationId ].charge_event_counter = 1;
+          // start new day
+          totalData[ stationId ].current_session_day = moment( chargeEvents[ j ].created_at );
+
+        // same day
         } else {
-          totalData[stationId].charge_event_counter++;
+          totalData[ stationId ].charge_event_counter++;
         }
       }
     }
