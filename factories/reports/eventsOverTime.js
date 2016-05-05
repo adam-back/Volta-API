@@ -196,21 +196,27 @@ exports.dataOverThirtyDays = function() {
         // no current day yet
         if ( !totalData[ stationId ].current_session_day ) {
           // start
-          totalData[ stationId ].current_session_day = moment( chargeEvents[ j ].created_at );
+          totalData[ stationId ].current_session_day = moment( chargeEvents[ j ].time_start );
           totalData[ stationId ].charge_event_counter++;
+          totalData[ stationId ].charge_events.push( totalData[ stationId ].charge_event_counter );
 
         // different day
-        } else if ( totalData[ stationId ].current_session_day.isSame( chargeEvents[ j ].created_at, 'day' ) === false ) {
+        } else if ( totalData[ stationId ].current_session_day.isSame( chargeEvents[ j ].time_start, 'day' ) === false ) {
           // add number of events during the last day to the median collector
-          totalData[ stationId ].charge_events.push( totalData[ stationId ].charge_event_counter );
           // reset counter
           totalData[ stationId ].charge_event_counter = 1;
+          totalData[ stationId ].charge_events.push( totalData[ stationId ].charge_event_counter );
           // start new day
-          totalData[ stationId ].current_session_day = moment( chargeEvents[ j ].created_at );
+          totalData[ stationId ].current_session_day = moment( chargeEvents[ j ].time_start );
 
         // same day
         } else {
+          // replace old record
+          totalData[ stationId ].charge_events.pop();
+          // with new
+          // we do this so the final day is always recorded
           totalData[ stationId ].charge_event_counter++;
+          totalData[ stationId ].charge_events.push( totalData[ stationId ].charge_event_counter );
         }
       }
     }
@@ -223,13 +229,10 @@ exports.dataOverThirtyDays = function() {
     }
 
     for ( var key in totalData ) {
-      if ( totalData[ key ].charge_events.length < 30 ) {
-        // Pushes extra 0s into the array in case there are charge events missing, this gives an accurate median
-        var difference = 30 - totalData[key ].charge_events.length;
+      var difference = 30 - totalData[ key ].charge_events.length;
 
-        for ( var i = 0; i < difference; i++ ) {
-          totalData[ key ].charge_events.push( 0 );
-        }
+      for ( var i = 0; i < difference; i++ ) {
+        totalData[ key ].charge_events.push( 0 );
       }
 
       totalData[ key ].median_session_length = helper.findMedian( totalData[ key ].session_lengths );
@@ -245,7 +248,7 @@ exports.dataOverThirtyDays = function() {
         currentNetwork.chargeEventCollection.push( totalData[ key ].median_charge_events_per_day );
         currentNetwork.sessionLengthCollection.push( totalData[ key ].median_session_length );
       } else {
-        throw new Error( 'Network not found in global median data object, eventOverTime.dataOverThirtyDays.' );
+        throw new Error( 'Network (' + totalData[ key ].network + ') not found in global median data object, eventOverTime.dataOverThirtyDays.' );
       }
     }
 
