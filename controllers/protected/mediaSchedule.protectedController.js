@@ -1,7 +1,8 @@
 var mediaPresentation = require( '../../models').media_presentation;
 var mediaSchedule = require( '../../models' ).media_schedule;
-var station = require( '../../models').station;
+var station = require( '../../models' ).station;
 var mediaScheduleFactory = require( '../../factories/media/mediaScheduleFactory' );
+var sequelize = require( '../../models' ).sequelize;
 
 module.exports = exports = {
 
@@ -109,21 +110,47 @@ module.exports = exports = {
   getMediaScheduleBySerialNumber: function( req, res ) {
     var serialNumber = req.params.serialNumber;
 
-    mediaSchedule.findAll({
-      where: {
-        serial_number: serialNumber
+    // log the time of the last check for a media schedule update
+    // run a cron job to check if any of the media players have not
+    //  checked for updates within the past N minutes
+
+    // mediaSchedule.findAll({
+    //   where: {
+    //     serial_number: serialNumber
+    //   }
+    // })
+    mediaSchedule.update(
+      {
+        last_check_in: sequelize.fn('NOW')
+      },
+      {
+        where: {
+          serial_number: serialNumber
+        }
       }
-    })
-    .then(function( schedules ) {
-      if( schedules.length === 0 ) {
+    )
+    .spread(function( countOfAffectedRows, schedules ) {
+      if( countOfAffectedRows === 0 || schedules.length === 0 ) {
         throw new Error( 'No schedules for serialNumber ' + serialNumber );
       } else {
-        res.json( schedules );
+        res.json( [ countOfAffectedRows, schedules ] );
       }
     })
     .catch(function( error ) {
       res.status( 500 ).send( error.message );
     });
 
+  },
+
+  getMediaPlayersInNeedOfMaintenance: function( req, res ) {
+    mediaScheduleFactory.getMediaPlayersThatHaveGoneAWOL()
+    .then( function( schedules ) {
+      res.json( {
+        haveNotCheckedIn: schedules
+      });
+    })
+    .catch(function( error ) {
+      res.status( 500 ).send( 'Failed to check for media players that are in need of maintenance: ' + error.message );
+    });
   }
 };
