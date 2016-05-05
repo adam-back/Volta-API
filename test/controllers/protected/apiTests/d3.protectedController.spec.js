@@ -25,15 +25,7 @@ module.exports = function() {
           data: null,
           lastFetch: null
         },
-        thirtyDays: {
-          data: null,
-          lastFetch: null
-        },
         sunburst: {
-          data: null,
-          lastFetch: null
-        },
-        medianData: {
           data: null,
           lastFetch: null
         }
@@ -404,51 +396,16 @@ module.exports = function() {
           .end( done );
         });
 
-        it('should check if data has been memoized or old', function( done ) {
-          controller.memoizedData.thirtyDays.data = true;
-          spyOn( controller, 'isOld' ).andReturn( false );
-          supertest.get( route )
-          .set( 'Authorization', 'Bearer ' + token )
-          .expect(function( res ) {
-            expect( time.dataOverThirtyDays ).not.toHaveBeenCalled();
-            expect( controller.isOld ).toHaveBeenCalled();
-            expect( controller.isOld ).toHaveBeenCalledWith( 'thirtyDays' );
-          })
-          .end( done );
-        });
-
-        it('should return memoized data if data is not old', function( done ) {
-          controller.memoizedData.thirtyDays.data = true;
-          spyOn( controller, 'isOld' ).andReturn( false );
+        it('should call dataOverThirtyDays', function( done ) {
+          get30Days.resolve( 'Stuff' );
           supertest.get( route )
           .set( 'Authorization', 'Bearer ' + token )
           .expect( 200 )
-          .expect( 'true' )
-          .end( done );
-        });
-
-        it('should call dataOverThirtyDays', function( done ) {
-          get30Days.reject( new Error( 'Test' ) );
-          supertest.get( route )
-          .set( 'Authorization', 'Bearer ' + token )
           .expect(function( res ) {
             expect( time.dataOverThirtyDays ).toHaveBeenCalled();
             expect( time.dataOverThirtyDays ).toHaveBeenCalledWith();
           })
-          .end( done );
-        });
-
-        it('should memoize and return data', function( done ) {
-          get30Days.resolve( 'csv,stuff' );
-          supertest.get( route )
-          .set( 'Authorization', 'Bearer ' + token )
-          .expect( 200 )
-          .expect( 'csv,stuff' )
-          .expect(function( res ) {
-            expect( controller.memoizedData.thirtyDays.data ).toBe( 'csv,stuff' );
-            expect( moment.isMoment( controller.memoizedData.thirtyDays.lastFetch ) ).toBe( true );
-            expect( controller.memoizedData.thirtyDays.lastFetch.fromNow() ).toBe( 'a few seconds ago' );
-          })
+          .expect( 'Stuff' )
           .end( done );
         });
 
