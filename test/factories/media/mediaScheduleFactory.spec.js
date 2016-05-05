@@ -274,5 +274,33 @@ module.exports = function() {
         });
       });
     });
-  });
+    });
+
+    describe('getMediaPlayersThatHaveGoneAWOL', function() {
+      var findMediaSchedules;
+      beforeEach(function() {
+        findMediaSchedules = Q.defer();
+        spyOn( models.media_schedule, 'findAll' ).andReturn( findMediaSchedules.promise );
+      });
+
+      it( 'should find media schedules that have gone AWOL', function( done ) {
+        var testSchedules = [ { id: 1 } ];
+
+        findMediaSchedules.resolve( [ { id: 1 } ] );
+        factory.getMediaPlayersThatHaveGoneAWOL()
+        .then( function( schedules ) {
+          expect( models.media_schedule.findAll ).toHaveBeenCalled();
+          expect( models.media_schedule.findAll.calls[ 0 ].args[ 0 ].hasOwnProperty( 'where' ) ).toBe( true );
+          expect( models.media_schedule.findAll.calls[ 0 ].args[ 0 ].where.hasOwnProperty( 'last_check_in' ) ).toBe( true );
+          expect( models.media_schedule.findAll.calls[ 0 ].args[ 0 ].where.last_check_in.hasOwnProperty( '$gt' ) ).toBe( true );
+          expect( models.media_schedule.findAll.calls[ 0 ].args[ 0 ].raw ).toBe( true );
+          expect( schedules ).toEqual( testSchedules );
+          done();
+        })
+        .catch( function( error ) {
+          expect( error ).toBe( undefined );
+          done();
+        });
+      });
+    });
 };
