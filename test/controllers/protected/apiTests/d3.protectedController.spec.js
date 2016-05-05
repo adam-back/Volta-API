@@ -397,13 +397,15 @@ module.exports = function() {
         });
 
         it('should call dataOverThirtyDays', function( done ) {
-          get30Days.reject( new Error( 'Test' ) );
+          get30Days.resolve( 'Stuff' );
           supertest.get( route )
           .set( 'Authorization', 'Bearer ' + token )
+          .expect( 200 )
           .expect(function( res ) {
             expect( time.dataOverThirtyDays ).toHaveBeenCalled();
             expect( time.dataOverThirtyDays ).toHaveBeenCalledWith();
           })
+          .expect( 'Stuff' )
           .end( done );
         });
 
