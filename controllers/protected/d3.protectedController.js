@@ -170,14 +170,5 @@ module.exports = exports = {
     .catch(function ( error ) {
       res.status( 500 ).send( error.message );
     });
-  },
-  getMedianData: function ( req, res ) {
-    time.medianDataOverThirtyDays()
-    .then(function ( csv ) {
-      res.send( csv );
-    })
-    .catch(function ( error ) {
-      res.status( 500 ).send( error );
-    });
   }
 };
