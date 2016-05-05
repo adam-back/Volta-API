@@ -8,6 +8,9 @@ var mediaScheduleFactory = require( '../../../../factories/media/mediaScheduleFa
 var createToken = require( '../../../jwtHelper' ).createToken;
 var token = createToken();
 
+var sequelize = models.sequelize;
+
+
 module.exports = function() {
   describe('SCHEDULES', function() {
     describe('mediaSchedules/', function() {
@@ -304,15 +307,15 @@ module.exports = function() {
       var route = '/protected/mediaSchedule/serial/1';
 
       describe('GET', function() {
-        var findSchedule;
+        var updateSchedule;
 
         beforeEach(function() {
-          findSchedule = Q.defer();
-          spyOn( models.media_schedule, 'findAll' ).andReturn( findSchedule.promise );
+          updateSchedule = Q.defer();
+          spyOn( models.media_schedule, 'update' ).andReturn( updateSchedule.promise );
         });
 
         it('should be a defined route (not 404)', function( done ) {
-          findSchedule.reject( new Error( 'Test' ) );
+          updateSchedule.reject( new Error( 'Test' ) );
           supertest.get( route )
           .set( 'Authorization', 'Bearer ' + token )
           .expect(function( res ) {
@@ -321,19 +324,19 @@ module.exports = function() {
           .end( done );
         });
 
-        it('should findAll schedules by serial number', function( done ) {
-          findSchedule.resolve( [ 1 ] );
+        it('should find schedules by serial number and update last_check_in', function( done ) {
+          updateSchedule.resolve( [ 1 ] );
           supertest.get( route )
           .set( 'Authorization', 'Bearer ' + token )
           .expect(function( res ) {
-            expect( models.media_schedule.findAll ).toHaveBeenCalled();
-            expect( models.media_schedule.findAll ).toHaveBeenCalledWith( { where: { serial_number: '1' } } );
+            expect( models.media_schedule.update ).toHaveBeenCalled();
+            expect( models.media_schedule.update ).toHaveBeenCalledWith( {last_check_in: sequelize.fn('NOW')}, { where: { serial_number: '1' } } );
           })
           .end( done );
         });
 
         it('should return JSON of schedules', function( done ) {
-          findSchedule.resolve( [ 1, 'schedule' ] );
+          updateSchedule.resolve( [ 1, 'schedule' ] );
           supertest.get( route )
           .set( 'Authorization', 'Bearer ' + token )
           .expect( 200 )
@@ -343,7 +346,7 @@ module.exports = function() {
         });
 
         it('should throw an error if no schedules were found', function( done ) {
-          findSchedule.resolve( [] );
+          updateSchedule.resolve( [ 0, undefined ] );
           supertest.get( route )
           .set( 'Authorization', 'Bearer ' + token )
           .expect( 500 )
@@ -353,7 +356,7 @@ module.exports = function() {
         });
 
         it('should return 500 failure for error', function( done ) {
-          findSchedule.reject( new Error( 'Test' ) );
+          updateSchedule.reject( new Error( 'Test' ) );
           supertest.get( route )
           .set( 'Authorization', 'Bearer ' + token )
           .expect( 500 )
@@ -454,5 +457,40 @@ module.exports = function() {
         });
       });
     });
-  });
+    });
+
+    describe('mediaSchedule/checkForIssues', function() {
+      describe('GET', function() {
+        var route = '/protected/mediaSchedule/checkForIssues';
+        var getMediaPlayersThatHaveGoneAWOL;
+
+        beforeEach( function() {
+          getMediaPlayersThatHaveGoneAWOL = Q.defer();
+          spyOn( mediaScheduleFactory, 'getMediaPlayersThatHaveGoneAWOL' ).andReturn( getMediaPlayersThatHaveGoneAWOL.promise );
+        });
+
+        it('should be a defined route (not 404)', function( done ) {
+          getMediaPlayersThatHaveGoneAWOL.reject( new Error( 'Test' ) );
+          supertest.get( route )
+          .set( 'Authorization', 'Bearer ' + token )
+          .expect(function( res ) {
+            expect( res.statusCode ).not.toBe( 404 );
+          })
+          .end( done );
+        });
+
+        it('should get media players that have gone AWOL', function( done ) {
+          var awolMediaPlayers = [ { id: 1 } ];
+          getMediaPlayersThatHaveGoneAWOL.resolve( awolMediaPlayers );
+          supertest.get( route )
+          .set( 'Authorization', 'Bearer ' + token )
+          .expect( 200 )
+          .expect( 'Content-Type', /json/ )
+          .expect( {
+            haveNotCheckedIn: awolMediaPlayers
+          })
+          .end( done );
+        });
+      });
+    });
 };

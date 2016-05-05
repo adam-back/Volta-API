@@ -48,3 +48,17 @@ exports.replaceMediaScheduleLocal = function( newSchedule ) {
     });
   });
 };
+
+exports.getMediaPlayersThatHaveGoneAWOL = function() {
+  var twoHoursAgo = new Date();
+  twoHoursAgo.setHours(twoHoursAgo.getHours()-2);
+
+  return mediaSchedule.findAll({
+    where: {
+      last_check_in: {
+        $gt: twoHoursAgo
+      }
+    },
+    raw: true
+  });
+};
