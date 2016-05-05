@@ -3,6 +3,7 @@ var charge_event = require( '../../models' ).charge_event;
 var station = require( '../../models' ).station;
 var moment = require( 'moment' );
 moment().format();
+var helper = require( '../reportHelpers' );
 
 exports.countNumberOfDaysWithoutData = function( firstDayWithCharge, nextDayWithCharge, kwh ) {
   var nulls = {};
@@ -175,25 +176,7 @@ exports.dataOverThirtyDays = function() {
         chargeEventCollection: [],
         sessionLengthCollection: []
       }
-    }
-
-    var isEven = function (num) {
-      return num % 2 === 0;
-    }
-
-    var getMedianFromArray = function (arr) {
-      var length = arr.length;
-      var median;
-      var leftIndex = Math.floor(length / 2);
-      var rightIndex = Math.ceil(length / 2);
-
-      if (isEven(length)) {
-        median = (arr[leftIndex] + arr[rightIndex]) / 2;
-      } else {
-        median = arr[leftIndex];
-      }
-      return median;
-    }
+    };
 
     for (var j = 0; j < numberOfChargeEvents; j ++) {
       var stationId = chargeEvents[ j ].station_id;
@@ -204,20 +187,36 @@ exports.dataOverThirtyDays = function() {
         totalData[ stationId ].events++;
         var start = moment( chargeEvents[ j ].time_start );
         var stop = moment( chargeEvents[ j ].time_stop );
-        totalData[ stationId ].time_spent_charging += stop.diff( start, 'minutes' );
+        var chargeDuration = stop.diff( start, 'minutes' );
+        totalData[ stationId ].time_spent_charging += chargeDuration;
+        totalData[ stationId ].session_lengths.push( chargeDuration );
 
-        var medianSessions = Math.round((chargeEvents[j].time_stop - chargeEvents[j].time_start) / 1000 / 60);
-        totalData[ stationId ].session_lengths.push(medianSessions);
+        // count number of days with charge events
 
-        if ( !totalData[stationId].current_session_day ) {
-          totalData[stationId].current_session_day = chargeEvents[ j ].created_at;
-          totalData[stationId].charge_event_counter++;
-        } else if ( !moment(totalData[stationId].current_session_day).isSame(chargeEvents[ j ].created_at, 'day') ) {
-          totalData[stationId].charge_events.push(totalData[stationId].charge_event_counter);
-          totalData[stationId].charge_event_counter = 1;
-          totalData[stationId].current_session_day = chargeEvents[ j ].created_at;
+        // no current day yet
+        if ( !totalData[ stationId ].current_session_day ) {
+          // start
+          totalData[ stationId ].current_session_day = moment( chargeEvents[ j ].time_start );
+          totalData[ stationId ].charge_event_counter++;
+          totalData[ stationId ].charge_events.push( totalData[ stationId ].charge_event_counter );
+
+        // different day
+        } else if ( totalData[ stationId ].current_session_day.isSame( chargeEvents[ j ].time_start, 'day' ) === false ) {
+          // add number of events during the last day to the median collector
+          // reset counter
+          totalData[ stationId ].charge_event_counter = 1;
+          totalData[ stationId ].charge_events.push( totalData[ stationId ].charge_event_counter );
+          // start new day
+          totalData[ stationId ].current_session_day = moment( chargeEvents[ j ].time_start );
+
+        // same day
         } else {
-          totalData[stationId].charge_event_counter++;
+          // replace old record
+          totalData[ stationId ].charge_events.pop();
+          // with new
+          // we do this so the final day is always recorded
+          totalData[ stationId ].charge_event_counter++;
+          totalData[ stationId ].charge_events.push( totalData[ stationId ].charge_event_counter );
         }
       }
     }
@@ -229,99 +228,38 @@ exports.dataOverThirtyDays = function() {
       }
     }
 
-    for (var key in totalData) {
-        // Pushes extra 0s into the array in case there are charge events missing, this gives an accurate median
+    for ( var key in totalData ) {
+      var difference = 30 - totalData[ key ].charge_events.length;
 
-      if (totalData[key].charge_events.length < 30) {
-        var difference = 30 - totalData[key].charge_events.length;
-        var sessionsArrayLength = totalData[key].session_lengths.length;
+      for ( var i = 0; i < difference; i++ ) {
+        totalData[ key ].charge_events.push( 0 );
+      }
 
+      totalData[ key ].median_session_length = helper.findMedian( totalData[ key ].session_lengths );
+      totalData[ key ].median_charge_events_per_day = helper.findMedian( totalData[ key ].charge_events );
 
-        for (var i = 0; i < difference; i ++) {
-          totalData[key].charge_events.push(0);
-        }
-       };
+      // global median data
+      allMedianSessionLengths.push( totalData[ key ].median_session_length );
+      allMedianChargeEvents.push( totalData[ key ].median_charge_events_per_day );
 
-       totalData[key].session_lengths.sort(function (a, b) {
-         return a - b;
-       })
-
-       totalData[key].charge_events.sort(function (a, b) {
-         return a - b;
-       })
-       //Find the median values for sessions, take the average of the 2 middle values if even, otherwise take the middle value
-       if (isEven(sessionsArrayLength)) {
-        var leftIndex = Math.floor(totalData[key].session_lengths.length / 2);
-        var rightIndex = Math.ceil(totalData[key].session_lengths.length / 2);
-        totalData[key].median_session_length = (totalData[key].session_lengths[leftIndex] + totalData[key].session_lengths[rightIndex]) / 2;
-       } else {
-        var rightIndex = Math.ceil(totalData[key].session_lengths.length / 2);
-        totalData[key].median_session_length = totalData[key].session_lengths[rightIndex];
-       }
-
-       //Find the median value for charge_events
-       totalData[key].median_charge_events_per_day = getMedianFromArray(totalData[key].charge_events);
+      // network median data
+      if ( networkMedians[ totalData[ key ].network ] ) {
+        var currentNetwork = networkMedians[ totalData[ key ].network ];
+        currentNetwork.chargeEventCollection.push( totalData[ key ].median_charge_events_per_day );
+        currentNetwork.sessionLengthCollection.push( totalData[ key ].median_session_length );
+      } else {
+        throw new Error( 'Network (' + totalData[ key ].network + ') not found in global median data object, eventOverTime.dataOverThirtyDays.' );
+      }
     }
 
-    //Loop through entire totalData collection and group up the global median data and the data by network
-    for (var key in totalData) {
-      allMedianChargeEvents.push(totalData[key].median_charge_events_per_day);
-      allMedianSessionLengths.push(totalData[key].median_session_length);
-      //Special condition for stations grouped under 'LA' but labeled as 'OC' and 'SB'
-      if (totalData[key].network === 'OC' || totalData[key].network === 'SB') {
-        networkMedians['LA'].chargeEventCollection.push(totalData[key].median_charge_events_per_day);
-        networkMedians['LA'].sessionLengthCollection.push(totalData[key].median_session_length);
-      };
-      //Puts median data into collections grouped by network
-      if (networkMedians[totalData[key].network]) {
-
-        var currentNetwork = networkMedians[totalData[key].network];
-
-        currentNetwork.chargeEventCollection.push(totalData[key].median_charge_events_per_day);
-        currentNetwork.sessionLengthCollection.push(totalData[key].median_session_length);
-      };
+    // median for each networkMedians
+    for (var network in networkMedians) {
+      networkMedians[ network ].chargeEvents = helper.findMedian( networkMedians[ network ].chargeEventCollection );
+      networkMedians[ network ].sessionLengths = helper.findMedian( networkMedians[ network ].sessionLengthCollection );
     }
 
-    //Sort all of the median values per network so we can grab the total median
-    for (var key in networkMedians) {
-      networkMedians[key].chargeEventCollection.sort(function (a, b) {
-        return a - b;
-      })
-      networkMedians[key].sessionLengthCollection.sort(function (a, b) {
-        return a - b;
-      })
-      networkMedians[key].chargeEvents = getMedianFromArray(networkMedians[key].chargeEventCollection);
-      networkMedians[key].sessionLengths = getMedianFromArray(networkMedians[key].sessionLengthCollection);
-    }
-
-    allMedianChargeEvents.sort(function (a, b) {
-      return a - b;
-    })
-
-    allMedianSessionLengths.sort(function (a, b) {
-      return a - b;
-    })
-
-    if (!isEven(allMedianChargeEvents)) {
-      var middleIndex = Math.floor(allMedianChargeEvents.length / 2);
-      medianChargeEvents = allMedianChargeEvents[ middleIndex ];
-    } else {
-      var leftIndex = Math.floor(allMedianChargeEvents.length / 2);
-      var rightIndex = Math.ceil(allMedianChargeEvents.length / 2);
-      medianChargeEvents = ((allMedianChargeEvents[leftIndex] + allMedianChargeEvents[rightIndex]) / 2 );
-    }
-
-    if (!isEven(allMedianSessionLengths)) {
-      var middleIndex = Math.floor(allMedianSessionLengths.length / 2);
-      medianSessions = allMedianSessionLengths[ middleIndex ];
-    } else {
-      var leftIndex = Math.floor(allMedianSessionLengths.length / 2);
-      var rightIndex = Math.ceil(allMedianSessionLengths.length / 2);
-      medianSessions = ((allMedianSessionLengths[leftIndex] + allMedianChargeEvents[rightIndex]) / 2 );
-    }
-
-    totalData.medianChargeEvents = medianChargeEvents;
-    totalData.medianSessionLengths = medianSessions;
+    totalData.medianChargeEvents = helper.findMedian( allMedianChargeEvents );
+    totalData.medianSessionLengths = helper.findMedian( allMedianSessionLengths );
     totalData.networkMedians = networkMedians;
 
     return totalData;

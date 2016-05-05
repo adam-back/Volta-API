@@ -25,12 +25,6 @@ module.exports = function() {
         expect( memoizedData.kwhGrowth.hasOwnProperty( 'lastFetch' ) ).toBe( true );
       });
 
-      it('should have a thirtyDays key with data/lastFetch', function() {
-        expect( memoizedData.hasOwnProperty( 'thirtyDays' ) ).toBe( true );
-        expect( memoizedData.thirtyDays.hasOwnProperty( 'data' ) ).toBe( true );
-        expect( memoizedData.thirtyDays.hasOwnProperty( 'lastFetch' ) ).toBe( true );
-      });
-
       it('should have a sunburst key with data/lastFetch', function() {
         expect( memoizedData.hasOwnProperty( 'sunburst' ) ).toBe( true );
         expect( memoizedData.sunburst.hasOwnProperty( 'data' ) ).toBe( true );
