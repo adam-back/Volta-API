@@ -289,10 +289,15 @@ module.exports = function() {
         findMediaSchedules.resolve( [ { id: 1 } ] );
         factory.getMediaPlayersThatHaveGoneAWOL()
         .then( function( schedules ) {
+          console.log('WHERE? WHY?', models.media_schedule.findAll.calls[ 0 ].args[ 0 ].where);
           expect( models.media_schedule.findAll ).toHaveBeenCalled();
+
           expect( models.media_schedule.findAll.calls[ 0 ].args[ 0 ].hasOwnProperty( 'where' ) ).toBe( true );
-          expect( models.media_schedule.findAll.calls[ 0 ].args[ 0 ].where.hasOwnProperty( 'last_check_in' ) ).toBe( true );
-          expect( models.media_schedule.findAll.calls[ 0 ].args[ 0 ].where.last_check_in.hasOwnProperty( '$gt' ) ).toBe( true );
+          expect( models.media_schedule.findAll.calls[ 0 ].args[ 0 ].where.hasOwnProperty( '$or' ) ).toBe( true );
+          expect( models.media_schedule.findAll.calls[ 0 ].args[ 0 ].where.$or[0].hasOwnProperty( 'last_check_in' ) ).toBe( true );
+          expect( models.media_schedule.findAll.calls[ 0 ].args[ 0 ].where.$or[0].last_check_in.hasOwnProperty( '$lt' ) ).toBe( true );
+          expect( models.media_schedule.findAll.calls[ 0 ].args[ 0 ].where.$or[1].hasOwnProperty( 'last_check_in' ) ).toBe( true );
+          expect( models.media_schedule.findAll.calls[ 0 ].args[ 0 ].where.$or[1].last_check_in ).toBe( null );
           expect( models.media_schedule.findAll.calls[ 0 ].args[ 0 ].raw ).toBe( true );
           expect( schedules ).toEqual( testSchedules );
           done();
