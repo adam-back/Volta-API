@@ -13,13 +13,16 @@ module.exports = exports = {
   getNetworkMapData: function( req, res ) {
     var sevenDaysAgo = moment.utc().startOf( 'day' ).subtract( 7, 'days' );
 
-    var stationPromise = model.station.findAll( { attributes: [ 'network' ], raw: true } );
-    var chargeEventPromise = model.charge_event.findAll( { where: { time_start: { $gt: sevenDaysAgo }, time_stop: { $ne: null } }, order: 'time_start', raw: true } );
+    var stationPromise = model.station.findAll( { attributes: [ 'id', 'network' ], raw: true } );
+    // SELECT *
+    // FROM charge_events
+    // WHERE time_start > sevenDays Ago AND ( time_stop IS NOT NULL AND time_stop < today );
+    var chargeEventPromise = model.charge_event.findAll( { where: { time_start: { $gt: sevenDaysAgo, $lt: moment.utc().startOf( 'day' ) }, time_stop: { $ne: null } }, order: 'time_start', raw: true } );
 
     Q.all( [ stationPromise, chargeEventPromise ] )
     .spread(function( stations, chargeEvents ) {
-
       var uniqueNetworks = {};
+      var networkLookupByStation = {};
 
       // make the networks of stations easier to find
       var numberOfStations = stations.length;
@@ -28,12 +31,14 @@ module.exports = exports = {
 
         if ( oneStation.network ) {
           uniqueNetworks[ oneStation.network ] = true;
+          networkLookupByStation[ oneStation.id ] = oneStation.network;
         }
       }
 
-      var formattedGraphData = factory.aggregateNetworkMapData( chargeEvents, uniqueNetworks );
-      res.json( formattedGraphData );
+      console.log( 'networkLookupByStation', networkLookupByStation );
 
+      var formattedGraphData = factory.aggregateNetworkMapData( chargeEvents, networkLookupByStation, uniqueNetworks );
+      res.json( formattedGraphData );
     })
     .catch(function( error ) {
       res.status( 500 ).send( error.message );
