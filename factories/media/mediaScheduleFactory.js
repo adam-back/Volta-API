@@ -1,4 +1,5 @@
 var Q = require( 'q' );
+var sequelize = require( '../../models' ).sequelize;
 var mediaSchedule = require( '../../models' ).media_schedule;
 var mediaPresentation = require( '../../models').media_presentation;
 
@@ -53,12 +54,20 @@ exports.getMediaPlayersThatHaveGoneAWOL = function() {
   var twoHoursAgo = new Date();
   twoHoursAgo.setHours(twoHoursAgo.getHours()-2);
 
+  // return all media player schedules where
+  // the media player has checked in more than 2 hours ago
+  // or the media player has never checked in
   return mediaSchedule.findAll({
-    where: {
-      last_check_in: {
-        $gt: twoHoursAgo
+    where: sequelize.or(
+      {
+        last_check_in: {
+          $lt: twoHoursAgo
+        }
+      },
+      {
+        last_check_in: null
       }
-    },
+    ),
     raw: true
   });
 };
