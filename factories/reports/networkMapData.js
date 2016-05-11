@@ -29,7 +29,7 @@ exports.aggregateNetworkMapData = function( listOfChargeEvents, networksMappedTo
 
 
   // set the first day
-  var currentDay = moment( listOfChargeEvents[ 0 ].time_start ).endOf( 'day' );
+  var currentDay = moment.utc( listOfChargeEvents[ 0 ].time_start ).endOf( 'day' );
   // loop over the charge events
   var numberOfChargeEvents = listOfChargeEvents.length;
 
@@ -41,7 +41,7 @@ exports.aggregateNetworkMapData = function( listOfChargeEvents, networksMappedTo
       continue;
     }
 
-    var startTime = moment( chargeEvent.time_start );
+    var startTime = moment.utc( chargeEvent.time_start );
 
     // if this charge event starts on a new day
     if ( startTime.isAfter( currentDay ) ) {
@@ -62,19 +62,12 @@ exports.aggregateNetworkMapData = function( listOfChargeEvents, networksMappedTo
 
 
     // always add to counter
-    console.log( 'kwh', chargeEvent.kwh );
-    console.log( 'before all kwh', counter.all[ 0 ] );
     counter.all[ 0 ] += chargeEvent.kwh;
-    console.log( 'after all kwh', counter.all[ 0 ] );
-    console.log( 'before all charge event', counter.all[ 1 ] );
     counter.all[ 1 ]++;
-    console.log( 'after all charge event', counter.all[ 1 ] );
-    console.log( 'station_id', chargeEvent.station_id );
-    console.log( 'network', networksMappedToStations[ chargeEvent.station_id ] );
-    console.log( 'counter', counter[ networksMappedToStations[ chargeEvent.station_id ] ]);
     counter[ networksMappedToStations[ chargeEvent.station_id ] ][ 0 ] += chargeEvent.kwh;
     counter[ networksMappedToStations[ chargeEvent.station_id ] ][ 1 ]++;
   }
+
 
   // don't forget the last day
   aggregate.all.days.push( currentDay.format( 'M/D' ) );
@@ -87,16 +80,16 @@ exports.aggregateNetworkMapData = function( listOfChargeEvents, networksMappedTo
     aggregate[ network ].chargeEvents.push( counter[ network ][ 1 ] );
 
     // add one more day for fake easing on the graph
-    aggregate[ network ].kWh.push( Number( counter[ network ][ 0 ].toFixed( 1 ) ) * 0.9 );
-    aggregate[ network ].chargeEvents.push( counter[ network ][ 1 ] * 0.9 );
+    aggregate[ network ].kWh.push( Number( ( counter[ network ][ 0 ] * 0.9 ).toFixed( 1 ) ) );
+    aggregate[ network ].chargeEvents.push( Math.floor( counter[ network ][ 1 ] * 0.9 ) );
   }
 
   // add one fake day on the start
-  aggregate.all.days.unshift( moment( aggregate.all.days[ 0 ], 'M/D' ).subtract( 1, 'day' ).format( 'M/D' ) );
+  aggregate.all.days.unshift( moment.utc( aggregate.all.days[ 0 ], 'M/D' ).subtract( 1, 'day' ).format( 'M/D' ) );
+
   for ( var network in aggregate ) {
-    console.log( network, aggregate[ network ]  );
-    aggregate[ network ].kWh.unshift( Number( aggregate[ network ].kWh[ 0 ].toFixed( 1 ) ) * 0.9 );
-    aggregate[ network ].chargeEvents.unshift( aggregate[ network ][ 0 ].chargeEvents * 0.9 );
+    aggregate[ network ].kWh.unshift( Number( ( aggregate[ network ].kWh[ 0 ] * 0.9 ).toFixed( 1 ) ) );
+    aggregate[ network ].chargeEvents.unshift( Math.floor( aggregate[ network ].chargeEvents[ 0 ] * 0.9 ) );
   }
 
   return aggregate;
