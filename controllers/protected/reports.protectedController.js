@@ -227,6 +227,8 @@ module.exports = exports = {
       var stationsWithoutCoordinates = 0;
       var summativeKwh = 0;
 
+      console.log( 'allStations.length', allStations.length );
+      console.log( 'data.cumulative.numberOfStations', data.cumulative.numberOfStations );
       for ( var j = 0; j < data.cumulative.numberOfStations; j++ ) {
         var oneStation = allStations[ j ];
 
@@ -244,13 +246,18 @@ module.exports = exports = {
 
         // system kWh
         if ( typeof oneStation.cumulative_kwh === 'number' ) {
+          console.log( 'I am a number', oneStation.cumulative_kwh  );
           summativeKwh += oneStation.cumulative_kwh;
         }
       }
 
       saveData( 'needMeter', data.cumulative.numberOfStations, numberOfUnmeteredStations );
       saveData( 'needGPS', data.cumulative.numberOfStations, stationsWithoutCoordinates );
+      console.log( 'before rounding', summativeKwh );
+      console.log( 'typeof before rounding', typeof summativeKwh );
       data.cumulative.total = Number( summativeKwh.toFixed( 0 ) );
+      console.log( 'after rouding', data.cumulative.total );
+      console.log( 'typeof after rouding', typeof data.cumulative.total );
       data.cumulative.calcs = helper.convertKwhToConsumerEquivalents( summativeKwh );
 
       return charge_event.count();
