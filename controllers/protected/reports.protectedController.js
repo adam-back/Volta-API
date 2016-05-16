@@ -227,10 +227,7 @@ module.exports = exports = {
       var stationsWithoutCoordinates = 0;
       var summativeKwh = 0;
 
-      console.log( 'allStations.length', allStations.length );
-      console.log( 'data.cumulative.numberOfStations', data.cumulative.numberOfStations );
       for ( var j = 0; j < data.cumulative.numberOfStations; j++ ) {
-        console.log( 'in for loop' );
         var oneStation = allStations[ j ];
 
         stations[ oneStation.id ] = oneStation;
@@ -246,23 +243,16 @@ module.exports = exports = {
         }
 
         // system kWh
-        console.log( 'value before if:', oneStation.cumulative_kwh );
-        console.log( 'what am I:', typeof oneStation.cumulative_kwh );
         oneStation.cumulative_kwh = Number( oneStation.cumulative_kwh );
 
         if ( typeof oneStation.cumulative_kwh === 'number' && !isNaN( oneStation.cumulative_kwh ) ) {
-          console.log( 'I am a number', oneStation.cumulative_kwh  );
           summativeKwh += oneStation.cumulative_kwh;
         }
       }
 
       saveData( 'needMeter', data.cumulative.numberOfStations, numberOfUnmeteredStations );
       saveData( 'needGPS', data.cumulative.numberOfStations, stationsWithoutCoordinates );
-      console.log( 'before rounding', summativeKwh );
-      console.log( 'typeof before rounding', typeof summativeKwh );
       data.cumulative.total = Number( summativeKwh.toFixed( 0 ) );
-      console.log( 'after rouding', data.cumulative.total );
-      console.log( 'typeof after rouding', typeof data.cumulative.total );
       data.cumulative.calcs = helper.convertKwhToConsumerEquivalents( summativeKwh );
 
       return charge_event.count();
