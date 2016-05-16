@@ -243,7 +243,9 @@ module.exports = exports = {
         }
 
         // system kWh
-        if ( typeof oneStation.cumulative_kwh === 'number' ) {
+        oneStation.cumulative_kwh = Number( oneStation.cumulative_kwh );
+
+        if ( typeof oneStation.cumulative_kwh === 'number' && !isNaN( oneStation.cumulative_kwh ) ) {
           summativeKwh += oneStation.cumulative_kwh;
         }
       }
