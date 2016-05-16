@@ -230,6 +230,7 @@ module.exports = exports = {
       console.log( 'allStations.length', allStations.length );
       console.log( 'data.cumulative.numberOfStations', data.cumulative.numberOfStations );
       for ( var j = 0; j < data.cumulative.numberOfStations; j++ ) {
+        console.log( 'in for loop' );
         var oneStation = allStations[ j ];
 
         stations[ oneStation.id ] = oneStation;
@@ -245,6 +246,9 @@ module.exports = exports = {
         }
 
         // system kWh
+        console.log( 'oneStation', oneStation );
+        console.log( 'value before if:', oneStation.cumulative_kwh );
+        console.log( 'what am I:', typeof oneStation.cumulative_kwh );
         if ( typeof oneStation.cumulative_kwh === 'number' ) {
           console.log( 'I am a number', oneStation.cumulative_kwh  );
           summativeKwh += oneStation.cumulative_kwh;
