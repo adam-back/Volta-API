@@ -243,12 +243,14 @@ module.exports = exports = {
         }
 
         // system kWh
-        summativeKwh += oneStation.cumulative_kwh;
+        if ( typeof oneStation.cumulative_kwh === 'number' ) {
+          summativeKwh += oneStation.cumulative_kwh;
+        }
       }
 
       saveData( 'needMeter', data.cumulative.numberOfStations, numberOfUnmeteredStations );
       saveData( 'needGPS', data.cumulative.numberOfStations, stationsWithoutCoordinates );
-      data.cumulative.total = summativeKwh;
+      data.cumulative.total = Number( summativeKwh.toFixed( 0 ) );
       data.cumulative.calcs = helper.convertKwhToConsumerEquivalents( summativeKwh );
 
       return charge_event.count();
