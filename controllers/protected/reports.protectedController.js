@@ -246,10 +246,11 @@ module.exports = exports = {
         }
 
         // system kWh
-        console.log( 'oneStation', oneStation );
         console.log( 'value before if:', oneStation.cumulative_kwh );
         console.log( 'what am I:', typeof oneStation.cumulative_kwh );
-        if ( typeof oneStation.cumulative_kwh === 'number' ) {
+        oneStation.cumulative_kwh = Number( oneStation.cumulative_kwh );
+
+        if ( typeof oneStation.cumulative_kwh === 'number' && !isNaN( oneStation.cumulative_kwh ) ) {
           console.log( 'I am a number', oneStation.cumulative_kwh  );
           summativeKwh += oneStation.cumulative_kwh;
         }
