@@ -9,6 +9,9 @@ router.route( '/' )
   .post( controller.addMediaSchedule )
   .patch( controller.replaceMediaSchedule );
 
+router.route( '/checkForIssues' )
+  .get( controller.getMediaPlayersInNeedOfMaintenance );
+
 // Used by media players
 // for http://www.baseurl.com/protected/mediaSchedule/serial/1
 router.route( '/serial/:serialNumber')

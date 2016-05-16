@@ -274,5 +274,38 @@ module.exports = function() {
         });
       });
     });
-  });
+    });
+
+    describe('getMediaPlayersThatHaveGoneAWOL', function() {
+      var findMediaSchedules;
+      beforeEach(function() {
+        findMediaSchedules = Q.defer();
+        spyOn( models.media_schedule, 'findAll' ).andReturn( findMediaSchedules.promise );
+      });
+
+      it( 'should find media schedules that have gone AWOL', function( done ) {
+        var testSchedules = [ { id: 1 } ];
+
+        findMediaSchedules.resolve( [ { id: 1 } ] );
+        factory.getMediaPlayersThatHaveGoneAWOL()
+        .then( function( schedules ) {
+          console.log('WHERE? WHY?', models.media_schedule.findAll.calls[ 0 ].args[ 0 ].where);
+          expect( models.media_schedule.findAll ).toHaveBeenCalled();
+
+          expect( models.media_schedule.findAll.calls[ 0 ].args[ 0 ].hasOwnProperty( 'where' ) ).toBe( true );
+          expect( models.media_schedule.findAll.calls[ 0 ].args[ 0 ].where.hasOwnProperty( '$or' ) ).toBe( true );
+          expect( models.media_schedule.findAll.calls[ 0 ].args[ 0 ].where.$or[0].hasOwnProperty( 'last_check_in' ) ).toBe( true );
+          expect( models.media_schedule.findAll.calls[ 0 ].args[ 0 ].where.$or[0].last_check_in.hasOwnProperty( '$lt' ) ).toBe( true );
+          expect( models.media_schedule.findAll.calls[ 0 ].args[ 0 ].where.$or[1].hasOwnProperty( 'last_check_in' ) ).toBe( true );
+          expect( models.media_schedule.findAll.calls[ 0 ].args[ 0 ].where.$or[1].last_check_in ).toBe( null );
+          expect( models.media_schedule.findAll.calls[ 0 ].args[ 0 ].raw ).toBe( true );
+          expect( schedules ).toEqual( testSchedules );
+          done();
+        })
+        .catch( function( error ) {
+          expect( error ).toBe( undefined );
+          done();
+        });
+      });
+    });
 };
