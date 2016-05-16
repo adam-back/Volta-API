@@ -79,7 +79,10 @@ exports.kwhByDay = function( station ) {
           }
 
           // always add to cumulative
-          cumulativekWh += Number( chargeEvent.kwh );
+          var kwh = Number( chargeEvent.kwh );
+          if ( !isNaN( kwh ) ) {
+            cumulativekWh += Number( chargeEvent.kwh );
+          }
         }
 
         // don't forget the last day
@@ -183,7 +186,7 @@ exports.dataOverThirtyDays = function() {
       // if we have a record of that station
       if ( totalData[ stationId ] ) {
         // add to the accumulator
-        totalData[ stationId ].kwh += chargeEvents[ j ].kwh;
+        totalData[ stationId ].kwh += Number( chargeEvents[ j ].kwh );
         totalData[ stationId ].events++;
         var start = moment( chargeEvents[ j ].time_start );
         var stop = moment( chargeEvents[ j ].time_stop );
