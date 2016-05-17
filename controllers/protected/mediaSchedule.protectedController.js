@@ -113,33 +113,27 @@ module.exports = exports = {
     // log the time of the last check for a media schedule update
     // run a cron job to check if any of the media players have not
     //  checked for updates within the past N minutes
-
-    // mediaSchedule.findAll({
-    //   where: {
-    //     serial_number: serialNumber
-    //   }
-    // })
-    mediaSchedule.update(
-      {
-        last_check_in: sequelize.fn('NOW')
-      },
-      {
-        where: {
-          serial_number: serialNumber
-        }
+    mediaSchedule.findOne( { where: { serial_number: serialNumber } } )
+    .then(function( mediaScheduleToUpdate ) {
+      if ( mediaScheduleToUpdate ) {
+        console.log('\n\nUpdating ' + serialNumber, mediaScheduleToUpdate);
+        mediaScheduleToUpdate.last_check_in = sequelize.fn('NOW');
+        return mediaScheduleToUpdate.save();
+      } else {
+        throw new Error( 'No Media Schedule found for serial_number ' + serialNumber );
       }
-    )
-    .spread(function( countOfAffectedRows, schedules ) {
-      if( countOfAffectedRows === 0 || schedules.length === 0 ) {
+    })
+    .then(function( schedule ) {
+      if( !schedule ) {
         throw new Error( 'No schedules for serialNumber ' + serialNumber );
       } else {
-        res.json( [ countOfAffectedRows, schedules ] );
+        console.log('\n\nResponding with updated schedule')
+        res.json( [ schedule ] );
       }
     })
     .catch(function( error ) {
       res.status( 500 ).send( error.message );
     });
-
   },
 
   getMediaPlayersInNeedOfMaintenance: function( req, res ) {
