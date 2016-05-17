@@ -311,7 +311,7 @@ module.exports = function() {
 
         beforeEach(function() {
           updateSchedule = Q.defer();
-          spyOn( models.media_schedule, 'update' ).andReturn( updateSchedule.promise );
+          spyOn( models.media_schedule, 'findOne' ).andReturn( updateSchedule.promise );
         });
 
         it('should be a defined route (not 404)', function( done ) {
@@ -325,32 +325,49 @@ module.exports = function() {
         });
 
         it('should find schedules by serial number and update last_check_in', function( done ) {
-          updateSchedule.resolve( [ 1 ] );
+          var saveSchedule = Q.defer();
+          var mediaScheduleToUpdate = {
+            last_check_in: null,
+            save: jasmine.createSpy('save media schedule').andReturn( saveSchedule.promise )
+          };
+
+          updateSchedule.resolve( mediaScheduleToUpdate );
+          saveSchedule.resolve( mediaScheduleToUpdate );
           supertest.get( route )
           .set( 'Authorization', 'Bearer ' + token )
+          .expect( 200 )
           .expect(function( res ) {
-            expect( models.media_schedule.update ).toHaveBeenCalled();
-            expect( models.media_schedule.update ).toHaveBeenCalledWith( {last_check_in: sequelize.fn('NOW')}, { where: { serial_number: '1' } } );
+            expect( mediaScheduleToUpdate.save ).toHaveBeenCalled();
+            expect( mediaScheduleToUpdate.last_check_in ).toNotEqual( null );
           })
           .end( done );
         });
 
+        // NOTE: BROKEN!
         it('should return JSON of schedules', function( done ) {
-          updateSchedule.resolve( [ 1, 'schedule' ] );
+          var saveSchedule = Q.defer();
+          var savedMediaSchedule = { test: true };
+          var mediaScheduleToUpdate = {
+            last_check_in: null,
+            save: jasmine.createSpy('save media schedule').andReturn( saveSchedule.promise )
+          };
+          updateSchedule.resolve( mediaScheduleToUpdate );
+          saveSchedule.resolve( savedMediaSchedule );
           supertest.get( route )
           .set( 'Authorization', 'Bearer ' + token )
           .expect( 200 )
           .expect( 'Content-Type', /json/ )
-          .expect( [ 1, 'schedule' ] )
+          .expect( [ savedMediaSchedule ] )
           .end( done );
         });
 
         it('should throw an error if no schedules were found', function( done ) {
-          updateSchedule.resolve( [ 0, undefined ] );
+          updateSchedule.resolve( undefined );
           supertest.get( route )
           .set( 'Authorization', 'Bearer ' + token )
           .expect( 500 )
-          .expect( 'No schedules for serialNumber 1' )
+          .expect( 'No Media Schedule found for serial_number 1' )
+          // .expect( 'No schedules for serialNumber 1' )
           .expect( 'Content-Type', /text/ )
           .end( done );
         });
