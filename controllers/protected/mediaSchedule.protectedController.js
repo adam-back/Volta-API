@@ -111,12 +111,9 @@ module.exports = exports = {
     var serialNumber = req.params.serialNumber;
 
     // log the time of the last check for a media schedule update
-    // run a cron job to check if any of the media players have not
-    //  checked for updates within the past N minutes
     mediaSchedule.findOne( { where: { serial_number: serialNumber } } )
     .then(function( mediaScheduleToUpdate ) {
       if ( mediaScheduleToUpdate ) {
-        console.log('\n\nUpdating ' + serialNumber, mediaScheduleToUpdate);
         mediaScheduleToUpdate.last_check_in = sequelize.fn('NOW');
         return mediaScheduleToUpdate.save();
       } else {
@@ -124,12 +121,7 @@ module.exports = exports = {
       }
     })
     .then(function( schedule ) {
-      if( !schedule ) {
-        throw new Error( 'No schedules for serialNumber ' + serialNumber );
-      } else {
-        console.log('\n\nResponding with updated schedule')
-        res.json( [ schedule ] );
-      }
+      res.json( [ schedule ] );
     })
     .catch(function( error ) {
       res.status( 500 ).send( error.message );
