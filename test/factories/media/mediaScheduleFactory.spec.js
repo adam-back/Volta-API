@@ -289,7 +289,6 @@ module.exports = function() {
         findMediaSchedules.resolve( [ { id: 1 } ] );
         factory.getMediaPlayersThatHaveGoneAWOL()
         .then( function( schedules ) {
-          console.log('WHERE? WHY?', models.media_schedule.findAll.calls[ 0 ].args[ 0 ].where);
           expect( models.media_schedule.findAll ).toHaveBeenCalled();
 
           expect( models.media_schedule.findAll.calls[ 0 ].args[ 0 ].hasOwnProperty( 'where' ) ).toBe( true );
