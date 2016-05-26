@@ -1,5 +1,22 @@
+var Q = require( 'q' );
+var db = require( '../../models' );
 var moment = require( 'moment' );
 moment().format();
+
+exports.countChargeEventsForNetwork = function( networkName ) {
+  // SELECT COUNT(*)
+  // FROM stations s, charge_events ce
+  // WHERE s.network=networkName AND s.id=ce.station_id;
+
+  return db.station.count( { where: { network: networkName }, include: [ { model: db.charge_event } ], raw: true } )
+  .then(function( numberOfChargeEvents ) {
+    // return [ LA, 2343 ]
+    return [ networkName, numberOfChargeEvents ];
+  })
+  .catch(function( error ) {
+    return Q.reject( error );
+  });
+};
 
 exports.aggregateNetworkMapData = function( listOfChargeEvents, networksMappedToStations, networks ) {
   var dateIndex = 0;

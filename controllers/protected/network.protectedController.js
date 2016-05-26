@@ -1,7 +1,4 @@
-var station = require( '../../models').station;
-var plug = require( '../../models').plug;
 var model = require( '../../models' );
-var charge_event = require( '../../models').charge_event;
 var async = require( 'async' );
 var Q = require( 'q' );
 var moment = require('moment');
@@ -13,7 +10,7 @@ module.exports = exports = {
   getNetworkMapData: function( req, res ) {
     var sevenDaysAgo = moment.utc().startOf( 'day' ).subtract( 7, 'days' );
 
-    var stationPromise = model.station.findAll( { attributes: [ 'id', 'network' ], raw: true } );
+    var stationPromise = model.station.findAll( { attributes: [ 'id', 'network', 'cumulative_kwh' ], raw: true } );
     // SELECT *
     // FROM charge_events
     // WHERE ( time_start > sevenDays Ago AND time_start < today ) AND time_stop IS NOT NULL
@@ -24,20 +21,68 @@ module.exports = exports = {
     .spread(function( stations, chargeEvents ) {
       var uniqueNetworks = {};
       var networkLookupByStation = {};
+      var networkCumulatives = {
+        all: 0
+      };
 
       // make the networks of stations easier to find
       var numberOfStations = stations.length;
-      for ( var   i = 0; i < numberOfStations; i++ ) {
+      for ( var i = 0; i < numberOfStations; i++ ) {
         var oneStation = stations[ i ];
 
+        // if a network is specified
         if ( oneStation.network ) {
           uniqueNetworks[ oneStation.network ] = true;
           networkLookupByStation[ oneStation.id ] = oneStation.network;
+
+          // if there is no accumulator yet
+          if ( networkCumulatives.hasOwnProperty( oneStation.network ) === false ) {
+            // add one
+            networkCumulatives[ oneStation.network ] = 0;
+          }
+
+          var kWh = Number( oneStation.cumulative_kwh );
+          if( Number.isNaN( kWh ) === false ) {
+            // add cumulative kWh
+            networkCumulatives[ oneStation.network ] += kWh;
+            networkCumulatives.all += kWh;
+          }
+
         }
       }
 
-      var formattedGraphData = factory.aggregateNetworkMapData( chargeEvents, networkLookupByStation, uniqueNetworks );
-      res.json( formattedGraphData );
+      // this is a syncronous function, but we want it to run non-blocking while we run the counts
+      var formattedGraphDataPromise = Q( factory.aggregateNetworkMapData( chargeEvents, networkLookupByStation, uniqueNetworks ) );
+      // count all
+      var countPromises = [ formattedGraphDataPromise, model.charge_event.count() ];
+
+      // count for specific networks
+      for ( var key in networkCumulatives ) {
+        if ( key !== 'all' ) {
+          countPromises.push( factory.countChargeEventsForNetwork( key ) );
+        }
+      }
+
+      return Q.all( countPromises )
+      .then(function( counts ) {
+        // separate out the graph data
+        var formattedGraphData = counts.shift();
+        // format total count
+        counts[ 0 ] = [ 'all', counts[ 0 ] ];
+
+        var numberOfCounts = counts.length;
+        for ( var j = 0; j < numberOfCounts; j++ ) {
+          var network = counts[ j ][ 0 ];
+          var count = counts[ j ][ 1 ];
+
+          // add the counts to the cumulative object
+          formattedGraphData[ network ].totalChargeEvents = count;
+          // round to nearest ones
+          formattedGraphData[ network ].cumulativeKwh = Number( networkCumulatives[ network ].toFixed( 0 ) );
+        }
+
+        res.json( formattedGraphData );
+      });
     })
     .catch(function( error ) {
       res.status( 500 ).send( error.message );
