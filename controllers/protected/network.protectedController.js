@@ -51,11 +51,12 @@ module.exports = exports = {
         }
       }
 
-      // this is a syncronous function, but we want it to run non-blocking while we run the counts
-      var formattedGraphDataPromise = Q( factory.aggregateNetworkMapData( chargeEvents, networkLookupByStation, uniqueNetworks ) );
-      // count all
-      var countPromises = [ formattedGraphDataPromise, model.charge_event.count() ];
+      var formattedGraphData = factory.aggregateNetworkMapData( chargeEvents, networkLookupByStation, uniqueNetworks );
 
+      // count all
+      var countPromises = [ model.charge_event.count() ];
+
+      // console.log( 'countPromises', countPromises );
       // count for specific networks
       for ( var key in networkCumulatives ) {
         if ( key !== 'all' ) {
@@ -65,8 +66,6 @@ module.exports = exports = {
 
       return Q.all( countPromises )
       .then(function( counts ) {
-        // separate out the graph data
-        var formattedGraphData = counts.shift();
         // format total count
         counts[ 0 ] = [ 'all', counts[ 0 ] ];
 
