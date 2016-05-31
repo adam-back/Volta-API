@@ -1,4 +1,5 @@
 var models = require( '../../../../models');
+var factory = require( '../../../../factories/reports/networkMapData.js' );
 var Q = require( 'q' );
 var async = require( 'async' );
 var moment = require( 'moment' );
@@ -16,15 +17,19 @@ module.exports = function() {
       var route = '/protected/station/network/map';
 
       describe('GET', function() {
-        var countEvents, sumKwh, findChargeEvents, chargeEvents;
+        var findAllStations, findChargeEvents, countAllChargeEvents, countChargeEventsByNetwork, chargeEvents;
 
         beforeEach(function() {
-          countEvents = Q.defer();
-          sumKwh = Q.defer();
+          findAllStations = Q.defer();
           findChargeEvents = Q.defer();
-          spyOn( models.charge_event, 'count' ).andReturn( countEvents.promise );
-          spyOn( models.station, 'sum' ).andReturn( sumKwh.promise );
+          countAllChargeEvents = Q.defer();
+          countChargeEventsByNetwork = Q.defer();
+
+          spyOn( models.station, 'findAll' ).andReturn( findAllStations.promise );
           spyOn( models.charge_event, 'findAll' ).andReturn( findChargeEvents.promise );
+          spyOn( factory, 'aggregateNetworkMapData' ).andCallThrough();
+          spyOn( models.charge_event, 'count' ).andReturn( countAllChargeEvents.promise );
+          spyOn( factory, 'countChargeEventsForNetwork' ).andReturn( countChargeEventsByNetwork.promise );
           chargeEvents = [];
           // seven days ago @ 12a to 1a for 1 hour
           chargeEvents.push( { time_start: moment().subtract( 7, 'days' ).startOf( 'day' ).toDate(), time_stop: moment().subtract( 7, 'days' ).startOf( 'day' ).add( 1, 'hours' ).toDate(), kwh: 5, station_id: 1 } );
@@ -35,7 +40,7 @@ module.exports = function() {
         });
 
         it('should be a defined route (not 404)', function( done ) {
-          countEvents.reject( new Error( 'Test' ) );
+          findAllStations.reject( new Error( 'Test' ) );
           supertest.get( route )
           .set( 'Authorization', 'Bearer ' + token )
           .expect(function( res ) {
@@ -44,7 +49,18 @@ module.exports = function() {
           .end( done );
         });
 
-        it('should return json after calculating graph data', function( done ) {
+        it('should find all stations', function( done ) {
+          findAllStations.reject( new Error( 'Test' ) );
+          supertest.get( route )
+          .set( 'Authorization', 'Bearer ' + token )
+          .expect(function( res ) {
+            expect( models.station.findAll ).toHaveBeenCalled();
+            expect( models.station.findAll ).toHaveBeenCalledWith( { attributes: [ 'id', 'network', 'cumulative_kwh' ], raw: true } );
+          })
+          .end( done );
+        });
+
+        xit('should return json after calculating graph data', function( done ) {
           countEvents.resolve( 3 );
           sumKwh.resolve( 10.5 );
           findChargeEvents.resolve( chargeEvents );
@@ -67,14 +83,14 @@ module.exports = function() {
         });
 
         it('should return 500 failure for error', function( done ) {
-          countEvents.reject( new Error( 'Test' ) );
+          findAllStations.reject( new Error( 'Test' ) );
           supertest.get( route )
           .set( 'Authorization', 'Bearer ' + token )
           .expect( 500 )
           .expect( 'Content-Type', /text/ )
           .expect( 'Test' )
           .expect(function( res ) {
-            expect( models.charge_event.count ).toHaveBeenCalled();
+            expect( models.station.findAll ).toHaveBeenCalled();
           })
           .end( done );
         });
