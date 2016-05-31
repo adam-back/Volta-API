@@ -54,7 +54,8 @@ exports.aggregateNetworkMapData = function( listOfChargeEvents, networksMappedTo
     var chargeEvent = listOfChargeEvents[ i ];
 
     // throw out outliers
-    if ( chargeEvent.kwh > 100 || chargeEvent.kwh === 0 ) {
+    chargeEvent.kwh = Number( chargeEvent.kwh );
+    if ( Number.isNaN( chargeEvent.kwh ) || chargeEvent.kwh > 100 || chargeEvent.kwh === 0 ) {
       continue;
     }
 
@@ -74,7 +75,7 @@ exports.aggregateNetworkMapData = function( listOfChargeEvents, networksMappedTo
       }
 
       // set the new day
-      currentDay = startTime.endOf( 'day' );
+      currentDay = startTime.clone().endOf( 'day' );
     }
 
 
@@ -84,6 +85,7 @@ exports.aggregateNetworkMapData = function( listOfChargeEvents, networksMappedTo
     counter[ networksMappedToStations[ chargeEvent.station_id ] ][ 0 ] += chargeEvent.kwh;
     counter[ networksMappedToStations[ chargeEvent.station_id ] ][ 1 ]++;
   }
+
 
 
   // don't forget the last day
