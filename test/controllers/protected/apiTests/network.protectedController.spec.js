@@ -17,20 +17,50 @@ module.exports = function() {
       var route = '/protected/station/network/map';
 
       describe('GET', function() {
-        var findAllStations, findChargeEvents, countAllChargeEvents, countChargeEventsByNetwork;
+        var findAllStations, findChargeEvents, countAllChargeEvents, countLAChargeEvents, countHawaiiChargeEvents, countChicacoChargeEvents;
         var stations, chargeEvents;
 
         beforeEach(function() {
           findAllStations = Q.defer();
           findChargeEvents = Q.defer();
           countAllChargeEvents = Q.defer();
-          countChargeEventsByNetwork = Q.defer();
+          countLAChargeEvents = Q.defer();
+          countHawaiiChargeEvents = Q.defer();
+          countChicagoChargeEvents = Q.defer();
 
           spyOn( models.station, 'findAll' ).andReturn( findAllStations.promise );
           spyOn( models.charge_event, 'findAll' ).andReturn( findChargeEvents.promise );
-          spyOn( factory, 'aggregateNetworkMapData' ).andCallThrough();
+          spyOn( factory, 'aggregateNetworkMapData' ).andReturn({
+            all: {
+              days: [],
+              chargeEvents: [],
+              kWh: []
+            },
+            Hawaii: {
+              chargeEvents: [],
+              kWh: []
+            },
+            LA: {
+              chargeEvents: [],
+              kWh: []
+            },
+            Chicago: {
+              chargeEvents: [],
+              kWh: []
+            },
+          });
           spyOn( models.charge_event, 'count' ).andReturn( countAllChargeEvents.promise );
-          spyOn( factory, 'countChargeEventsForNetwork' ).andReturn( countChargeEventsByNetwork.promise );
+          spyOn( factory, 'countChargeEventsForNetwork' ).andCallFake(function( network ) {
+            if ( network === 'LA' ) {
+              return countLAChargeEvents.promise;
+            } else if ( network === 'Hawaii' ) {
+              return countHawaiiChargeEvents.promise;
+            } else if ( network === 'Chicago' ) {
+              return countChicagoChargeEvents.promise;
+            } else {
+              return void( 0 );
+            }
+          });
 
           stations = [
             {
@@ -143,25 +173,56 @@ module.exports = function() {
           .end( done );
         });
 
-        xit('should return json after calculating graph data', function( done ) {
-          countEvents.resolve( 3 );
-          sumKwh.resolve( 10.5 );
+        it('should count charge events for all networks', function( done ) {
+          findAllStations.resolve( stations );
           findChargeEvents.resolve( chargeEvents );
-          var expectedOutput = {
-            plugIns: 3,
-            kwhGiven: 10.5,
-            graphs: {
-              days: [ moment( chargeEvents[ 0 ].time_start ).format( 'M[/]D' ), moment( chargeEvents[ 2 ].time_start ).format( 'M[/]D' ) ],
-              plugIns: [ 2, 1 ],
-              kwhGiven: [ 7, 3.5 ]
-            }
-          };
+          countAllChargeEvents.resolve( 50 );
+          countLAChargeEvents.reject( new Error( 'Test' ) );
+
+          supertest.get( route )
+          .set( 'Authorization', 'Bearer ' + token )
+          .expect(function( res ) {
+            expect( models.charge_event.count ).toHaveBeenCalled();
+            expect( models.charge_event.count ).toHaveBeenCalledWith();
+            expect( factory.countChargeEventsForNetwork.calls.length ).toBe( 3 );
+            var networks = [ 'Hawaii', 'Chicago', 'LA' ];
+            var index = networks.indexOf( factory.countChargeEventsForNetwork.calls[ 0 ].args[ 0 ] );
+            expect( index ).not.toBe( -1 );
+            networks.splice( index, 1 );
+            index = networks.indexOf( factory.countChargeEventsForNetwork.calls[ 1 ].args[ 0 ] );
+            expect( index ).not.toBe( -1 );
+            networks.splice( index, 1 );
+            index = networks.indexOf( factory.countChargeEventsForNetwork.calls[ 2 ].args[ 0 ] ); 
+            expect( index ).not.toBe( -1 );
+          })
+          .end( done );
+        });
+
+        it('should add cumulatives to the networks and return JSON', function( done ) {
+          findAllStations.resolve( stations );
+          findChargeEvents.resolve( chargeEvents );
+          countAllChargeEvents.resolve( 1000 );
+          countLAChargeEvents.resolve( [ 'LA', 150 ] );
+          countHawaiiChargeEvents.resolve( [ 'Hawaii', 50 ] );
+          countChicagoChargeEvents.resolve( [ 'Chicago', 2 ] );
 
           supertest.get( route )
           .set( 'Authorization', 'Bearer ' + token )
           .expect( 200 )
           .expect( 'Content-Type', /json/ )
-          .expect( expectedOutput )
+          .expect(function( res ) {
+            var keys = Object.keys( res.body );
+            expect( keys.length ).toBe( 4 );
+            expect( res.body.hasOwnProperty( 'LA' ) ).toBe( true );
+            expect( res.body.LA.totalChargeEvents ).toBe( 150 );
+            expect( res.body.LA.cumulativeKwh ).toBe( 0 );
+            expect( res.body.hasOwnProperty( 'Hawaii' ) ).toBe( true );
+            expect( res.body.Hawaii.totalChargeEvents ).toBe( 50 );
+            expect( res.body.Hawaii.cumulativeKwh ).toBe( 23 );
+            expect( res.body.hasOwnProperty( 'Chicago' ) ).toBe( true );
+            expect( res.body.Chicago.totalChargeEvents ).toBe( 2 );
+            expect( res.body.Chicago.cumulativeKwh ).toBe( 5 );
+          })
           .end( done );
         });
 

@@ -56,7 +56,6 @@ module.exports = exports = {
       // count all
       var countPromises = [ model.charge_event.count() ];
 
-      // console.log( 'countPromises', countPromises );
       // count for specific networks
       for ( var key in networkCumulatives ) {
         if ( key !== 'all' ) {
