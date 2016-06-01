@@ -1,178 +1,86 @@
-var station = require( '../../models').station;
-var plug = require( '../../models').plug;
-var charge_event = require( '../../models').charge_event;
+var model = require( '../../models' );
 var async = require( 'async' );
+var Q = require( 'q' );
 var moment = require('moment');
 moment().format();
+var factory = require( '../../factories/reports/networkMapData.js' );
 
 module.exports = exports = {
-  getTopTenStations: function( req, res ) {
-    station.findAll( { where: { cumulative_kwh: { $ne: null } },  limit: 10, order: 'cumulative_kwh DESC' } )
-    .then(function( stationsInOrder ) {
-      var stationsAndPlugs  = {
-        stations: {},
-        plugs: {},
-        events: {}
+
+  getNetworkMapData: function( req, res ) {
+    var sevenDaysAgo = moment.utc().startOf( 'day' ).subtract( 7, 'days' );
+
+    var stationPromise = model.station.findAll( { attributes: [ 'id', 'network', 'cumulative_kwh' ], raw: true } );
+    // SELECT *
+    // FROM charge_events
+    // WHERE ( time_start > sevenDays Ago AND time_start < today ) AND time_stop IS NOT NULL
+    // ORDER BY time_start
+    var chargeEventPromise = model.charge_event.findAll( { where: { time_start: { $gt: sevenDaysAgo.format(), $lt: moment.utc().startOf( 'day' ).format() }, time_stop: { $ne: null } }, order: 'time_start', raw: true } );
+
+    Q.all( [ stationPromise, chargeEventPromise ] )
+    .spread(function( stations, chargeEvents ) {
+      var uniqueNetworks = {};
+      var networkLookupByStation = {};
+      var networkCumulatives = {
+        all: 0
       };
 
-      async.each(stationsInOrder, function( station, cb ) {
-        var order = stationsInOrder.indexOf( station );
-        station.getPlugs()
-        .then(function( plugs ) {
-          stationsAndPlugs.stations[ order ] = station;
-          stationsAndPlugs.plugs[ order ] = plugs;
-          stationsAndPlugs.events[ order ] = {};
-          // count the number of total charge events
-          return charge_event.count( { where: { station_id: station.id } } );
-        })
-        .then(function( countOfEvents ) {
-          stationsAndPlugs.events[ order ].count = countOfEvents;
-          // add total kWh
-          stationsAndPlugs.events[ order ].cumulative_kwh = station.cumulative_kwh;
-          var sevenDaysAgo = moment().subtract( 7, 'days' );
-          sevenDaysAgo.startOf( 'day' );
-          return charge_event.findAll( { where: { station_id: station.id, time_stop: { $ne: null }, time_start: { $gt: sevenDaysAgo.toDate() } }, order: 'time_start', raw: true } );
-        })
-        .then(function( charges ) {
-          // create a data set for the graph
-          var days = [];
-          var plugIns = [];
-          var kwhGiven = [];
-          var dayIndex = 0;
-          // start values
-          var currentDay = moment( charges[ 0 ].time_start );
-          days.push( moment( charges[ 0 ].time_start ).format( 'M[/]D') );
-          plugIns[ dayIndex ] = 1;
-          kwhGiven[ dayIndex ] = +charges[ 0 ].kwh;
+      // make the networks of stations easier to find
+      var numberOfStations = stations.length;
+      for ( var i = 0; i < numberOfStations; i++ ) {
+        var oneStation = stations[ i ];
 
-          // sort the report into days
-          for ( var i = 1; i < charges.length; i++ ) {
-            var chargeTime = moment( charges[ i ].time_start );
-            // if we're still on the same day
-            if ( chargeTime.isSame( currentDay, 'day' ) ) {
-              // this is a charge event to count, increase it
-              plugIns[ dayIndex ]++;
-              kwhGiven[ dayIndex ] += +charges[ i ].kwh;
-            // new day
-            } else {
-              currentDay = moment( charges[ i ].time_start );
-              days.push( moment( charges[ i ].time_start ).format( 'M[/]D') );
-              dayIndex++;
-              plugIns.push( 1 );
-              kwhGiven.push( +charges[ i ].kwh );
-            }
+        // if a network is specified
+        if ( oneStation.network ) {
+          uniqueNetworks[ oneStation.network ] = true;
+          networkLookupByStation[ oneStation.id ] = oneStation.network;
+
+          // if there is no accumulator yet
+          if ( networkCumulatives.hasOwnProperty( oneStation.network ) === false ) {
+            // add one
+            networkCumulatives[ oneStation.network ] = 0;
           }
 
-          // round to nearest tenths
-          for ( var i = 0; i < kwhGiven.length; i++ ) {
-            kwhGiven[ i ] = Number( kwhGiven[ i ].toFixed( 1 ) );
+          var kWh = Number( oneStation.cumulative_kwh );
+          if( Number.isNaN( kWh ) === false ) {
+            // add cumulative kWh
+            networkCumulatives[ oneStation.network ] += kWh;
+            networkCumulatives.all += kWh;
           }
 
-          stationsAndPlugs.events[ order ].days = days;
-          stationsAndPlugs.events[ order ].plugIns = plugIns;
-          stationsAndPlugs.events[ order ].kwhGiven = kwhGiven;
-
-          cb( null );
-        })
-        .catch(function( error ) {
-          cb( error );
-        });
-      }, function( error ) {
-        if ( error ) {
-          res.status( 500 ).send( error.message );
-        } else {
-          res.json( stationsAndPlugs );
         }
+      }
+
+      var formattedGraphData = factory.aggregateNetworkMapData( chargeEvents, networkLookupByStation, uniqueNetworks );
+
+      // count all
+      var countPromises = [ model.charge_event.count() ];
+
+      // count for specific networks
+      for ( var key in networkCumulatives ) {
+        if ( key !== 'all' ) {
+          countPromises.push( factory.countChargeEventsForNetwork( key ) );
+        }
+      }
+
+      return Q.all( countPromises )
+      .then(function( counts ) {
+        // format total count
+        counts[ 0 ] = [ 'all', counts[ 0 ] ];
+
+        var numberOfCounts = counts.length;
+        for ( var j = 0; j < numberOfCounts; j++ ) {
+          var network = counts[ j ][ 0 ];
+          var count = counts[ j ][ 1 ];
+
+          // add the counts to the cumulative object
+          formattedGraphData[ network ].totalChargeEvents = count;
+          // round to nearest ones
+          formattedGraphData[ network ].cumulativeKwh = Number( networkCumulatives[ network ].toFixed( 0 ) );
+        }
+
+        res.json( formattedGraphData );
       });
-    })
-    .catch(function( error ) {
-      res.status( 500 ).send( error.message );
-    });
-  },
-  getCumulativeData: function( req, res ) {
-    var data = {
-      plugIns: 0,
-      kwhGiven: 0,
-      graphs: {}
-    };
-
-    // count the number of total charge events
-    charge_event.count()
-    .then(function( number ) {
-      data.plugIns = number;
-      // add the kwh of those charge events
-      return station.sum( 'cumulative_kwh' );
-    })
-    .then(function( totalKWH ) {
-      data.kwhGiven = totalKWH;
-      var sevenDaysAgo = moment().subtract( 7, 'days' );
-      // set to start of day seven days ago
-      sevenDaysAgo.startOf( 'day' );
-      // get the charge events from the last seven days
-      return charge_event.findAll( { where: { time_stop: { $ne: null }, time_start: { $gt: sevenDaysAgo.toDate() } }, order: 'time_start', raw: true } );
-    })
-    .then(function( charges ) {
-      // create a data set for the graph
-      var days = [];
-      var plugIns = [];
-      var kwhGiven = [];
-      var dayIndex = 0;
-      // start values
-      var currentDay = moment( charges[ 0 ].time_start );
-      days.push( moment( charges[ 0 ].time_start ).format( 'M[/]D') );
-      plugIns[ dayIndex ] = 1;
-      kwhGiven[ dayIndex ] = +charges[ 0 ].kwh;
-
-      // sort the report into days
-      for ( var i = 1; i < charges.length; i++ ) {
-        var chargeTime = moment( charges[ i ].time_start );
-        // if we're still on the same day
-        if ( chargeTime.isSame( currentDay, 'day' ) ) {
-          // this is a charge event to count, increase it
-          plugIns[ dayIndex ]++;
-          kwhGiven[ dayIndex ] += +charges[ i ].kwh;
-        // new day
-        } else {
-          currentDay = moment( charges[ i ].time_start );
-          days.push( moment( charges[ i ].time_start ).format( 'M[/]D') );
-          dayIndex++;
-          plugIns.push( 1 );
-          kwhGiven.push( +charges[ i ].kwh );
-        }
-      }
-
-      // round to nearest tenths
-      for ( var i = 0; i < kwhGiven.length; i++ ) {
-        kwhGiven[ i ] = Number( kwhGiven[ i ].toFixed( 1 ) );
-      }
-
-      data.graphs.days = days;
-      data.graphs.plugIns = plugIns;
-      data.graphs.kwhGiven = kwhGiven;
-      res.json( data );
-    })
-    .catch(function( error ) {
-      res.status( 500 ).send( error.message );
-    });
-  },
-  getStationsByNetwork: function ( req, res ) {
-    // query database for all rows of stations
-    station.findAll( { where: { network: req.params.network } } )
-    .then(function( stations ) {
-      // if found
-      if( stations.length === 0 ) {
-        res.status( 404 ).send('That region was not found. Please try '+
-                                  'Arizona, ' +
-                                  'Hawaii, ' +
-                                  'Chicago, ' +
-                                  'NoCal for Northern California, ' +
-                                  'LA for Los Angeles, ' +
-                                  'SD for San Diego, ' +
-                                  'or SB for Santa Barbara Area.'
-                                );
-      } else {
-        res.json( stations );
-      }
     })
     .catch(function( error ) {
       res.status( 500 ).send( error.message );

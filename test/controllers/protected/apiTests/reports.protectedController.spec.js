@@ -26,7 +26,7 @@ module.exports = function() {
 
         beforeEach(function() {
           plugs = [ { id: 1, meter_status: 'error', ekm_omnimeter_serial: 'A', in_use: null }, { id: 2, meter_status: 'charging', ekm_omnimeter_serial: 'B', in_use: true }  ];
-          stations = [ { id: 1, kin: '001-0001-001-01-K', in_use: null, location_gps: null, cumulative_kwh: 2.5, location: 'Main', location_address: '123 Main' }, { id: 2, kin: '001-0001-001-02-K', in_use: true, location_gps: [ 1, 2 ], cumulative_kwh: 1.5, location: 'Volta', location_address: '123 Volta' } ];
+          stations = [ { id: 1, kin: '001-0001-001-01-K', in_use: null, location_gps: null, cumulative_kwh: '2.5', location: 'Main', location_address: '123 Main' }, { id: 2, kin: '001-0001-001-02-K', in_use: true, location_gps: [ 1, 2 ], cumulative_kwh: '1.5', location: 'Volta', location_address: '123 Volta' }, { id: 3, kin: '001-0001-001-03-K', in_use: true, location_gps: [ 1, 2 ], cumulative_kwh: undefined, location: 'Volta', location_address: '123 Volta' } ];
           chargeEvents = [ { id: 1, station_id: 1, plug_id: 1 }, { id: 2, station_id: 2, plug_id: 2 }, { id: 3, station_id: 1, plug_id: 1 } ];
           findAllPlugs = Q.defer();
           findAllStations = Q.defer();
@@ -127,14 +127,14 @@ module.exports = function() {
             },
             needMeter: {
               labels: [ 'Needs Meter', 'Metered' ],
-              data: [ 1, 1 ]
+              data: [ 1, 2 ]
             },
             needGPS: {
               labels: [ 'Needs Coordinates', 'Has Coordinates' ],
-              data: [ 1, 1 ]
+              data: [ 1, 2 ]
             },
             cumulative: {
-              numberOfStations: 2,
+              numberOfStations: 3,
               total: 4,
               calcs: {
                 offset: 6.1 ,

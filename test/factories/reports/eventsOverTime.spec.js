@@ -211,6 +211,7 @@ module.exports = function() {
       it('should start with nulls when data doesn\'t start on May 16', function( done ) {
         chargeEvents.pop();
         chargeEvents.push( { time_start: moment( '2015 05 19', 'YYYY MM DD' ).add( 2, 'hours' ).add( 35, 'minutes' ).toDate(), kwh: 3 } );
+        chargeEvents.push( { time_start: moment( '2015 05 19', 'YYYY MM DD' ).add( 3, 'hours' ).add( 35, 'minutes' ).toDate(), kwh: undefined } );
         chargeEvents.push( { time_start: moment( '2015 05 20', 'YYYY MM DD' ).add( 6, 'hours' ).add( 59, 'minutes' ).toDate(), kwh: 2 } );
         chargeEvents.push( { time_start: moment( '2015 05 20', 'YYYY MM DD' ).add( 7, 'hours' ).add( 49, 'minutes' ).toDate(), kwh: 4 } );
         count.resolve( 3 );
