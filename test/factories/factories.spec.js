@@ -8,6 +8,7 @@ var geocodeCacheTests = require( './geocodeCache.spec.js' );
 var reportHelpersTests = require( './reportHelpers.spec.js' );
 var eventsOverTimeTests = require( './reports/eventsOverTime.spec.js' );
 var kwhGrowthOverTimeTests = require( './reports/kwhGrowthOverTime.spec.js' );
+var networkMapTests = require( './reports/networkMapData.spec.js' );
 var mediaScheduleFactoryTests = require( './media/mediaScheduleFactory.spec.js' );
 
 describe('Factories', function() {
@@ -15,6 +16,7 @@ describe('Factories', function() {
     reportHelpersTests();
     eventsOverTimeTests();
     kwhGrowthOverTimeTests();
+    networkMapTests();
   });
 
   describe('APP HELPERS', function() {
