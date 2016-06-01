@@ -67,58 +67,57 @@ module.exports = function() {
 
     describe('aggregateNetworkMapData', function() {
       var aggregateNetworkMapData = factory.aggregateNetworkMapData;
-      var sevenDaysAgo = moment.utc( '5/24/2016', 'MM/DD/YYYY' ).startOf( 'day' );
+      var sevenDaysAgo = moment.utc( "05-01-2016", "MM-DD-YYYY" );
       var listOfChargeEvents = [
         {
           id: 1,
           // 1a - 2a
-          time_start: sevenDaysAgo.clone().add( 1, 'hour' ).toDate(),
-          time_stop: sevenDaysAgo.clone().add( 2, 'hours' ).toDate(),
+          time_start: sevenDaysAgo.clone().add( 1, 'hour' ).format(),
+          time_stop: sevenDaysAgo.clone().add( 2, 'hours' ).format(),
           kwh: '1.2',
           station_id: 1
         },
         {
           id: 2,
           // 230a-3a
-          time_start: sevenDaysAgo.clone().add( 2, 'hours' ).add( 30, 'minutes' ).toDate(),
-          time_stop: sevenDaysAgo.clone().add( 3, 'hours' ).toDate(),
+          time_start: sevenDaysAgo.clone().add( 2, 'hours' ).add( 30, 'minutes' ).format(),
+          time_stop: sevenDaysAgo.clone().add( 3, 'hours' ).format(),
           kwh: '3.1',
           station_id: 1
         },
         {
           id: 3,
           // 235a-3a
-          time_start: sevenDaysAgo.clone().add( 2, 'hours' ).add( 35, 'minutes' ).toDate(),
-          time_stop: sevenDaysAgo.clone().add( 3, 'hours' ).toDate(),
+          time_start: sevenDaysAgo.clone().add( 2, 'hours' ).add( 35, 'minutes' ).format(),
+          time_stop: sevenDaysAgo.clone().add( 3, 'hours' ).format(),
           kwh: '3.8',
           station_id: 2
         },
         {
           id: 4,
           // Next day, 12a-3a
-          time_start: sevenDaysAgo.clone().add( 1, 'day' ).toDate(),
-          time_stop: sevenDaysAgo.clone().add( 1, 'day' ).add( 3, 'hours' ).toDate(),
+          time_start: sevenDaysAgo.clone().add( 1, 'day' ).format(),
+          time_stop: sevenDaysAgo.clone().add( 1, 'day' ).add( 3, 'hours' ).format(),
           kwh: '100.2',
           station_id: 1
         },
         {
           id: 5,
           // Next day, 1230a-3a
-          time_start: sevenDaysAgo.clone().add( 1, 'day' ).add( 30, 'minutes' ).toDate(),
-          time_stop: sevenDaysAgo.clone().add( 1, 'day' ).add( 3, 'hours' ).toDate(),
+          time_start: sevenDaysAgo.clone().add( 1, 'day' ).add( 30, 'minutes' ).format(),
+          time_stop: sevenDaysAgo.clone().add( 1, 'day' ).add( 3, 'hours' ).format(),
           kwh: '7.2',
           station_id: 1
         },
         {
           id: 6,
           // Two days, 1230a-3a
-          time_start: sevenDaysAgo.clone().add( 2, 'day' ).add( 30, 'minutes' ).toDate(),
-          time_stop: sevenDaysAgo.clone().add( 2, 'day' ).add( 3, 'hours' ).toDate(),
+          time_start: sevenDaysAgo.clone().add( 2, 'day' ).add( 30, 'minutes' ).format(),
+          time_stop: sevenDaysAgo.clone().add( 2, 'day' ).add( 3, 'hours' ).format(),
           kwh: '0',
           station_id: 1
         }
       ];
-
 
       var networksMappedToStations = {
         1: 'Hawaii',
@@ -139,7 +138,7 @@ module.exports = function() {
         expect( Array.isArray( result ) ).toBe( false );
       });
 
-      xit('should aggregate Voltaverse (\'all\') data', function() {
+      it('should aggregate Voltaverse (\'all\') data', function() {
         var result = aggregateNetworkMapData( listOfChargeEvents, networksMappedToStations, networks );
         expect( result.hasOwnProperty( 'all' ) ).toBe( true );
         var eight = sevenDaysAgo.clone().subtract( 1, 'days' ).format( 'M/D' );
@@ -148,8 +147,19 @@ module.exports = function() {
         var five = sevenDaysAgo.clone().add( 2, 'days' ).format( 'M/D' );
 
         expect( result.all.days ).toEqual( [ eight, seven, six, five ] );
-        expect( result.all.chargeEvents ).toEqual( [ 3, 2 ] );
-        expect( result.all.kWh ).toEqual( [ 8.1, 7.2 ] );
+        expect( result.all.chargeEvents ).toEqual( [ 2, 3, 1, 0 ] );
+        expect( result.all.kWh ).toEqual( [ 7.3, 8.1, 7.2, 6.5 ] );
+      });
+
+      it('should aggregate specific network data', function() {
+        var result = aggregateNetworkMapData( listOfChargeEvents, networksMappedToStations, networks );
+        expect( result.hasOwnProperty( 'Hawaii' ) ).toBe( true );
+        expect( result.hasOwnProperty( 'Chicago' ) ).toBe( true );
+
+        expect( result.Hawaii.chargeEvents ).toEqual( [ 1, 2, 1, 0 ] );
+        expect( result.Hawaii.kWh ).toEqual( [ 3.9, 4.3, 7.2, 6.5 ] );
+        expect( result.Chicago.chargeEvents ).toEqual( [ 0, 1, 0, 0 ] );
+        expect( result.Chicago.kWh ).toEqual( [ 3.4, 3.8, 0, 0 ] );
       });
     });
   });
