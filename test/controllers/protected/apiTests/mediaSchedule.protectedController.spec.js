@@ -88,10 +88,20 @@ module.exports = function() {
       describe('POST', function() {
         var newMediaSchedule, findOrCreateSchedule, body;
 
+        var updateSchedule;
+        beforeEach(function() {
+          updateSchedule = Q.defer();
+          spyOn( models.media_schedule, 'findOne' ).andReturn( updateSchedule.promise );
+        });
+
         beforeEach(function() {
           newMediaSchedule = models.media_schedule.build( { kin: '001-0001-001-01-K' } );
           findOrCreateSchedule = Q.defer();
-          body = { kin: '001-0001-001-01-K' };
+          body = {
+            kin: '001-0001-001-01-K',
+            playingPresentation: 42,
+            downloadedPresentations: [ 1, 3, 5, 42 ]
+          };
           spyOn( models.media_schedule, 'findOrCreate' ).andReturn( findOrCreateSchedule.promise );
         });
 
@@ -166,6 +176,84 @@ module.exports = function() {
           .send( body )
           .expect( 500 )
           .expect( 'Test' )
+          .expect( 'Content-Type', /text/ )
+          .end( done );
+        });
+
+
+        // NOTE: NEW!
+        it('should update downloaded presentations', function( done ) {
+          var route = '/protected/mediaSchedule/notification/downloadedPresentations/1';
+          var saveSchedule = Q.defer();
+
+          var mediaScheduleToUpdate = {
+            last_check_in: null,
+            save: jasmine.createSpy('save media schedule').andReturn( saveSchedule.promise )
+          };
+
+          updateSchedule.resolve( mediaScheduleToUpdate );
+          saveSchedule.resolve( mediaScheduleToUpdate );
+
+          supertest.post( route )
+          .set( 'Authorization', 'Bearer ' + token )
+          .send( body )
+          .expect( 200 )
+          .expect( 'Content-Type', /json/ )
+          .expect([{
+            last_check_in: null,
+            downloaded_presentations: body.downloadedPresentations
+          }])
+          .end( done );
+        });
+
+        it('should fail to update downloaded presentations', function( done ) {
+          var route = '/protected/mediaSchedule/notification/downloadedPresentations/1';
+          var saveSchedule = Q.defer();
+
+          updateSchedule.resolve( null );
+
+          supertest.post( route )
+          .set( 'Authorization', 'Bearer ' + token )
+          .send( body )
+          .expect( 500 )
+          .expect( 'Content-Type', /text/ )
+          .end( done );
+        });
+
+        it('should update playing presentation', function( done ) {
+          var route = '/protected/mediaSchedule/notification/playingPresentation/1';
+          var saveSchedule = Q.defer();
+
+          var mediaScheduleToUpdate = {
+            last_check_in: null,
+            save: jasmine.createSpy('save media schedule').andReturn( saveSchedule.promise )
+          };
+
+          updateSchedule.resolve( mediaScheduleToUpdate );
+          saveSchedule.resolve( mediaScheduleToUpdate );
+
+          supertest.post( route )
+          .set( 'Authorization', 'Bearer ' + token )
+          .send( body )
+          .expect( 200 )
+          .expect( 'Content-Type', /json/ )
+          .expect([{
+            last_check_in: null,
+            playing_presentation: body.playingPresentation
+          }])
+          .end( done );
+        });
+
+        it('should fail to update playing presentation', function( done ) {
+          var route = '/protected/mediaSchedule/notification/playingPresentation/1';
+          var saveSchedule = Q.defer();
+
+          updateSchedule.resolve( null );
+
+          supertest.post( route )
+          .set( 'Authorization', 'Bearer ' + token )
+          .send( body )
+          .expect( 500 )
           .expect( 'Content-Type', /text/ )
           .end( done );
         });
@@ -343,7 +431,6 @@ module.exports = function() {
           .end( done );
         });
 
-        // NOTE: BROKEN!
         it('should return JSON of schedules', function( done ) {
           var saveSchedule = Q.defer();
           var savedMediaSchedule = { test: true };
