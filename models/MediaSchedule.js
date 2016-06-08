@@ -10,7 +10,9 @@ module.exports = function( sequelize, DataTypes ) {
 		kin: DataTypes.STRING,
 		serial_number: DataTypes.STRING,
 		active: DataTypes.BOOLEAN,
-		last_check_in: DataTypes.DATE
+		last_check_in: DataTypes.DATE,
+		downloaded_presentations: DataTypes.ARRAY( DataTypes.INTEGER ),
+		playing_presentation: DataTypes.INTEGER
 	}, { paranoid: true, underscored: true } );
 
 	return media_schedule;

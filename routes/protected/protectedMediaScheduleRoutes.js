@@ -14,9 +14,15 @@ router.route( '/checkForIssues' )
 
 // Used by media players
 // for http://www.baseurl.com/protected/mediaSchedule/serial/1
-router.route( '/serial/:serialNumber')
+router.route( '/serial/:serialNumber' )
   .get( controller.getMediaScheduleBySerialNumber )
   .post( controller.setMediaScheduleSerialNumber );
+
+router.route( '/notification/downloadedPresentations/:serialNumber' )
+  .post( controller.setDownloadedPresentationsBySerialNumber );
+
+router.route( '/notification/playingPresentation/:serialNumber' )
+  .post( controller.setPlayingPresentationBySerialNumber );
 
 // Will be used by Station Manager
 // for http://www.baseurl.com/protected/mediaSchedule/1

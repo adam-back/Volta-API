@@ -138,5 +138,47 @@ module.exports = exports = {
     .catch(function( error ) {
       res.status( 500 ).send( 'Failed to check for media players that are in need of maintenance: ' + error.message );
     });
+  },
+
+  setDownloadedPresentationsBySerialNumber: function( req, res ) {
+    var serialNumber = req.params.serialNumber;
+    var downloadedPresentations = req.body.downloadedPresentations;
+
+    mediaSchedule.findOne( { where: { serial_number: serialNumber } } )
+    .then(function( mediaScheduleToUpdate ) {
+      if ( mediaScheduleToUpdate ) {
+        mediaScheduleToUpdate.downloaded_presentations = downloadedPresentations;
+        return mediaScheduleToUpdate.save();
+      } else {
+        throw new Error( 'No Media Schedule found for serial_number ' + serialNumber );
+      }
+    })
+    .then(function( schedule ) {
+      res.json( [ schedule ] );
+    })
+    .catch(function( error ) {
+      res.status( 500 ).send( error.message );
+    });
+  },
+
+  setPlayingPresentationBySerialNumber: function( req, res ) {
+    var serialNumber = req.params.serialNumber;
+    var playingPresentation = req.body.playingPresentation;
+
+    mediaSchedule.findOne( { where: { serial_number: serialNumber } } )
+    .then(function( mediaScheduleToUpdate ) {
+      if ( mediaScheduleToUpdate ) {
+        mediaScheduleToUpdate.playing_presentation = playingPresentation;
+        return mediaScheduleToUpdate.save();
+      } else {
+        throw new Error( 'No Media Schedule found for serial_number ' + serialNumber );
+      }
+    })
+    .then(function( schedule ) {
+      res.json( [ schedule ] );
+    })
+    .catch(function( error ) {
+      res.status( 500 ).send( error.message );
+    });
   }
 };
