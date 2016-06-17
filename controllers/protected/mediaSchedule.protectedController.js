@@ -180,5 +180,28 @@ module.exports = exports = {
     .catch(function( error ) {
       res.status( 500 ).send( error.message );
     });
+  },
+
+  setSlideViewStatus: function( req, res ) {
+    var serialNumber = req.params.serialNumber;
+    var slidesPlayedRecently = req.body.playedRecently;
+    var slidesNotPlayedRecently = req.body.notPlayedRecently;
+
+    mediaSchedule.findOne( { where: { serial_number: serialNumber } } )
+    .then(function( mediaScheduleToUpdate ) {
+      if( mediaScheduleToUpdate ) {
+        mediaScheduleToUpdate.slides_played_recently = slidesPlayedRecently;
+        mediaScheduleToUpdate.slides_not_played_recently = slidesNotPlayedRecently;
+        return mediaScheduleToUpdate.save();
+      } else {
+        throw new Error( 'No Media Schedule found for serial_number ' + serialNumber );
+      }
+    })
+    .then(function( schedule ) {
+      res.json();
+    })
+    .catch(function( error ) {
+      res.status( 500 ).send( error.message );
+    });
   }
 };
