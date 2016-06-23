@@ -12,6 +12,8 @@ module.exports = function( sequelize, DataTypes ) {
 		active: DataTypes.BOOLEAN,
 		last_check_in: DataTypes.DATE,
 		downloaded_presentations: DataTypes.ARRAY( DataTypes.INTEGER ),
+		slides_played_recently: DataTypes.ARRAY( DataTypes.INTEGER ),
+		slides_not_played_recently: DataTypes.ARRAY( DataTypes.INTEGER ),
 		playing_presentation: DataTypes.INTEGER
 	}, { paranoid: true, underscored: true } );
 

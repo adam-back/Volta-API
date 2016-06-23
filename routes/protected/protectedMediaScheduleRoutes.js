@@ -24,6 +24,9 @@ router.route( '/notification/downloadedPresentations/:serialNumber' )
 router.route( '/notification/playingPresentation/:serialNumber' )
   .post( controller.setPlayingPresentationBySerialNumber );
 
+router.route( '/notification/slidesViewStatus/:serialNumber' )
+  .post( controller.setSlideViewStatus );
+
 // Will be used by Station Manager
 // for http://www.baseurl.com/protected/mediaSchedule/1
 router.route( '/:id' )
