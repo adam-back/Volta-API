@@ -1,4 +1,4 @@
-tvar mediaPresentation = require( '../../models').media_presentation;
+var mediaPresentation = require( '../../models').media_presentation;
 var mediaSchedule = require( '../../models' ).media_schedule;
 var station = require( '../../models' ).station;
 var mediaScheduleFactory = require( '../../factories/media/mediaScheduleFactory' );
