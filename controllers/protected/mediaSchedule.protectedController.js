@@ -1,4 +1,4 @@
-var mediaPresentation = require( '../../models').media_presentation;
+tvar mediaPresentation = require( '../../models').media_presentation;
 var mediaSchedule = require( '../../models' ).media_schedule;
 var station = require( '../../models' ).station;
 var mediaScheduleFactory = require( '../../factories/media/mediaScheduleFactory' );
@@ -154,7 +154,7 @@ module.exports = exports = {
       }
     })
     .then(function( schedule ) {
-      res.json( [ schedule ] );
+      res.status( 200 ).send();
     })
     .catch(function( error ) {
       res.status( 500 ).send( error.message );
@@ -175,7 +175,7 @@ module.exports = exports = {
       }
     })
     .then(function( schedule ) {
-      res.json( [ schedule ] );
+      res.status( 200 ).send();
     })
     .catch(function( error ) {
       res.status( 500 ).send( error.message );
@@ -198,7 +198,7 @@ module.exports = exports = {
       }
     })
     .then(function( schedule ) {
-      res.json();
+      res.status( 200 ).send();
     })
     .catch(function( error ) {
       res.status( 500 ).send( error.message );
