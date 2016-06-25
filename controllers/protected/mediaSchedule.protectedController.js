@@ -154,7 +154,7 @@ module.exports = exports = {
       }
     })
     .then(function( schedule ) {
-      res.json( [ schedule ] );
+      res.status( 200 ).send();
     })
     .catch(function( error ) {
       res.status( 500 ).send( error.message );
@@ -175,7 +175,7 @@ module.exports = exports = {
       }
     })
     .then(function( schedule ) {
-      res.json( [ schedule ] );
+      res.status( 200 ).send();
     })
     .catch(function( error ) {
       res.status( 500 ).send( error.message );
@@ -198,7 +198,7 @@ module.exports = exports = {
       }
     })
     .then(function( schedule ) {
-      res.json();
+      res.status( 200 ).send();
     })
     .catch(function( error ) {
       res.status( 500 ).send( error.message );
