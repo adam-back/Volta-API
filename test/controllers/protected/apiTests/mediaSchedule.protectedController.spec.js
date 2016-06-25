@@ -198,7 +198,6 @@ module.exports = function() {
           .set( 'Authorization', 'Bearer ' + token )
           .send( body )
           .expect( 200 )
-          .expect( 'Content-Type', /json/ )
           .expect([{
             last_check_in: null,
             downloaded_presentations: body.downloadedPresentations
@@ -236,7 +235,6 @@ module.exports = function() {
           .set( 'Authorization', 'Bearer ' + token )
           .send( body )
           .expect( 200 )
-          .expect( 'Content-Type', /json/ )
           .expect([{
             last_check_in: null,
             playing_presentation: body.playingPresentation
