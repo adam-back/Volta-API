@@ -197,6 +197,7 @@ module.exports = function() {
           .set( 'Authorization', 'Bearer ' + token )
           .send( body )
           .expect( 200 )
+          .expect( 'Content-Type', /text/ )
           .end( done );
         });
 
@@ -230,6 +231,7 @@ module.exports = function() {
           .set( 'Authorization', 'Bearer ' + token )
           .send( body )
           .expect( 200 )
+          .expect( 'Content-Type', /text/ )
           .end( done );
         });
 
@@ -263,6 +265,7 @@ module.exports = function() {
           .set( 'Authorization', 'Bearer ' + token )
           .send( body )
           .expect( 200 )
+          .expect( 'Content-Type', /text/ )
           .end( done );
         });
 
