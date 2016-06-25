@@ -181,7 +181,6 @@ module.exports = function() {
         });
 
 
-        // NOTE: NEW!
         it('should update downloaded presentations', function( done ) {
           var route = '/protected/mediaSchedule/notification/downloadedPresentations/1';
           var saveSchedule = Q.defer();
@@ -198,10 +197,6 @@ module.exports = function() {
           .set( 'Authorization', 'Bearer ' + token )
           .send( body )
           .expect( 200 )
-          .expect([{
-            last_check_in: null,
-            downloaded_presentations: body.downloadedPresentations
-          }])
           .end( done );
         });
 
@@ -235,10 +230,6 @@ module.exports = function() {
           .set( 'Authorization', 'Bearer ' + token )
           .send( body )
           .expect( 200 )
-          .expect([{
-            last_check_in: null,
-            playing_presentation: body.playingPresentation
-          }])
           .end( done );
         });
 
@@ -255,6 +246,40 @@ module.exports = function() {
           .expect( 'Content-Type', /text/ )
           .end( done );
         });
+
+        it('should update slide status', function( done ) {
+          var route = '/protected/mediaSchedule/notification/slidesViewStatus/1';
+          var saveSchedule = Q.defer();
+
+          var mediaScheduleToUpdate = {
+            last_check_in: null,
+            save: jasmine.createSpy('save media schedule').andReturn( saveSchedule.promise )
+          };
+
+          updateSchedule.resolve( mediaScheduleToUpdate );
+          saveSchedule.resolve( mediaScheduleToUpdate );
+
+          supertest.post( route )
+          .set( 'Authorization', 'Bearer ' + token )
+          .send( body )
+          .expect( 200 )
+          .end( done );
+        });
+
+        it('should fail to update slide status', function( done ) {
+          var route = '/protected/mediaSchedule/notification/slidesViewStatus/1';
+          var saveSchedule = Q.defer();
+
+          updateSchedule.resolve( null );
+
+          supertest.post( route )
+          .set( 'Authorization', 'Bearer ' + token )
+          .send( body )
+          .expect( 500 )
+          .expect( 'Content-Type', /text/ )
+          .end( done );
+        });
+
       });
 
       describe('PATCH', function() {
