@@ -147,7 +147,7 @@ module.exports = function() {
         });
       });
 
-      it('should get app sponsors for each station', function( done ) {
+      it('should get current app sponsors for each station', function( done ) {
         station1GetPlugPromise.resolve( plugs );
         station2GetPlugPromise.resolve( [] );
         station1GetSponsorsPromise.reject( 'Test' );
@@ -155,9 +155,9 @@ module.exports = function() {
         connectStationsWithPlugsAndSponsors( stations )
         .catch(function( error ) {
           expect( mockData.station1.getAppSponsors ).toHaveBeenCalled();
-          expect( mockData.station1.getAppSponsors ).toHaveBeenCalledWith();
+          expect( mockData.station1.getAppSponsors ).toHaveBeenCalledWith( { where: { current: true } } );
           expect( mockData.station2.getAppSponsors ).toHaveBeenCalled();
-          expect( mockData.station2.getAppSponsors ).toHaveBeenCalledWith();
+          expect( mockData.station2.getAppSponsors ).toHaveBeenCalledWith( { where: { current: true } } );
           done();
         });
       });
@@ -323,13 +323,13 @@ module.exports = function() {
         });
       });
 
-      it('should get each station\'s images', function( done ) {
+      it('should get each station\'s approved images', function( done ) {
         findStation.resolve( foundStation );
         getImages.reject( 'Test' );
         attachImages( groupsOfStations )
         .catch(function( error ) {
           expect( foundStation.getStation_images ).toHaveBeenCalled();
-          expect( foundStation.getStation_images ).toHaveBeenCalledWith();
+          expect( foundStation.getStation_images ).toHaveBeenCalledWith( { where: { approved: true } } );
           done();
         });
       });
