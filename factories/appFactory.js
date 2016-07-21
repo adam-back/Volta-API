@@ -41,7 +41,7 @@ exports.connectStationsWithPlugsAndSponsors = function( stations ) {
     // get the associated plugs for the station
     station.getPlugs()
     .then(function( plugs ) {
-      return station.getAppSponsors()
+      return station.getAppSponsors( { where: { current: true } } )
       .then(function( appSponsors ) {
         // if there are plugs, i.e. push and cloudgate installed
         var numberOfPlugs = plugs.length;
@@ -92,7 +92,7 @@ exports.attachImages = function( groups ) {
   async.forEachOf(groups, function( group, commonKin, cb ) {
     station.find( { where: { kin: group.stations[ 0 ].kin } } )
     .then(function( foundStation ) {
-      return foundStation.getStation_images();
+      return foundStation.getStation_images( { where: { approved: true } } );
     })
     .then(function( images ) {
       // if there are images for this station
