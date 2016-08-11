@@ -1,15 +1,14 @@
 [![Build Status](https://travis-ci.com/Volta-Charging/Database.svg?token=1diC3xzfftT1ypNJZKLa&branch=master)](https://travis-ci.com/Volta-Charging/Database)
-# [The Volta Database](http://volta-api.elasticbeanstalk.com)
+# [The Volta API](http://volta-api.elasticbeanstalk.com)
 <img src="https://s3-us-west-2.amazonaws.com/repo-assets/Database+Arch.png" alt="Architecture Diagram" width="400" height="300"/>
 
-There are currently two deployments:
+There are currently three-ish deployments:
 
 1. [Production](http://volta-api.elasticbeanstalk.com)
   - Master branch, volta-api
 1. [Development](http://volta-api-dev.elasticbeanstalk.com)
   - Dev branch, API-dev
-
-Kill Switch (deprecated)
+1. Kill Switch (deprecated)
   - kill-switch-api
   - This is a single instance, rather than load-balanced.
 
@@ -71,11 +70,11 @@ From RDS:
 
 ```javascript
 // good
-voltadb.cyq2lc28ysoe.us-west-2.rds.amazonaws.com
+dbname.uniqueId.us-west-2.rds.amazonaws.com
 
 // bad
 // the default port for PostgreSQl is always 5432
-voltadb.cyq2lc28ysoe.us-west-2.rds.amazonaws.com:5432
+dbname.uniqueId.us-west-2.rds.amazonaws.com:5432
 ```
 
 Your own, matching Auth-API. These should match the authentication API's values:
