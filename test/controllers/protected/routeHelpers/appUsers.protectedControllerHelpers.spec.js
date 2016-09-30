@@ -3,7 +3,7 @@ var Q = require( 'q' );
 var rewire = require( 'rewire' );
 var models = require( '../../../../models' );
 var controller = rewire( '../../../../controllers/protected/appUsers.protectedController.js' );
-var bcrypt = require( 'bcrypt' );
+var bcrypt = require( 'bcrypt-nodejs' );
 var createToken = require( '../../../jwtHelper' ).createToken;
 var token = createToken();
 

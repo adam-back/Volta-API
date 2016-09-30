@@ -2,7 +2,7 @@ var user = require( '../../models' ).user;
 var Q = require( 'q' );
 var env = process.env.NODE_ENV || 'development';
 var config    = require( '../../config/config' )[ env ];
-var bcrypt = require( 'bcrypt' );
+var bcrypt = require( 'bcrypt-nodejs' );
 var jwtFactory = require( '../../factories/jwtFactory' );
 
 module.exports = exports = {
