@@ -23,21 +23,6 @@ module.exports = function() {
         expect( typeof saltAndHashPassword ).toBe( 'function' );
       });
 
-      it('should bind and denodify bcrypt.hash', function() {
-        var mockQ = {
-          nbind: function( fn, obj ) {
-            expect( fn ).toEqual( bcrypt.hash );
-            expect( obj ).toEqual( bcrypt );
-            return function() {
-              return void( 0 );
-            };
-          }
-        };
-
-        revert = controller.__set__( 'Q', mockQ );
-        saltAndHashPassword( 'password' );
-      });
-
       it('should return a promise', function() {
         var hash = Q.defer();
         var mockQ = {
@@ -54,8 +39,39 @@ module.exports = function() {
         expect( Q.isPromise( result ) ).toBe( true );
       });
 
+      it('should bind and denodify bcrypt.genSalt and bcrypt.hash', function() {
+        this.addMatchers({
+          toEqualThisOrThat: function( expectation1, expectation2 ) {
+            var pass = false;
+
+            if ( this.actual === expectation1 || this.actual === expectation2 ) {
+              pass = true;
+              this.message = 'Expected ' + this.actual + ' NOT to match ' + expectation1 + ' or ' + expectation2 ;
+            } else {
+              this.message = 'Expected ' + this.actual + ' to match ' + expectation1 + ' or ' + expectation2 ;
+            }
+
+            return pass;
+          }
+        });
+
+        var hash = Q.defer();
+        var mockQ = {
+          nbind: function( fn, obj ) {
+            expect( fn ).toEqualThisOrThat( bcrypt.hash, bcrypt.genSalt );
+            expect( obj ).toEqual( bcrypt );
+            return function() {
+              return hash.promise;
+            };
+          }
+        };
+
+        revert = controller.__set__( 'Q', mockQ );
+        saltAndHashPassword( 'password' );
+      });
+
       it('should salt and hash a password', function( done ) {
-        saltAndHashPassword( 'password', 8 )
+        saltAndHashPassword( 'password' )
         .then(function( saltAndHash ) {
           expect( saltAndHash ).toBeDefined();
           expect( typeof saltAndHash ).toBe( 'string' );
@@ -64,14 +80,13 @@ module.exports = function() {
               throw err;
             } else {
               expect( res ).toBe( true );
-              done();
             }
           });
         })
         .catch(function( error ) {
-          expect( error ).toBe( 1 );
-          done();
-        });
+          expect( error ).toBeUndefined();
+        })
+        .done( done );
       });
     });
 
@@ -145,12 +160,11 @@ module.exports = function() {
         .then(function( result ) {
           expect( result ).toBeDefined();
           expect( typeof result ).toBe( 'boolean' );
-          done();
         })
         .catch(function( error ) {
-          expect( error ).toBe( 1 );
-          done();
-        });
+          expect( error ).toBeUndefined();
+        })
+        .done( done );
       });
 
       it('should return true for matching password', function( done ) {
@@ -160,12 +174,11 @@ module.exports = function() {
         })
         .then(function( result ) {
           expect( result ).toBe( true );
-          done();
         })
         .catch(function( error ) {
-          expect( error ).toBe( 1 );
-          done();
-        });
+          expect( error ).toBeUndefined();
+        })
+        .done( done );
       });
 
       it('should return false for wrong password', function( done ) {
@@ -175,12 +188,11 @@ module.exports = function() {
         })
         .then(function( result ) {
           expect( result ).toBe( false );
-          done();
         })
         .catch(function( error ) {
-          expect( error ).toBe( 1 );
-          done();
-        });
+          expect( error ).toBeUndefined();
+        })
+        .done( done );
       });
     });
   });
