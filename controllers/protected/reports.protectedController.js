@@ -12,7 +12,6 @@ var generateCSV = require( '../../factories/csvFactory' ).generateCSV;
 var csv = require( '../../factories/csvFactory' );
 var helper = require( '../../factories/reportHelpers' );
 var moment = require( 'moment' );
-moment().format();
 
 module.exports = exports = {
   geocodeLater: function( delay, address ) {
@@ -455,6 +454,38 @@ module.exports = exports = {
       res.status( 500 ).send( error.message );
     });
   },
+  generateQuarterlyReport: function( req, res ) {
+    // GET request with params specifying which quarter
+    Q()
+    .then(function() {
+      // necessary params exist
+      if ( !req.query.quarter || !req.query.year ) {
+        throw new Error( 'Please specify the quarter and year for this report.' );
+      } else {
+        return Q();
+      }
+    })
+    .then(function() {
+      // get oldest event
+      return charge_event.findAll( { limit: 1, order: [ [ 'time_start', 'ASC' ] ], raw: true } );
+    })
+    .then(function( oldestEvent ) {
+      // is oldest event older than one week?
+      // i.e. check if migration is complete
+      oldestEvent = oldestEvent[ 0 ];
+      if ( moment.utc( oldestEvent.time_start ).isBefore( moment.utc().subtract( 7, 'days' ) ) ) {
+        throw new Error( 'Migration not complete.' );
+      }
+
+      return helper.generateQuarterlyReport( req.query.quarter, req.query.year );
+    })
+    .then(function( csv ) {
+      res.send( csv );
+    })
+    .catch(function( error ) {
+      res.status( 500 ).send( { error: error.message } );
+    });
+  }
 
   // not complete
   // getOneStationAnalytics: function (req, res) {
