@@ -1,17 +1,18 @@
-var station = require( '../../models').station;
-var plug = require( '../../models').plug;
-var charge_event = require( '../../models').charge_event;
-var async     = require( 'async' );
-var Q = require( 'q' );
-var env = process.env.NODE_ENV || 'development';
-var config    = require( '../../config/config' )[ env ];
-var ekm = require('../../factories/ekmFactory.js');
-var geocoder = require( 'node-geocoder' )( 'google', 'https', { apiKey: config.googleApiKey, formatter: null } );
-var distance = require( '../../factories/distanceFactory.js' );
-var generateCSV = require( '../../factories/csvFactory' ).generateCSV;
-var csv = require( '../../factories/csvFactory' );
-var helper = require( '../../factories/reportHelpers' );
-var moment = require( 'moment' );
+var env             = process.env.NODE_ENV || 'development';
+var config          = require( '../../config/config' )[ env ];
+var models          = require( '../../models' );
+var station         = models.station;
+var plug            = models.plug;
+var charge_event    = models.charge_event;
+var ekm             = require('../../factories/ekmFactory.js');
+var distance        = require( '../../factories/distanceFactory.js' );
+var csv             = require( '../../factories/csvFactory' );
+var helper          = require( '../../factories/reportHelpers' );
+var quarterlyReport = require( '../../factories/reports/quarterlyReports' );
+var Q               = require( 'q' );
+var geocoder        = require( 'node-geocoder' )( 'google', 'https', { apiKey: config.googleApiKey, formatter: null } );
+var moment          = require( 'moment' );
+var async           = require( 'async' );
 
 module.exports = exports = {
   geocodeLater: function( delay, address ) {
