@@ -2,13 +2,19 @@ var user = require( '../../models' ).user;
 var Q = require( 'q' );
 var env = process.env.NODE_ENV || 'development';
 var config    = require( '../../config/config' )[ env ];
-var bcrypt = require( 'bcrypt' );
+var bcrypt = require( 'bcrypt-nodejs' );
 var jwtFactory = require( '../../factories/jwtFactory' );
 
 module.exports = exports = {
   saltAndHashPassword: function( password ) {
-    var saltAndHash = Q.nbind( bcrypt.hash, bcrypt );
-    return saltAndHash( password, 8 );
+    var genSalt = Q.nbind( bcrypt.genSalt, bcrypt );
+    var hash = Q.nbind( bcrypt.hash, bcrypt );
+
+    return genSalt( 8 )
+    .then(function( salt ) {
+      // null is progress cb
+      return hash( password, salt, null );
+    });
   },
   comparePasswordToDatabase: function( inputPassword, dbPassword ) {
     var compare = Q.nbind( bcrypt.compare, bcrypt );
