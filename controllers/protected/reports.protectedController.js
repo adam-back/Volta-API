@@ -478,7 +478,7 @@ module.exports = exports = {
         throw new Error( 'Migration not complete.' );
       }
 
-      return helper.generateQuarterlyReport( req.query.quarter, req.query.year );
+      return quarterlyReport.generateQuarterlyReport( req.query.quarter, req.query.year );
     })
     .then(function( csv ) {
       res.send( csv );
