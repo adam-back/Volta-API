@@ -1,5 +1,4 @@
 var moment = require( 'moment' );
-moment().format();
 var Q = require( 'q' );
 var station = require( '../models').station;
 var plug = require( '../models').plug;
@@ -18,6 +17,34 @@ exports.orderByKin = function( collection ) {
   });
 
   return collection;
+};
+
+exports.convertDecimalsToNumbers = function( collection ) {
+  var newNumbers = [];
+
+  for ( var numItems = collection.length, i = 0; i < numItems; i++ ) {
+    var item = collection[ i ];
+    var convertedItem = Number( item );
+    if ( isNaN( convertedItem ) ) {
+      throw new Error( 'Could not convert ' + item + ' to a number in reportHelpers.convertDecimalsToNumbers.' );
+    } else {
+      newNumbers.push( convertedItem );
+    }
+  }
+
+  return newNumbers;
+};
+
+exports.findAverage = function( collection ) {
+  var sum = 0;
+  var numItems = collection.length;
+
+  for ( var i = 0; i < numItems; i++ ) {
+    var item = collection[ i ];
+    sum += item;
+  }
+
+  return sum / numItems;
 };
 
 exports.findMedian = function( collection ) {

@@ -35,23 +35,51 @@ Object.keys( db ).forEach( function( modelName ) {
 db.station.hasOne( db.media_schedule, { as: 'MediaSchedule' } );
 
 // One-to-many
+  // Stations
 db.station.hasMany( db.charge_event );
+var HistoricalChargeEvents = db.station.hasMany( db.historical_charge_event, { as: 'HistoricalChargeEvents' } );
+var ChargeEventMonthSummaries = db.station.hasMany( db.charge_event_month_summary, { as: 'ChargeEventMonthSummaries' } );
 db.station.hasMany( db.plug );
 db.station.hasMany( db.weather_reading );
 db.station.hasMany( db.station_rating );
 db.station.hasMany( db.station_report );
 db.station.hasMany( db.station_image );
 db.station.hasMany( db.ekm_reading );
+db.station.hasMany( db.historical_ekm_reading, { as: 'HistoricalReadings' } );
+var ReadingHourSummaries = db.station.hasMany( db.ekm_reading_hour_summary, { as: 'ReadingHourSummaries' } );
+var ReadingDaySummaries = db.station.hasMany( db.ekm_reading_day_summary, { as: 'ReadingDaySummaries' } );
+var ReadingMonthSummaries = db.station.hasMany( db.ekm_reading_month_summary, { as: 'ReadingMonthSummaries' } );
+db.station.hasMany( db.idle_chunk );
+db.station.hasMany( db.historical_idle_chunk );
 
+  // Plugs
 db.plug.hasMany( db.charge_event );
+db.plug.hasMany( db.historical_charge_event, { as: 'HistoricalChargeEvents' } );
+db.plug.hasMany( db.charge_event_month_summary, { as: 'ChargeEventMonthSummaries' } );
 db.plug.hasMany( db.ekm_reading );
+db.plug.hasMany( db.historical_ekm_reading, { as: 'HistoricalReadings' } );
+db.plug.hasMany( db.ekm_reading_hour_summary, { as: 'ReadingHourSummaries' } );
+db.plug.hasMany( db.ekm_reading_day_summary, { as: 'ReadingDaySummaries' } );
+db.plug.hasMany( db.ekm_reading_month_summary, { as: 'ReadingMonthSummaries' } );
+db.plug.hasMany( db.idle_chunk );
+db.plug.hasMany( db.historical_idle_chunk );
 
+  // Users
 db.user.hasMany( db.station_rating );
 db.user.hasMany( db.station_report );
 db.user.hasMany( db.station_image );
 db.user.hasMany( db.charge_event );
 
+  // Charge Events
 db.charge_event.hasMany( db.ekm_reading );
+
+  // Historical
+var HistoricalReadings = db.historical_charge_event.hasMany( db.historical_ekm_reading, { as: 'HistoricalReadings' } );
+db.charge_event_month_summary.hasMany( db.historical_charge_event, { as: 'HistoricalChargeEvents' } );
+db.ekm_reading_hour_summary.hasMany( db.historical_ekm_reading );
+db.ekm_reading_day_summary.hasMany( db.ekm_reading_hour_summary );
+db.ekm_reading_month_summary.hasMany( db.ekm_reading_day_summary );
+
 db.media_company.hasMany( db.media_campaign, { as: 'MediaCampaigns' } );
 
 // Many-to-many
@@ -88,5 +116,11 @@ sequelize.sync()
 
 db.sequelize = sequelize;
 db.Sequelize = Sequelize;
+db.HistoricalChargeEvents = HistoricalChargeEvents;
+db.ChargeEventMonthSummaries = ChargeEventMonthSummaries;
+db.HistoricalReadings = HistoricalReadings;
+db.ReadingHourSummaries = ReadingHourSummaries;
+db.ReadingDaySummaries = ReadingDaySummaries;
+db.ReadingMonthSummaries = ReadingMonthSummaries;
 
 module.exports = db;
