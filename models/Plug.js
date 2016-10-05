@@ -9,8 +9,9 @@ module.exports = function( sequelize, DataTypes ) {
     // could be same as station install date,
     // but doesn't have to be if it was added later
     install_date: DataTypes.STRING,
+    // RS1772
     connector_type: DataTypes.STRING,
-    // 2, Level 2
+    // 1, Level 1
     charger_type: DataTypes.INTEGER,
     max_amps: DataTypes.INTEGER,
     ekm_omnimeter_serial: {
@@ -21,9 +22,12 @@ module.exports = function( sequelize, DataTypes ) {
     meter_status_message: DataTypes.STRING,
     in_use: DataTypes.BOOLEAN,
     cumulative_kwh: DataTypes.DECIMAL
-  }, { paranoid: true, underscored: true } );
+  },
+  // options
+  { paranoid: true,
+    underscored: true
+  });
 
   return plug;
-
   // station_id added as foreign key
 };

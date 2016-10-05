@@ -1,18 +1,18 @@
-var station = require( '../../models').station;
-var plug = require( '../../models').plug;
-var charge_event = require( '../../models').charge_event;
-var async     = require( 'async' );
-var Q = require( 'q' );
-var env = process.env.NODE_ENV || 'development';
-var config    = require( '../../config/config' )[ env ];
-var ekm = require('../../factories/ekmFactory.js');
-var geocoder = require( 'node-geocoder' )( 'google', 'https', { apiKey: config.googleApiKey, formatter: null } );
-var distance = require( '../../factories/distanceFactory.js' );
-var generateCSV = require( '../../factories/csvFactory' ).generateCSV;
-var csv = require( '../../factories/csvFactory' );
-var helper = require( '../../factories/reportHelpers' );
-var moment = require( 'moment' );
-moment().format();
+var env             = process.env.NODE_ENV || 'development';
+var config          = require( '../../config/config' )[ env ];
+var models          = require( '../../models' );
+var station         = models.station;
+var plug            = models.plug;
+var charge_event    = models.charge_event;
+var ekm             = require('../../factories/ekmFactory.js');
+var distance        = require( '../../factories/distanceFactory.js' );
+var csv             = require( '../../factories/csvFactory' );
+var helper          = require( '../../factories/reportHelpers' );
+var quarterlyReport = require( '../../factories/reports/quarterlyReports' );
+var Q               = require( 'q' );
+var geocoder        = require( 'node-geocoder' )( 'google', 'https', { apiKey: config.googleApiKey, formatter: null } );
+var moment          = require( 'moment' );
+var async           = require( 'async' );
 
 module.exports = exports = {
   geocodeLater: function( delay, address ) {
@@ -455,6 +455,38 @@ module.exports = exports = {
       res.status( 500 ).send( error.message );
     });
   },
+  generateQuarterlyReport: function( req, res ) {
+    // GET request with params specifying which quarter
+    Q()
+    .then(function() {
+      // necessary params exist
+      if ( !req.query.quarter || !req.query.year ) {
+        throw new Error( 'Please specify the quarter and year for this report.' );
+      } else {
+        return Q();
+      }
+    })
+    .then(function() {
+      // get oldest event
+      return charge_event.findAll( { limit: 1, order: [ [ 'time_start', 'ASC' ] ], raw: true } );
+    })
+    .then(function( oldestEvent ) {
+      // is oldest event older than one week?
+      // i.e. check if migration is complete
+      oldestEvent = oldestEvent[ 0 ];
+      if ( moment.utc( oldestEvent.time_start ).isBefore( moment.utc().subtract( 7, 'days' ) ) ) {
+        throw new Error( 'Migration not complete.' );
+      }
+
+      return quarterlyReport.generateQuarterlyReport( req.query.quarter, req.query.year );
+    })
+    .then(function( csv ) {
+      res.send( csv );
+    })
+    .catch(function( error ) {
+      res.status( 500 ).send( { error: error.message } );
+    });
+  }
 
   // not complete
   // getOneStationAnalytics: function (req, res) {
