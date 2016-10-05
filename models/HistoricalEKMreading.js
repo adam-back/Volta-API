@@ -1,0 +1,77 @@
+module.exports = function( sequelize, DataTypes ) {
+  var historical_ekm_reading = sequelize.define('historical_ekm_reading', {
+    id: {
+          type: DataTypes.INTEGER,
+          autoIncrement: true,
+          primaryKey: true
+    },
+    meter_serial_number: DataTypes.STRING,
+    group: DataTypes.INTEGER,
+    interval: DataTypes.INTEGER,
+    protocol: DataTypes.STRING,
+    mac_address: DataTypes.STRING,
+    date: DataTypes.STRING,
+    time: DataTypes.STRING,
+    time_stamp_utc_ms: DataTypes.DATE,
+    firmware: DataTypes.STRING,
+    // had to rename Model to meterModel
+    // because it didn't like Model for import
+    // even as a string
+    meter_model: DataTypes.STRING,
+    kwh_tot: DataTypes.STRING,
+    kwh_tariff_1: DataTypes.STRING,
+    kwh_tariff_2: DataTypes.STRING,
+    kwh_tariff_3: DataTypes.STRING,
+    kwh_tariff_4: DataTypes.STRING,
+    rev_kwh_tot: DataTypes.STRING,
+    rev_kwh_tariff_1: DataTypes.STRING,
+    rev_kwh_tariff_2: DataTypes.STRING,
+    rev_kwh_tariff_3: DataTypes.STRING,
+    rev_kwh_tariff_4: DataTypes.STRING,
+    rms_volts_ln_1: DataTypes.STRING,
+    rms_volts_ln_2: DataTypes.STRING,
+    rms_volts_ln_3: DataTypes.STRING,
+    amps_ln_1: DataTypes.STRING,
+    amps_ln_2: DataTypes.STRING,
+    amps_ln_3: DataTypes.STRING,
+    rms_watts_ln_1: DataTypes.STRING,
+    rms_watts_ln_2: DataTypes.STRING,
+    rms_watts_ln_3: DataTypes.STRING,
+    rms_watts_tot: DataTypes.STRING,
+    power_factor_ln_1: DataTypes.STRING,
+    power_factor_ln_2: DataTypes.STRING,
+    power_factor_ln_3: DataTypes.STRING,
+    rms_watts_max_demand: DataTypes.STRING,
+    max_demand_period: DataTypes.STRING,
+    ct_ratio: DataTypes.STRING,
+    pulse_cnt_1: DataTypes.STRING,
+    pulse_cnt_2: DataTypes.STRING,
+    pulse_cnt_3: DataTypes.STRING,
+    pulse_ratio_1: DataTypes.STRING,
+    pulse_ratio_2: DataTypes.STRING,
+    pulse_ratio_3: DataTypes.STRING,
+    state_inputs: DataTypes.STRING,
+    reactive_energy_tot: DataTypes.STRING,
+    kwh_rst: DataTypes.STRING,
+    rev_kwh_rst: DataTypes.STRING,
+    reactive_pwr_ln_1: DataTypes.STRING,
+    reactive_pwr_ln_2: DataTypes.STRING,
+    reactive_pwr_ln_3: DataTypes.STRING,
+    reactive_pwr_tot: DataTypes.STRING,
+    kwh_scale: DataTypes.STRING,
+    line_freq: DataTypes.STRING,
+    state_watts_dir: DataTypes.STRING,
+    state_out: DataTypes.STRING,
+    kwh_ln_1: DataTypes.STRING,
+    kwh_ln_2: DataTypes.STRING,
+    kwh_ln_3: DataTypes.STRING,
+    rev_kwh_ln_1: DataTypes.STRING,
+    rev_kwh_ln_2: DataTypes.STRING,
+    rev_kwh_ln_3: DataTypes.STRING,
+    cf_ratio: DataTypes.STRING
+  }, { paranoid: true, underscored: true } );
+
+    return historical_ekm_reading;
+
+    // plug_id, station_id, historical_charge_event_id, ekm_reading_hour_summary_id added as foreign keys
+};
