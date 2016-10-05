@@ -1,4 +1,4 @@
-var math   = require( '../helpers/math' );
+var math = require( '../factories/math' );
 
 module.exports = function( sequelize, DataTypes ) {
   var idle_chunk = sequelize.define('idle_chunk', {

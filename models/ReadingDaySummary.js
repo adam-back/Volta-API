@@ -1,4 +1,4 @@
-var math = require( '../helpers/math.js' );
+var math = require( '../factories/math' );
 
 module.exports = function( sequelize, DataTypes ) {
   var ekm_reading_day_summary = sequelize.define('ekm_reading_day_summary', {
