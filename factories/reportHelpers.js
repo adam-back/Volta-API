@@ -227,7 +227,7 @@ exports.chargeEventsOverTime = function( where, timePeriod ) {
   };
   var periods = [];
 
-  return charge_event.findAll( query )
+  return models.historical_charge_event.findAll( query )
   .then(function( chargeEvents ) {
     // set the first 30-min period
     var currentPeriod = moment( chargeEvents[ 0 ].time_start ).add( timeNum, timeUnit );
@@ -340,7 +340,6 @@ exports.chargesOverLastThirtyDaysForOneStation = function( oneStation ) {
       dataForCSV.medianGallonsPerEvent = consumerNumbersMedian.gallons;
     }
 
-    console.log( 'dataForCSV', dataForCSV )
     return dataForCSV;
   });
 };
