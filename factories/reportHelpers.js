@@ -1,11 +1,12 @@
 var moment = require( 'moment' );
-var Q = require( 'q' );
+var Q      = require( 'q' );
+var async  = require( 'async' );
+var models = require( '../models');
+var ekm    = require( './ekmFactory.js' );
+var csv    = require( './csvFactory');
 var station = require( '../models').station;
 var plug = require( '../models').plug;
 var charge_event = require( '../models').charge_event;
-var async     = require( 'async' );
-var ekm = require( './ekmFactory.js' );
-var csv = require( './csvFactory');
 
 exports.orderByKin = function( collection ) {
   collection.sort(function( a, b ) {
@@ -274,7 +275,7 @@ exports.chargesOverLastThirtyDaysForOneStation = function( oneStation ) {
     order: [ [ 'time_start', 'ASC' ] ]
   };
 
-  return charge_event.findAll( where )
+  return models.historical_charge_event.findAll( where )
   .then(function( eventsForStation ) {
     var dataForCSV = {
       kin: oneStation.kin,
@@ -339,6 +340,7 @@ exports.chargesOverLastThirtyDaysForOneStation = function( oneStation ) {
       dataForCSV.medianGallonsPerEvent = consumerNumbersMedian.gallons;
     }
 
+    console.log( 'dataForCSV', dataForCSV )
     return dataForCSV;
   });
 };
