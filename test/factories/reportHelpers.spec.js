@@ -1,11 +1,10 @@
+var Q             = require( 'q' );
+var async         = require( 'async' );
+var moment        = require( 'moment' );
+var db            = require( '../../models' );
 var reportHelpers = require( '../../factories/reportHelpers.js' );
-var Q = require( 'q' );
-var db = require( '../../models/index.js' );
-var csv = require( '../../factories/csvFactory.js' );
-var moment = require( 'moment' );
-moment().format();
-var async = require( 'async' );
-var ekmFactory = require( '../../factories/ekmFactory.js' );
+var csv           = require( '../../factories/csvFactory.js' );
+var ekmFactory    = require( '../../factories/ekmFactory.js' );
 
 module.exports = function() {
   describe('reportHelpers.js', function() {
@@ -343,7 +342,7 @@ module.exports = function() {
       beforeEach(function() {
         timePeriod = [ 1, 'days' ];
         findChargeEvents = Q.defer();
-        spyOn( db.charge_event, 'findAll' ).andReturn( findChargeEvents.promise );
+        spyOn( db.historical_charge_event, 'findAll' ).andReturn( findChargeEvents.promise );
       });
 
       it('should be defined as a function', function() {
@@ -359,28 +358,37 @@ module.exports = function() {
       it('should find all charge events', function( done ) {
         findChargeEvents.reject();
         chargeEventsOverTime( null, timePeriod )
+        .then(function( result ) {
+          expect( result ).toBeUndefined();
+        })
         .catch(function() {
-          expect( db.charge_event.findAll ).toHaveBeenCalled();
-          done();
-        });
+          expect( db.historical_charge_event.findAll ).toHaveBeenCalled();
+        })
+        .done( done );
       });
 
       it('should construct query user-passed WHERE', function( done ) {
         findChargeEvents.reject();
         chargeEventsOverTime( { where: { id: 1 } }, timePeriod )
+        .then(function( result ) {
+          expect( result ).toBeUndefined();
+        })
         .catch(function() {
-          expect( db.charge_event.findAll ).toHaveBeenCalledWith( { where: { id: 1, time_stop: { $ne: null } }, order: 'id', raw: true } );
-          done();
-        });
+          expect( db.historical_charge_event.findAll ).toHaveBeenCalledWith( { where: { id: 1, time_stop: { $ne: null } }, order: 'id', raw: true } );
+        })
+        .done( done );
       });
 
       it('should construct query if one is not provided', function( done ) {
         findChargeEvents.reject();
         chargeEventsOverTime( null, timePeriod )
+        .then(function( result ) {
+          expect( result ).toBeUndefined();
+        })
         .catch(function() {
-          expect( db.charge_event.findAll ).toHaveBeenCalledWith( { where: { time_stop: { $ne: null } }, order: 'id', raw: true } );
-          done();
-        });
+          expect( db.historical_charge_event.findAll ).toHaveBeenCalledWith( { where: { time_stop: { $ne: null } }, order: 'id', raw: true } );
+        })
+        .done( done );
       });
 
       it('should return array with accumulators over the time interval', function( done ) {
@@ -405,12 +413,11 @@ module.exports = function() {
           expect( result[ 0 ] ).toEqual( { time: moment( '2015 05 17', 'YYYY MM DD' ).toDate(), events: 1, kwh: 5.2 } );
           expect( result[ 1 ] ).toEqual( { time: moment( '2015 05 18', 'YYYY MM DD' ).toDate(), events: 3, kwh: 8.8 } );
           expect( result[ 2 ] ).toEqual( { time: moment( '2015 05 20', 'YYYY MM DD' ).toDate(), events: 4, kwh: 18.8 } );
-          done();
         })
         .catch(function( error ) {
-          expect( error ).not.toBeDefined();
-          done();
-        });
+          expect( error ).toBeUndefined();
+        })
+        .done( done );
       });
     });
 
@@ -443,7 +450,7 @@ module.exports = function() {
 
       beforeEach(function() {
         findChargeEvents = Q.defer();
-        spyOn( db.charge_event, 'findAll' ).andReturn( findChargeEvents.promise );
+        spyOn( db.historical_charge_event, 'findAll' ).andReturn( findChargeEvents.promise );
         spyOn( reportHelpers, 'countChargesAndDuration' ).andReturn( averagesAndMedians );
         spyOn( reportHelpers, 'convertKwhToConsumerEquivalents' ).andReturn( conversions );
       });
@@ -461,19 +468,22 @@ module.exports = function() {
       it('should find all charge events for last 30 days', function( done ) {
         findChargeEvents.reject();
         chargesOverLastThirtyDaysForOneStation( station1 )
+        .then(function( result ) {
+          expect( result ).toBeUndefined();
+        })
         .catch(function() {
-          expect( db.charge_event.findAll ).toHaveBeenCalled();
-          expect( db.charge_event.findAll.calls[ 0 ].args[ 0 ].hasOwnProperty( 'where' ) ).toBe( true );
-          expect( db.charge_event.findAll.calls[ 0 ].args[ 0 ].where.station_id ).toBe( 1 );
+          expect( db.historical_charge_event.findAll ).toHaveBeenCalled();
+          expect( db.historical_charge_event.findAll.calls[ 0 ].args[ 0 ].hasOwnProperty( 'where' ) ).toBe( true );
+          expect( db.historical_charge_event.findAll.calls[ 0 ].args[ 0 ].where.station_id ).toBe( 1 );
           // can't really test date directly
-          expect( db.charge_event.findAll.calls[ 0 ].args[ 0 ].where.time_start[ '$gt' ] ).toBeDefined();
-          expect( db.charge_event.findAll.calls[ 0 ].args[ 0 ].where.time_stop[ '$ne' ] ).toBe( null );
-          expect( db.charge_event.findAll.calls[ 0 ].args[ 0 ].hasOwnProperty( 'raw' ) ).toBe( true );
-          expect( db.charge_event.findAll.calls[ 0 ].args[ 0 ].raw ).toBe( true );
-          expect( db.charge_event.findAll.calls[ 0 ].args[ 0 ].hasOwnProperty( 'order' ) ).toBe( true );
-          expect( db.charge_event.findAll.calls[ 0 ].args[ 0 ].order ).toEqual( [ [ 'time_start', 'ASC' ] ] );
-          done();
-        });
+          expect( db.historical_charge_event.findAll.calls[ 0 ].args[ 0 ].where.time_start[ '$gt' ] ).toBeDefined();
+          expect( db.historical_charge_event.findAll.calls[ 0 ].args[ 0 ].where.time_stop[ '$ne' ] ).toBe( null );
+          expect( db.historical_charge_event.findAll.calls[ 0 ].args[ 0 ].hasOwnProperty( 'raw' ) ).toBe( true );
+          expect( db.historical_charge_event.findAll.calls[ 0 ].args[ 0 ].raw ).toBe( true );
+          expect( db.historical_charge_event.findAll.calls[ 0 ].args[ 0 ].hasOwnProperty( 'order' ) ).toBe( true );
+          expect( db.historical_charge_event.findAll.calls[ 0 ].args[ 0 ].order ).toEqual( [ [ 'time_start', 'ASC' ] ] );
+        })
+        .done( done );
       });
 
       it('should make various calcs and return object for CSV', function( done ) {
