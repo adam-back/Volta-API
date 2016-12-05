@@ -1,10 +1,9 @@
-var models = require( '../../../models' );
+var Q            = require( 'q' );
+var moment       = require( 'moment' );
+var models       = require( '../../../models' );
 var charge_event = models.charge_event;
-var station = models.station;
-var time = require( '../../../factories/reports/eventsOverTime.js' );
-var Q = require( 'q' );
-var moment = require( 'moment' );
-moment().format();
+var station      = models.station;
+var time         = require( '../../../factories/reports/eventsOverTime.js' );
 
 module.exports = function() {
   describe('eventsOverTime.js', function() {
@@ -244,7 +243,7 @@ module.exports = function() {
         findStations = Q.defer();
         findChargeEvents = Q.defer();
         spyOn( station, 'findAll' ).andReturn( findStations.promise );
-        spyOn( charge_event, 'findAll' ).andReturn( findChargeEvents.promise );
+        spyOn( models.historical_charge_event, 'findAll' ).andReturn( findChargeEvents.promise );
       });
 
       it('should be defined as a function', function() {
@@ -260,25 +259,31 @@ module.exports = function() {
       it('should find all stations', function( done ) {
         findStations.reject();
         dataOverThirtyDays()
+        .then(function( result ) {
+          expect( result ).toBeUndefined();
+        })
         .catch(function() {
           expect( station.findAll ).toHaveBeenCalled();
           expect( station.findAll ).toHaveBeenCalledWith( { raw: true } );
-          done();
-        });
+        })
+        .done( done );
       });
 
       it('should find all charge events in last 30 days', function( done ) {
         findStations.resolve( [] );
         findChargeEvents.reject();
         dataOverThirtyDays()
+        .then(function( result ) {
+          expect( result ).toBeUndefined();
+        })
         .catch(function() {
-          expect( charge_event.findAll ).toHaveBeenCalled();
-          expect( charge_event.findAll.calls[ 0 ].args[ 0 ].where ).toBeDefined();
-          expect( charge_event.findAll.calls[ 0 ].args[ 0 ].where.time_start ).toBeDefined();
-          expect( charge_event.findAll.calls[ 0 ].args[ 0 ].where.time_start[ '$gt' ] ).toBeDefined();
-          expect( charge_event.findAll.calls[ 0 ].args[ 0 ].where.time_stop ).toEqual( { $ne: null } );
-          done();
-        });
+          expect( models.historical_charge_event.findAll ).toHaveBeenCalled();
+          expect( models.historical_charge_event.findAll.calls[ 0 ].args[ 0 ].where ).toBeDefined();
+          expect( models.historical_charge_event.findAll.calls[ 0 ].args[ 0 ].where.time_start ).toBeDefined();
+          expect( models.historical_charge_event.findAll.calls[ 0 ].args[ 0 ].where.time_start[ '$gt' ] ).toBeDefined();
+          expect( models.historical_charge_event.findAll.calls[ 0 ].args[ 0 ].where.time_stop ).toEqual( { $ne: null } );
+        })
+        .done( done );
       });
 
       it('should return stations with cumulative 30-day data', function( done ) {
@@ -319,12 +324,11 @@ module.exports = function() {
           expect( result[ '2' ].session_lengths ).toEqual( [ 65 ] );
           expect( result[ '2' ].charge_events.length ).toBe( 30 );
           expect( result[ '2' ].charge_events ).toEqual( [ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1 ] );
-          done();
         })
         .catch(function( error ) {
           expect( error ).not.toBeDefined();
-          done();
-        });
+        })
+        .done( done );
       });
 
       it('should delete stations which have no charge events', function( done ) {
@@ -349,12 +353,11 @@ module.exports = function() {
           expect( result[ '1' ].time_spent_charging ).toBe( 210 );
           expect( result.hasOwnProperty( '2' ) ).toBe( false );
           expect( result.hasOwnProperty( '3' ) ).toBe( false );
-          done();
         })
         .catch(function( error ) {
           expect( error ).not.toBeDefined();
-          done();
-        });
+        })
+        .done( done );
       });
 
       it('should throw error if network is not correct', function( done ) {
@@ -367,12 +370,11 @@ module.exports = function() {
         dataOverThirtyDays()
         .then(function( result ) {
           expect( result ).not.toBeDefined();
-          done();
         })
         .catch(function( error ) {
           expect( error.message ).toBe( 'Network (OC) not found in global median data object, eventOverTime.dataOverThirtyDays.' );
-          done();
-        });
+        })
+        .done( done );
       });
     });
   });

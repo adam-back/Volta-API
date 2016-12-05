@@ -1,9 +1,9 @@
-
+var moment       = require( 'moment' );
 var charge_event = require( '../../models' ).charge_event;
-var station = require( '../../models' ).station;
-var moment = require( 'moment' );
-moment().format();
-var helper = require( '../reportHelpers' );
+var station      = require( '../../models' ).station;
+var helper       = require( '../reportHelpers' );
+var models       = require( '../../models' );
+
 
 exports.countNumberOfDaysWithoutData = function( firstDayWithCharge, nextDayWithCharge, kwh ) {
   var nulls = {};
@@ -133,7 +133,7 @@ exports.dataOverThirtyDays = function() {
     }
 
     // get all closed charge events from the last 30 days
-    return charge_event.findAll( { where: { time_start: { $gt: thirtyDaysAgo.toDate() } , time_stop: { $ne: null } }, order: 'time_start', raw: true } );
+    return models.historical_charge_event.findAll( { where: { time_start: { $gt: thirtyDaysAgo.toDate() } , time_stop: { $ne: null } }, order: 'time_start', raw: true } );
   })
   .then(function ( chargeEvents ) {
 
