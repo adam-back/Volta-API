@@ -317,34 +317,21 @@ module.exports = exports = {
       res.status( 500 ).send( error.message );
     });
   },
+  // add id to station
   exportPlugDataAsCsv: function( req, res ) {
-    // var fields = [ 'kin', 'location', 'location_address', 'location_gps', 'network', 'install_date', 'ekm_push_mac', 'sim_card', 'cumulative_kwh' ];
-    // var fieldNames = [ 'KIN', 'Location', 'Address', 'GPS', 'Network', 'Install Date', 'Push MAC', 'SIM card', 'Meter Reading (kWh)' ];
+    var fields = [ 'id', 'number_on_station', 'install_date', 'connector_type', 'charger_type', 'max_amps', 'ekm_omnimeter_serial', 'meter_status', 'meter_status_message', 'in_use', 'cumulative_kwh', 'station_id' ];
+    var fieldNames = [ 'ID', 'Number on Station', 'Install Date', 'Connector', 'Charger Type (level)', 'Max Amps', 'Omnimeter Serial Number', 'Meter Status', 'Meter Status Message', 'In Use', 'Cumulative kWh', 'Station ID' ];
 
-    // station.findAll( { order: [ 'kin' ], raw: true } )
-    // .then(function( stations ) {
-    //   for ( var i = 0; i < stations.length; i++ ) {
-    //     var oneStation = stations[ i ];
-    //     if ( oneStation.location_gps ) {
-    //       // make gps a string
-    //       stations[ i ].location_gps = oneStation.location_gps.toString();
-    //       oneStation = stations[ i ];
-    //     }
-
-    //     for ( var key in oneStation ) {
-    //       if ( oneStation[ key ] === null ) {
-    //         oneStation[ key ] = '';
-    //       }
-    //     }
-    //   }
-    //   return csv.generateCSV( stations, fields, fieldNames );
-    // })
-    // .then(function( csv ) {
-    //   res.send( csv );
-    // })
-    // .catch(function( error ) {
+    models.plug.findAll( { order: [ 'id' ], raw: true } )
+    .then(function( plugs ) {
+      return csv.generateCSV( plugs, fields, fieldNames );
+    })
+    .then(function( csv ) {
+      res.send( csv );
+    })
+    .catch(function( error ) {
       res.status( 500 ).send( error.message );
-    // });
+    });
   },
   exportChargeEventDataAsCsv: function( req, res ) {
     // var fields = [ 'kin', 'location', 'location_address', 'location_gps', 'network', 'install_date', 'ekm_push_mac', 'sim_card', 'cumulative_kwh' ];
