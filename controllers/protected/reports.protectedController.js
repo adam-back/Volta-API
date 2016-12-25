@@ -289,8 +289,8 @@ module.exports = exports = {
     });
   },
   exportStationDataAsCsv: function( req, res ) {
-    var fields = [ 'kin', 'location', 'location_address', 'location_gps', 'network', 'install_date', 'ekm_push_mac', 'sim_card', 'cumulative_kwh' ];
-    var fieldNames = [ 'KIN', 'Location', 'Address', 'GPS', 'Network', 'Install Date', 'Push MAC', 'SIM card', 'Meter Reading (kWh)' ];
+    var fields = [ 'id', 'kin', 'location', 'location_address', 'location_gps', 'network', 'install_date', 'ekm_push_mac', 'sim_card', 'cumulative_kwh' ];
+    var fieldNames = [ 'ID', 'KIN', 'Location', 'Address', 'GPS', 'Network', 'Install Date', 'Push MAC', 'SIM card', 'Meter Reading (kWh)' ];
 
     station.findAll( { order: [ 'kin' ], raw: true } )
     .then(function( stations ) {
