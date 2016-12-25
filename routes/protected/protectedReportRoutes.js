@@ -37,6 +37,18 @@ router.route( '/wrongCoordinates/:output' )
 router.route( '/downloadStations/CSV' )
   .get( controller.exportStationDataAsCsv );
 
+// for http://www.baseurl.com/protected/reports/downloadPlugs/CSV
+router.route( '/downloadPlugs/CSV' )
+  .get( controller.exportPlugDataAsCsv );
+
+// for http://www.baseurl.com/protected/reports/downloadChargeEvents/CSV
+router.route( '/downloadChargeEvents/CSV' )
+  .get( controller.exportChargeEventDataAsCsv );
+
+// for http://www.baseurl.com/protected/reports/downloadHistoricalChargeEvents/CSV
+router.route( '/downloadHistoricalChargeEvents/CSV' )
+  .get( controller.exportHistoricalChargeEventDataAsCsv );
+
 // for http://www.baseurl.com/protected/reports/chargeEventsOverTime/CSV
 router.route( '/chargeEventsOverTime/CSV' )
   .get( controller.getChargeDataOverTime );
