@@ -928,6 +928,85 @@ module.exports = function() {
           });
         });
       });
+
+      describe('reports/downloadPlugs/CSV', function() {
+        var route = '/protected/reports/downloadPlugs/CSV';
+
+        describe('GET', function() {
+          var findAllPlugs, generateCSV;
+
+          beforeEach(function() {
+            findAllPlugs = Q.defer();
+            generateCSV = Q.defer();
+            spyOn( models.plug, 'findAll' ).andReturn( findAllPlugs.promise );
+            spyOn( csv, 'generateCSV' ).andReturn( generateCSV.promise );
+          });
+
+          it('should be a defined route (not 404)', function( done ) {
+            findAllPlugs.reject( new Error( 'Test' ) );
+            supertest.get( route )
+            .set( 'Authorization', 'Bearer ' + token )
+            .expect(function( res ) {
+              expect( res.statusCode ).not.toBe( 404 );
+            })
+            .end( done );
+          });
+
+          it('should 404 for Web endpoint', function( done ) {
+            route = '/protected/reports/downloadPlugs/Web';
+            findAllPlugs.reject( new Error( 'Test' ) );
+            supertest.get( route )
+            .set( 'Authorization', 'Bearer ' + token )
+            .expect( 404 )
+            .expect(function( res ) {
+              route = '/protected/reports/downloadPlugs/CSV';
+            })
+            .end( done );
+          });
+
+          it('should generate CSV after manipulating data', function( done ) {
+            var fields = [ 'id', 'number_on_station', 'install_date', 'connector_type', 'charger_type', 'max_amps', 'ekm_omnimeter_serial', 'meter_status', 'meter_status_message', 'in_use', 'cumulative_kwh', 'station_id' ];
+            var fieldNames = [ 'ID', 'Number on Station', 'Install Date', 'Connector', 'Charger Type (level)', 'Max Amps', 'Omnimeter Serial Number', 'Meter Status', 'Meter Status Message', 'In Use', 'Cumulative kWh', 'Station ID' ];
+            var plugs = [ { id: 1, ekm_omnimeter_serial: 'A' }, { id: 3, ekm_omnimeter_serial: 'B' } ];
+            findAllPlugs.resolve( plugs );
+            generateCSV.reject( new Error( 'Test' ) );
+
+            supertest.get( route )
+            .set( 'Authorization', 'Bearer ' + token )
+            .expect(function( res ) {
+              expect( csv.generateCSV ).toHaveBeenCalled();
+              expect( csv.generateCSV ).toHaveBeenCalledWith( plugs, fields, fieldNames );
+            })
+            .end( done );
+          });
+
+          it('should send CSV', function( done ) {
+            var plugs = [ { id: 1, ekm_omnimeter_serial: 'A' }, { id: 3, ekm_omnimeter_serial: 'B' } ];
+            findAllPlugs.resolve( plugs );
+            generateCSV.resolve( 'CSV' );
+
+            supertest.get( route )
+            .set( 'Authorization', 'Bearer ' + token )
+            .expect( 200 )
+            .expect( 'Content-Type', /text/ )
+            .expect( 'CSV' )
+            .end( done );
+          });
+
+          it('should return 500 failure for error', function( done ) {
+            findAllPlugs.reject( new Error( 'Test' ) );
+            supertest.get( route )
+            .set( 'Authorization', 'Bearer ' + token )
+            .expect( 500 )
+            .expect( 'Test' )
+            .expect( 'Content-Type', /text/ )
+            .expect(function( res ) {
+              expect( models.plug.findAll ).toHaveBeenCalled();
+            })
+            .end( done );
+          });
+        });
+      });
     });
 
     describe('MEDIA SALES', function() {
