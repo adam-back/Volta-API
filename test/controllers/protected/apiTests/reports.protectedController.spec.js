@@ -1084,6 +1084,83 @@ module.exports = function() {
           });
         });
       });
+
+      describe('reports/downloadHistoricalChargeEvents/CSV', function() {
+        var route = '/protected/reports/downloadHistoricalChargeEvents/CSV';
+
+        describe('GET', function() {
+          var findAllEvents, generateCSV;
+
+          beforeEach(function() {
+            findAllEvents = Q.defer();
+            generateCSV = Q.defer();
+            spyOn( models.historical_charge_event, 'findAll' ).andReturn( findAllEvents.promise );
+            spyOn( csv, 'generateCSV' ).andReturn( generateCSV.promise );
+          });
+
+          it('should be a defined route (not 404)', function( done ) {
+            findAllEvents.reject( new Error( 'Test' ) );
+            supertest.get( route )
+            .set( 'Authorization', 'Bearer ' + token )
+            .expect(function( res ) {
+              expect( res.statusCode ).not.toBe( 404 );
+            })
+            .end( done );
+          });
+
+          it('should 404 for Web endpoint', function( done ) {
+            route = '/protected/reports/downloadHistoricalChargeEvents/Web';
+            findAllEvents.reject( new Error( 'Test' ) );
+            supertest.get( route )
+            .set( 'Authorization', 'Bearer ' + token )
+            .expect( 404 )
+            .expect(function( res ) {
+              route = '/protected/reports/downloadHistoricalChargeEvents/CSV';
+            })
+            .end( done );
+          });
+
+          it('should generate CSV after manipulating data', function( done ) {
+            var events = [ { id: 1, kwh: 1.0 }, { id: 2, kwh: 2.7 } ];
+            findAllEvents.resolve( events );
+            generateCSV.reject( new Error( 'Test' ) );
+
+            supertest.get( route )
+            .set( 'Authorization', 'Bearer ' + token )
+            .expect(function( res ) {
+              expect( csv.generateCSV ).toHaveBeenCalled();
+              expect( csv.generateCSV ).toHaveBeenCalledWith( events, null, null );
+            })
+            .end( done );
+          });
+
+          it('should send CSV', function( done ) {
+            var events = [ { id: 1, kwh: 1.0 }, { id: 2, kwh: 2.7 } ];
+            findAllEvents.resolve( events );
+            generateCSV.resolve( 'CSV' );
+
+            supertest.get( route )
+            .set( 'Authorization', 'Bearer ' + token )
+            .expect( 200 )
+            .expect( 'Content-Type', /text/ )
+            .expect( 'CSV' )
+            .end( done );
+          });
+
+          it('should return 500 failure for error', function( done ) {
+            findAllEvents.reject( new Error( 'Test' ) );
+            supertest.get( route )
+            .set( 'Authorization', 'Bearer ' + token )
+            .expect( 500 )
+            .expect( 'Test' )
+            .expect( 'Content-Type', /text/ )
+            .expect(function( res ) {
+              expect( models.historical_charge_event.findAll ).toHaveBeenCalled();
+            })
+            .end( done );
+          });
+        });
+      });
     });
 
     describe('MEDIA SALES', function() {
